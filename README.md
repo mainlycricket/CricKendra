@@ -1,0 +1,1 @@
+I am building `CricKendra` out of my passion for cricket and programming. This project is intended for learning purposes, not for commercial purposes.
