@@ -31,6 +31,13 @@ func main() {
 	// api routes
 	r.Mount("/teams", teamsRouter())
 	r.Mount("/players", playersRouter())
+	r.Mount("/tournaments", tournamentsRouter())
+	r.Mount("/series", seriesRouter())
+	r.Mount("/seasons", seasonsRouter())
+	r.Mount("/continents", continentsRouter())
+	r.Mount("/host-nations", hostNationsRouter())
+	r.Mount("/cities", citiesRouter())
+	r.Mount("/grounds", groundsRouter())
 
 	err = http.ListenAndServe(":8080", r)
 	if err != nil {

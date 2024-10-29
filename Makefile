@@ -1,10 +1,10 @@
-.PHONY: build-main build-live run-main run-live watch-main watch-live install-tools
+.PHONY: build-main build-live run-main run-live watch-main watch-live install-tools backup-db setup-db
 
 build-main:
-	go build -o bin/main-server ./cmd/main-server/
+	go build -o bin/ ./cmd/main-server/
 
 build-live:
-	go build -o bin/live-server ./cmd/live-server/
+	go build -o bin/ ./cmd/live-server/
 
 run-main: build-main
 	./bin/main-server
@@ -20,3 +20,11 @@ watch-main:
 
 watch-live:
 	reflex -r '\.go$$' -s -- sh -c './bin/live-server'
+
+backup-db:
+	pg_dump -h localhost -U postgres crickendra > db.sql
+
+setup-db:
+	psql -h localhost -U postgres -c "DROP DATABASE IF EXISTS crickendra;"
+	psql -h localhost -U postgres -c "CREATE DATABASE crickendra;"
+	psql -h localhost -U postgres -d crickendra -f db.sql

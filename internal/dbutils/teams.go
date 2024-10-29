@@ -7,12 +7,13 @@ import (
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/mainlycricket/CricKendra/internal/models"
+	"github.com/mainlycricket/CricKendra/internal/responses"
 )
 
 func InsertTeam(ctx context.Context, db *pgxpool.Pool, team *models.Team) error {
-	query := `INSERT INTO teams (name, is_male, image_url, playing_level) VALUES($1, $2, $3, $4)`
+	query := `INSERT INTO teams (name, is_male, image_url, playing_level, short_name) VALUES($1, $2, $3, $4, $5)`
 
-	cmd, err := db.Exec(ctx, query, team.Name, team.IsMale, team.ImageURL, team.PlayingLevel)
+	cmd, err := db.Exec(ctx, query, team.Name, team.IsMale, team.ImageURL, team.PlayingLevel, team.ShortName)
 
 	if err != nil {
 		return err
@@ -25,8 +26,8 @@ func InsertTeam(ctx context.Context, db *pgxpool.Pool, team *models.Team) error 
 	return nil
 }
 
-func ReadTeams(ctx context.Context, db *pgxpool.Pool) ([]models.Team, error) {
-	query := `SELECT id, name, is_male, image_url, playing_level FROM teams`
+func ReadTeams(ctx context.Context, db *pgxpool.Pool) ([]responses.AllTeams, error) {
+	query := `SELECT id, name, is_male, image_url, playing_level, short_name FROM teams`
 
 	rows, err := db.Query(ctx, query)
 
@@ -34,12 +35,12 @@ func ReadTeams(ctx context.Context, db *pgxpool.Pool) ([]models.Team, error) {
 		return nil, err
 	}
 
-	data, err := pgx.CollectRows(rows, func(row pgx.CollectableRow) (models.Team, error) {
-		var item models.Team
+	data, err := pgx.CollectRows(rows, func(row pgx.CollectableRow) (responses.AllTeams, error) {
+		var team responses.AllTeams
 
-		err := rows.Scan(&item.Id, &item.Name, &item.IsMale, &item.ImageURL, &item.PlayingLevel)
+		err := rows.Scan(&team.Id, &team.Name, &team.IsMale, &team.ImageURL, &team.PlayingLevel, &team.ShortName)
 
-		return item, err
+		return team, err
 	})
 
 	return data, err

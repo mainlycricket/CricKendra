@@ -4,3 +4,5 @@
 - Validation
 - Pagination
 - Delete / Update
+- Authentication
+- Handle DB Errors

@@ -7,6 +7,7 @@ import (
 	"github.com/go-chi/chi/v5"
 	"github.com/mainlycricket/CricKendra/internal/dbutils"
 	"github.com/mainlycricket/CricKendra/internal/models"
+	"github.com/mainlycricket/CricKendra/internal/responses"
 )
 
 func teamsRouter() *chi.Mux {
@@ -21,26 +22,26 @@ func createTeam(w http.ResponseWriter, r *http.Request) {
 
 	err := json.NewDecoder(r.Body).Decode(&team)
 	if err != nil {
-		writeJsonResponse(w, r, ApiResponse{false, "error while decoding json", err}, http.StatusBadRequest)
+		responses.WriteJsonResponse(w, responses.ApiResponse{Success: false, Message: "error while decoding json", Data: err}, http.StatusBadRequest)
 		return
 	}
 
 	err = dbutils.InsertTeam(r.Context(), DB_POOL, &team)
 	if err != nil {
-		writeJsonResponse(w, r, ApiResponse{false, "error while inserting team", err}, http.StatusBadRequest)
+		responses.WriteJsonResponse(w, responses.ApiResponse{Success: false, Message: "error while inserting team", Data: err}, http.StatusBadRequest)
 		return
 	}
 
-	writeJsonResponse(w, r, ApiResponse{true, "team created successfully", nil}, http.StatusCreated)
+	responses.WriteJsonResponse(w, responses.ApiResponse{Success: true, Message: "team created successfully", Data: nil}, http.StatusCreated)
 }
 
 func getTeams(w http.ResponseWriter, r *http.Request) {
 	teams, err := dbutils.ReadTeams(r.Context(), DB_POOL)
 
 	if err != nil {
-		writeJsonResponse(w, r, ApiResponse{false, "error while reading teams", err}, http.StatusBadRequest)
+		responses.WriteJsonResponse(w, responses.ApiResponse{Success: false, Message: "error while reading teams", Data: err}, http.StatusBadRequest)
 		return
 	}
 
-	writeJsonResponse(w, r, ApiResponse{true, "teams read successfully", teams}, http.StatusOK)
+	responses.WriteJsonResponse(w, responses.ApiResponse{Success: true, Message: "teams read successfully", Data: teams}, http.StatusOK)
 }

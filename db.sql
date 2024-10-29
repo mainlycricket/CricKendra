@@ -5,8 +5,6 @@
 -- Dumped from database version 16.4 (Ubuntu 16.4-1.pgdg22.04+2)
 -- Dumped by pg_dump version 17.0 (Ubuntu 17.0-1.pgdg22.04+1)
 
--- Started on 2024-10-22 20:44:55 IST
-
 SET statement_timeout = 0;
 SET lock_timeout = 0;
 SET idle_in_transaction_session_timeout = 0;
@@ -20,7 +18,51 @@ SET client_min_messages = warning;
 SET row_security = off;
 
 --
--- TOC entry 852 (class 1247 OID 20575)
+-- Name: article_category; Type: TYPE; Schema: public; Owner: postgres
+--
+
+CREATE TYPE public.article_category AS ENUM (
+    'news',
+    'preview',
+    'analysis',
+    'feature',
+    'interview',
+    'report'
+);
+
+
+ALTER TYPE public.article_category OWNER TO postgres;
+
+--
+-- Name: article_status; Type: TYPE; Schema: public; Owner: postgres
+--
+
+CREATE TYPE public.article_status AS ENUM (
+    'published',
+    'drafted',
+    'trashed'
+);
+
+
+ALTER TYPE public.article_status OWNER TO postgres;
+
+--
+-- Name: bowling_style; Type: TYPE; Schema: public; Owner: postgres
+--
+
+CREATE TYPE public.bowling_style AS ENUM (
+    'right_arm_fast',
+    'left_arm_fast',
+    'right_arm_off_break',
+    'left_arm_orthodox',
+    'right_arm_leg_spin',
+    'left_arm_wrist_spin'
+);
+
+
+ALTER TYPE public.bowling_style OWNER TO postgres;
+
+--
 -- Name: career_stats; Type: TYPE; Schema: public; Owner: postgres
 --
 
@@ -57,23 +99,147 @@ CREATE TYPE public.career_stats AS (
 ALTER TYPE public.career_stats OWNER TO postgres;
 
 --
--- TOC entry 224 (class 1255 OID 20607)
+-- Name: dismissal_type; Type: TYPE; Schema: public; Owner: postgres
+--
+
+CREATE TYPE public.dismissal_type AS ENUM (
+    'caught',
+    'bowled',
+    'lbw',
+    'run_out',
+    'stumped',
+    'hit_wicket',
+    'handed_the_ball',
+    'obstructing_the_field',
+    'timed_out',
+    'retired_hurt',
+    'hit_the_ball_twice'
+);
+
+
+ALTER TYPE public.dismissal_type OWNER TO postgres;
+
+--
+-- Name: innings_end; Type: TYPE; Schema: public; Owner: postgres
+--
+
+CREATE TYPE public.innings_end AS ENUM (
+    'all_out',
+    'declared',
+    'target_reached',
+    'forfeited',
+    'incomplete'
+);
+
+
+ALTER TYPE public.innings_end OWNER TO postgres;
+
+--
+-- Name: match_final_result; Type: TYPE; Schema: public; Owner: postgres
+--
+
+CREATE TYPE public.match_final_result AS ENUM (
+    'winner_decided',
+    'tied',
+    'drawn',
+    'no_result',
+    'abandoned'
+);
+
+
+ALTER TYPE public.match_final_result OWNER TO postgres;
+
+--
+-- Name: match_type; Type: TYPE; Schema: public; Owner: postgres
+--
+
+CREATE TYPE public.match_type AS ENUM (
+    'preliminary',
+    'quarter_final',
+    'semi_final',
+    'final',
+    'eliminator'
+);
+
+
+ALTER TYPE public.match_type OWNER TO postgres;
+
+--
+-- Name: playing_format; Type: TYPE; Schema: public; Owner: postgres
+--
+
+CREATE TYPE public.playing_format AS ENUM (
+    'test',
+    'odi',
+    't20i',
+    'first_class',
+    'list_a',
+    't20'
+);
+
+
+ALTER TYPE public.playing_format OWNER TO postgres;
+
+--
+-- Name: playing_level; Type: TYPE; Schema: public; Owner: postgres
+--
+
+CREATE TYPE public.playing_level AS ENUM (
+    'international',
+    'domestic'
+);
+
+
+ALTER TYPE public.playing_level OWNER TO postgres;
+
+--
+-- Name: playing_status; Type: TYPE; Schema: public; Owner: postgres
+--
+
+CREATE TYPE public.playing_status AS ENUM (
+    'playing_xi',
+    'bench',
+    'substitute',
+    'withdrawn',
+    'impact_player'
+);
+
+
+ALTER TYPE public.playing_status OWNER TO postgres;
+
+--
+-- Name: user_role; Type: TYPE; Schema: public; Owner: postgres
+--
+
+CREATE TYPE public.user_role AS ENUM (
+    'system_admin',
+    'editor_in_chief',
+    'editor',
+    'sub_editor',
+    'scorer'
+);
+
+
+ALTER TYPE public.user_role OWNER TO postgres;
+
+--
 -- Name: get_player_profile_by_id(integer); Type: FUNCTION; Schema: public; Owner: postgres
 --
 
-CREATE FUNCTION public.get_player_profile_by_id(player_id integer) RETURNS TABLE(id integer, name text, playing_role text, nationality text, is_male boolean, date_of_birth date, image_url text, biography text, batting_styles text[], primary_batting_style text, bowling_styles text[], primary_bowling_style text, teams_represented jsonb, test_stats jsonb, odi_stats jsonb, t20i_stats jsonb, fc_stats jsonb, lista_stats jsonb, t20_stats jsonb, cricsheet_id text, cricinfo_id text, cricbuzz_id text)
+CREATE FUNCTION public.get_player_profile_by_id(player_id integer) RETURNS TABLE(id integer, name text, full_name text, playing_role text, nationality text, is_male boolean, date_of_birth date, image_url text, biography text, is_rhb boolean, bowling_styles public.bowling_style[], primary_bowling_style public.bowling_style, teams_represented jsonb, test_stats jsonb, odi_stats jsonb, t20i_stats jsonb, fc_stats jsonb, lista_stats jsonb, t20_stats jsonb, cricsheet_id text, cricinfo_id text, cricbuzz_id text)
     LANGUAGE plpgsql
-    AS $$ BEGIN RETURN QUERY
+    AS $$
+ BEGIN RETURN QUERY
 SELECT p.id,
     p.name,
+	p.full_name,
     p.playing_role,
     p.nationality,
     p.is_male,
     p.date_of_birth,
     p.image_url,
     p.biography,
-    p.batting_styles,
-    p.primary_batting_style,
+	p.is_rhb,
     p.bowling_styles,
     p.primary_bowling_style,
     COALESCE(
@@ -689,7 +855,208 @@ SET default_tablespace = '';
 SET default_table_access_method = heap;
 
 --
--- TOC entry 223 (class 1259 OID 20599)
+-- Name: batting_scorecards; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public.batting_scorecards (
+    id integer NOT NULL,
+    innings_id integer NOT NULL,
+    batter_id integer NOT NULL,
+    batting_position integer NOT NULL,
+    runs_scored integer DEFAULT 0,
+    balls_faced integer DEFAULT 0,
+    minutes_batted integer DEFAULT 0,
+    fours_scored integer DEFAULT 0,
+    sixes_scored integer DEFAULT 0,
+    dismissed_by_id integer,
+    dismissal_ball_id integer,
+    fielder1_id integer,
+    fielder2_id integer,
+    dismissal_type public.dismissal_type
+);
+
+
+ALTER TABLE public.batting_scorecards OWNER TO postgres;
+
+--
+-- Name: batting_scorecards_id_seq; Type: SEQUENCE; Schema: public; Owner: postgres
+--
+
+CREATE SEQUENCE public.batting_scorecards_id_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+ALTER SEQUENCE public.batting_scorecards_id_seq OWNER TO postgres;
+
+--
+-- Name: batting_scorecards_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: postgres
+--
+
+ALTER SEQUENCE public.batting_scorecards_id_seq OWNED BY public.batting_scorecards.id;
+
+
+--
+-- Name: blog_articles; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public.blog_articles (
+    id integer NOT NULL,
+    title text NOT NULL,
+    content text NOT NULL,
+    author_id integer NOT NULL,
+    category public.article_category NOT NULL,
+    status public.article_status NOT NULL,
+    player_tags integer[],
+    team_tags integer[],
+    series_tags integer[],
+    tournament_tags integer[],
+    created_at timestamp with time zone DEFAULT now(),
+    updated_at timestamp with time zone DEFAULT now()
+);
+
+
+ALTER TABLE public.blog_articles OWNER TO postgres;
+
+--
+-- Name: blog_articles_id_seq; Type: SEQUENCE; Schema: public; Owner: postgres
+--
+
+CREATE SEQUENCE public.blog_articles_id_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+ALTER SEQUENCE public.blog_articles_id_seq OWNER TO postgres;
+
+--
+-- Name: blog_articles_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: postgres
+--
+
+ALTER SEQUENCE public.blog_articles_id_seq OWNED BY public.blog_articles.id;
+
+
+--
+-- Name: bowling_scorecards; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public.bowling_scorecards (
+    id integer NOT NULL,
+    innings_id integer NOT NULL,
+    bowler_id integer NOT NULL,
+    bowling_position integer NOT NULL,
+    wickets_taken integer DEFAULT 0,
+    runs_conceded integer DEFAULT 0,
+    balls_bowled integer DEFAULT 0,
+    fours_conceded integer DEFAULT 0,
+    sixes_conceded integer DEFAULT 0,
+    wides_conceded integer DEFAULT 0,
+    noballs_conceded integer DEFAULT 0
+);
+
+
+ALTER TABLE public.bowling_scorecards OWNER TO postgres;
+
+--
+-- Name: bowling_scorecards_id_seq; Type: SEQUENCE; Schema: public; Owner: postgres
+--
+
+CREATE SEQUENCE public.bowling_scorecards_id_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+ALTER SEQUENCE public.bowling_scorecards_id_seq OWNER TO postgres;
+
+--
+-- Name: bowling_scorecards_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: postgres
+--
+
+ALTER SEQUENCE public.bowling_scorecards_id_seq OWNED BY public.bowling_scorecards.id;
+
+
+--
+-- Name: cities; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public.cities (
+    id integer NOT NULL,
+    name text NOT NULL,
+    host_nation_id integer NOT NULL
+);
+
+
+ALTER TABLE public.cities OWNER TO postgres;
+
+--
+-- Name: cities_id_seq; Type: SEQUENCE; Schema: public; Owner: postgres
+--
+
+CREATE SEQUENCE public.cities_id_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+ALTER SEQUENCE public.cities_id_seq OWNER TO postgres;
+
+--
+-- Name: cities_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: postgres
+--
+
+ALTER SEQUENCE public.cities_id_seq OWNED BY public.cities.id;
+
+
+--
+-- Name: continents; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public.continents (
+    id integer NOT NULL,
+    name text NOT NULL
+);
+
+
+ALTER TABLE public.continents OWNER TO postgres;
+
+--
+-- Name: continents_id_seq; Type: SEQUENCE; Schema: public; Owner: postgres
+--
+
+CREATE SEQUENCE public.continents_id_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+ALTER SEQUENCE public.continents_id_seq OWNER TO postgres;
+
+--
+-- Name: continents_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: postgres
+--
+
+ALTER SEQUENCE public.continents_id_seq OWNED BY public.continents.id;
+
+
+--
 -- Name: grounds; Type: TABLE; Schema: public; Owner: postgres
 --
 
@@ -704,7 +1071,6 @@ CREATE TABLE public.grounds (
 ALTER TABLE public.grounds OWNER TO postgres;
 
 --
--- TOC entry 222 (class 1259 OID 20598)
 -- Name: grounds_id_seq; Type: SEQUENCE; Schema: public; Owner: postgres
 --
 
@@ -720,8 +1086,6 @@ CREATE SEQUENCE public.grounds_id_seq
 ALTER SEQUENCE public.grounds_id_seq OWNER TO postgres;
 
 --
--- TOC entry 3410 (class 0 OID 0)
--- Dependencies: 222
 -- Name: grounds_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: postgres
 --
 
@@ -729,15 +1093,96 @@ ALTER SEQUENCE public.grounds_id_seq OWNED BY public.grounds.id;
 
 
 --
--- TOC entry 221 (class 1259 OID 20590)
+-- Name: host_nations; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public.host_nations (
+    id integer NOT NULL,
+    name text NOT NULL,
+    continent_id integer NOT NULL
+);
+
+
+ALTER TABLE public.host_nations OWNER TO postgres;
+
+--
+-- Name: host_nations_id_seq; Type: SEQUENCE; Schema: public; Owner: postgres
+--
+
+CREATE SEQUENCE public.host_nations_id_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+ALTER SEQUENCE public.host_nations_id_seq OWNER TO postgres;
+
+--
+-- Name: host_nations_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: postgres
+--
+
+ALTER SEQUENCE public.host_nations_id_seq OWNED BY public.host_nations.id;
+
+
+--
+-- Name: innings; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public.innings (
+    id integer NOT NULL,
+    match_id integer NOT NULL,
+    innings_number integer NOT NULL,
+    batting_team_id integer NOT NULL,
+    bowling_team_id integer NOT NULL,
+    total_runs integer DEFAULT 0,
+    total_balls integer DEFAULT 0,
+    total_wickets integer DEFAULT 0,
+    byes integer DEFAULT 0,
+    leg_byes integer DEFAULT 0,
+    wides integer DEFAULT 0,
+    noballs integer DEFAULT 0,
+    penalty integer DEFAULT 0,
+    is_super_over boolean DEFAULT false,
+    innings_end public.innings_end
+);
+
+
+ALTER TABLE public.innings OWNER TO postgres;
+
+--
+-- Name: innings_id_seq; Type: SEQUENCE; Schema: public; Owner: postgres
+--
+
+CREATE SEQUENCE public.innings_id_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+ALTER SEQUENCE public.innings_id_seq OWNER TO postgres;
+
+--
+-- Name: innings_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: postgres
+--
+
+ALTER SEQUENCE public.innings_id_seq OWNED BY public.innings.id;
+
+
+--
 -- Name: matches; Type: TABLE; Schema: public; Owner: postgres
 --
 
 CREATE TABLE public.matches (
     id integer NOT NULL,
-    start_datetime timestamp with time zone NOT NULL,
-    team1_id integer NOT NULL,
-    team2_id integer NOT NULL,
+    start_datetime timestamp with time zone,
+    team1_id integer,
+    team2_id integer,
     is_male boolean NOT NULL,
     tournament_id integer,
     series_id integer,
@@ -745,18 +1190,13 @@ CREATE TABLE public.matches (
     continent_id integer,
     ground_id integer,
     current_status text,
-    final_result text,
     home_team_id integer,
     away_team_id integer,
-    match_type text,
-    playing_level text,
-    playing_format text,
-    season_id text,
+    season text,
     is_day_night boolean,
     is_dls boolean,
     toss_winner_team_id integer,
     toss_loser_team_id integer,
-    toss_decision text,
     match_winner_team_id integer,
     match_loser_team_id integer,
     is_won_by_runs boolean,
@@ -764,14 +1204,21 @@ CREATE TABLE public.matches (
     balls_remaining_after_win integer,
     potm_id integer,
     scorers_id integer[],
-    commentators_id integer[]
+    commentators_id integer[],
+    is_toss_decision_bat boolean,
+    match_type public.match_type,
+    playing_level public.playing_level NOT NULL,
+    playing_format public.playing_format NOT NULL,
+    tour_id integer,
+    final_result public.match_final_result,
+    parent_series_id integer,
+    balls_per_over integer DEFAULT 6
 );
 
 
 ALTER TABLE public.matches OWNER TO postgres;
 
 --
--- TOC entry 220 (class 1259 OID 20589)
 -- Name: matches_id_seq; Type: SEQUENCE; Schema: public; Owner: postgres
 --
 
@@ -787,8 +1234,6 @@ CREATE SEQUENCE public.matches_id_seq
 ALTER SEQUENCE public.matches_id_seq OWNER TO postgres;
 
 --
--- TOC entry 3411 (class 0 OID 0)
--- Dependencies: 220
 -- Name: matches_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: postgres
 --
 
@@ -796,7 +1241,6 @@ ALTER SEQUENCE public.matches_id_seq OWNED BY public.matches.id;
 
 
 --
--- TOC entry 219 (class 1259 OID 20577)
 -- Name: players; Type: TABLE; Schema: public; Owner: postgres
 --
 
@@ -809,10 +1253,6 @@ CREATE TABLE public.players (
     date_of_birth date NOT NULL,
     image_url text,
     biography text,
-    batting_styles text[],
-    primary_batting_style text,
-    bowling_styles text[],
-    primary_bowling_style text,
     teams_represented_id integer[],
     test_stats public.career_stats,
     odi_stats public.career_stats,
@@ -823,6 +1263,10 @@ CREATE TABLE public.players (
     cricsheet_id text,
     cricinfo_id text,
     cricbuzz_id text,
+    full_name text,
+    is_rhb boolean,
+    bowling_styles public.bowling_style[],
+    primary_bowling_style public.bowling_style,
     CONSTRAINT valid_birth_date CHECK ((date_of_birth < CURRENT_DATE)),
     CONSTRAINT valid_image_url CHECK (((image_url IS NULL) OR (image_url ~ '^https?://[^\s/$.?#].[^\s]*$'::text))),
     CONSTRAINT valid_name CHECK ((length(TRIM(BOTH FROM name)) > 0))
@@ -832,7 +1276,6 @@ CREATE TABLE public.players (
 ALTER TABLE public.players OWNER TO postgres;
 
 --
--- TOC entry 218 (class 1259 OID 20576)
 -- Name: players_id_seq; Type: SEQUENCE; Schema: public; Owner: postgres
 --
 
@@ -848,8 +1291,6 @@ CREATE SEQUENCE public.players_id_seq
 ALTER SEQUENCE public.players_id_seq OWNER TO postgres;
 
 --
--- TOC entry 3412 (class 0 OID 0)
--- Dependencies: 218
 -- Name: players_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: postgres
 --
 
@@ -857,7 +1298,77 @@ ALTER SEQUENCE public.players_id_seq OWNED BY public.players.id;
 
 
 --
--- TOC entry 216 (class 1259 OID 20564)
+-- Name: seasons; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public.seasons (
+    season text NOT NULL
+);
+
+
+ALTER TABLE public.seasons OWNER TO postgres;
+
+--
+-- Name: series; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public.series (
+    id integer NOT NULL,
+    name text NOT NULL,
+    is_male boolean NOT NULL,
+    playing_level public.playing_level NOT NULL,
+    playing_format public.playing_format NOT NULL,
+    season text NOT NULL,
+    teams_id integer[] NOT NULL,
+    host_nations_id integer[] NOT NULL,
+    tournament_id integer,
+    parent_series_id integer,
+    tour_id integer
+);
+
+
+ALTER TABLE public.series OWNER TO postgres;
+
+--
+-- Name: series_id_seq; Type: SEQUENCE; Schema: public; Owner: postgres
+--
+
+CREATE SEQUENCE public.series_id_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+ALTER SEQUENCE public.series_id_seq OWNER TO postgres;
+
+--
+-- Name: series_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: postgres
+--
+
+ALTER SEQUENCE public.series_id_seq OWNED BY public.series.id;
+
+
+--
+-- Name: squads; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public.squads (
+    player_id integer,
+    series_id integer,
+    match_id integer,
+    is_captain boolean DEFAULT false,
+    is_wk boolean DEFAULT false,
+    is_debut boolean DEFAULT false,
+    playing_status public.playing_status
+);
+
+
+ALTER TABLE public.squads OWNER TO postgres;
+
+--
 -- Name: teams; Type: TABLE; Schema: public; Owner: postgres
 --
 
@@ -866,14 +1377,14 @@ CREATE TABLE public.teams (
     name text NOT NULL,
     is_male boolean DEFAULT true,
     image_url text,
-    playing_level text
+    short_name text,
+    playing_level public.playing_level DEFAULT 'international'::public.playing_level NOT NULL
 );
 
 
 ALTER TABLE public.teams OWNER TO postgres;
 
 --
--- TOC entry 215 (class 1259 OID 20563)
 -- Name: teams_id_seq; Type: SEQUENCE; Schema: public; Owner: postgres
 --
 
@@ -889,8 +1400,6 @@ CREATE SEQUENCE public.teams_id_seq
 ALTER SEQUENCE public.teams_id_seq OWNER TO postgres;
 
 --
--- TOC entry 3413 (class 0 OID 0)
--- Dependencies: 215
 -- Name: teams_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: postgres
 --
 
@@ -898,7 +1407,151 @@ ALTER SEQUENCE public.teams_id_seq OWNED BY public.teams.id;
 
 
 --
--- TOC entry 3242 (class 2604 OID 20602)
+-- Name: tournaments; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public.tournaments (
+    id integer NOT NULL,
+    name text NOT NULL,
+    is_male boolean NOT NULL,
+    playing_level public.playing_level NOT NULL,
+    playing_format public.playing_format NOT NULL
+);
+
+
+ALTER TABLE public.tournaments OWNER TO postgres;
+
+--
+-- Name: tournaments_id_seq; Type: SEQUENCE; Schema: public; Owner: postgres
+--
+
+CREATE SEQUENCE public.tournaments_id_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+ALTER SEQUENCE public.tournaments_id_seq OWNER TO postgres;
+
+--
+-- Name: tournaments_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: postgres
+--
+
+ALTER SEQUENCE public.tournaments_id_seq OWNED BY public.tournaments.id;
+
+
+--
+-- Name: tours; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public.tours (
+    id integer NOT NULL,
+    "touring_team_Id" integer NOT NULL,
+    host_nations_id integer[] NOT NULL,
+    season text NOT NULL
+);
+
+
+ALTER TABLE public.tours OWNER TO postgres;
+
+--
+-- Name: tours_id_seq; Type: SEQUENCE; Schema: public; Owner: postgres
+--
+
+CREATE SEQUENCE public.tours_id_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+ALTER SEQUENCE public.tours_id_seq OWNER TO postgres;
+
+--
+-- Name: tours_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: postgres
+--
+
+ALTER SEQUENCE public.tours_id_seq OWNED BY public.tours.id;
+
+
+--
+-- Name: users; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public.users (
+    id integer NOT NULL,
+    name text NOT NULL,
+    email text NOT NULL,
+    password text NOT NULL,
+    role public.user_role NOT NULL
+);
+
+
+ALTER TABLE public.users OWNER TO postgres;
+
+--
+-- Name: users_id_seq; Type: SEQUENCE; Schema: public; Owner: postgres
+--
+
+CREATE SEQUENCE public.users_id_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+ALTER SEQUENCE public.users_id_seq OWNER TO postgres;
+
+--
+-- Name: users_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: postgres
+--
+
+ALTER SEQUENCE public.users_id_seq OWNED BY public.users.id;
+
+
+--
+-- Name: batting_scorecards id; Type: DEFAULT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.batting_scorecards ALTER COLUMN id SET DEFAULT nextval('public.batting_scorecards_id_seq'::regclass);
+
+
+--
+-- Name: blog_articles id; Type: DEFAULT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.blog_articles ALTER COLUMN id SET DEFAULT nextval('public.blog_articles_id_seq'::regclass);
+
+
+--
+-- Name: bowling_scorecards id; Type: DEFAULT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.bowling_scorecards ALTER COLUMN id SET DEFAULT nextval('public.bowling_scorecards_id_seq'::regclass);
+
+
+--
+-- Name: cities id; Type: DEFAULT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.cities ALTER COLUMN id SET DEFAULT nextval('public.cities_id_seq'::regclass);
+
+
+--
+-- Name: continents id; Type: DEFAULT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.continents ALTER COLUMN id SET DEFAULT nextval('public.continents_id_seq'::regclass);
+
+
+--
 -- Name: grounds id; Type: DEFAULT; Schema: public; Owner: postgres
 --
 
@@ -906,7 +1559,20 @@ ALTER TABLE ONLY public.grounds ALTER COLUMN id SET DEFAULT nextval('public.grou
 
 
 --
--- TOC entry 3241 (class 2604 OID 20593)
+-- Name: host_nations id; Type: DEFAULT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.host_nations ALTER COLUMN id SET DEFAULT nextval('public.host_nations_id_seq'::regclass);
+
+
+--
+-- Name: innings id; Type: DEFAULT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.innings ALTER COLUMN id SET DEFAULT nextval('public.innings_id_seq'::regclass);
+
+
+--
 -- Name: matches id; Type: DEFAULT; Schema: public; Owner: postgres
 --
 
@@ -914,7 +1580,6 @@ ALTER TABLE ONLY public.matches ALTER COLUMN id SET DEFAULT nextval('public.matc
 
 
 --
--- TOC entry 3240 (class 2604 OID 20580)
 -- Name: players id; Type: DEFAULT; Schema: public; Owner: postgres
 --
 
@@ -922,7 +1587,13 @@ ALTER TABLE ONLY public.players ALTER COLUMN id SET DEFAULT nextval('public.play
 
 
 --
--- TOC entry 3238 (class 2604 OID 20567)
+-- Name: series id; Type: DEFAULT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.series ALTER COLUMN id SET DEFAULT nextval('public.series_id_seq'::regclass);
+
+
+--
 -- Name: teams id; Type: DEFAULT; Schema: public; Owner: postgres
 --
 
@@ -930,62 +1601,233 @@ ALTER TABLE ONLY public.teams ALTER COLUMN id SET DEFAULT nextval('public.teams_
 
 
 --
--- TOC entry 3404 (class 0 OID 20599)
--- Dependencies: 223
+-- Name: tournaments id; Type: DEFAULT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.tournaments ALTER COLUMN id SET DEFAULT nextval('public.tournaments_id_seq'::regclass);
+
+
+--
+-- Name: tours id; Type: DEFAULT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.tours ALTER COLUMN id SET DEFAULT nextval('public.tours_id_seq'::regclass);
+
+
+--
+-- Name: users id; Type: DEFAULT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.users ALTER COLUMN id SET DEFAULT nextval('public.users_id_seq'::regclass);
+
+
+--
+-- Data for Name: batting_scorecards; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY public.batting_scorecards (id, innings_id, batter_id, batting_position, runs_scored, balls_faced, minutes_batted, fours_scored, sixes_scored, dismissed_by_id, dismissal_ball_id, fielder1_id, fielder2_id, dismissal_type) FROM stdin;
+\.
+
+
+--
+-- Data for Name: blog_articles; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY public.blog_articles (id, title, content, author_id, category, status, player_tags, team_tags, series_tags, tournament_tags, created_at, updated_at) FROM stdin;
+\.
+
+
+--
+-- Data for Name: bowling_scorecards; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY public.bowling_scorecards (id, innings_id, bowler_id, bowling_position, wickets_taken, runs_conceded, balls_bowled, fours_conceded, sixes_conceded, wides_conceded, noballs_conceded) FROM stdin;
+\.
+
+
+--
+-- Data for Name: cities; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY public.cities (id, name, host_nation_id) FROM stdin;
+1	Mumbai	1
+\.
+
+
+--
+-- Data for Name: continents; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY public.continents (id, name) FROM stdin;
+1	Asia
+\.
+
+
+--
 -- Data for Name: grounds; Type: TABLE DATA; Schema: public; Owner: postgres
 --
 
 COPY public.grounds (id, name, host_nation_id, city_id) FROM stdin;
+1	Wankhede Stadium	1	1
 \.
 
 
 --
--- TOC entry 3402 (class 0 OID 20590)
--- Dependencies: 221
+-- Data for Name: host_nations; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY public.host_nations (id, name, continent_id) FROM stdin;
+1	India	1
+\.
+
+
+--
+-- Data for Name: innings; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY public.innings (id, match_id, innings_number, batting_team_id, bowling_team_id, total_runs, total_balls, total_wickets, byes, leg_byes, wides, noballs, penalty, is_super_over, innings_end) FROM stdin;
+\.
+
+
+--
 -- Data for Name: matches; Type: TABLE DATA; Schema: public; Owner: postgres
 --
 
-COPY public.matches (id, start_datetime, team1_id, team2_id, is_male, tournament_id, series_id, host_nation_id, continent_id, ground_id, current_status, final_result, home_team_id, away_team_id, match_type, playing_level, playing_format, season_id, is_day_night, is_dls, toss_winner_team_id, toss_loser_team_id, toss_decision, match_winner_team_id, match_loser_team_id, is_won_by_runs, win_margin, balls_remaining_after_win, potm_id, scorers_id, commentators_id) FROM stdin;
+COPY public.matches (id, start_datetime, team1_id, team2_id, is_male, tournament_id, series_id, host_nation_id, continent_id, ground_id, current_status, home_team_id, away_team_id, season, is_day_night, is_dls, toss_winner_team_id, toss_loser_team_id, match_winner_team_id, match_loser_team_id, is_won_by_runs, win_margin, balls_remaining_after_win, potm_id, scorers_id, commentators_id, is_toss_decision_bat, match_type, playing_level, playing_format, tour_id, final_result, parent_series_id, balls_per_over) FROM stdin;
 \.
 
 
 --
--- TOC entry 3400 (class 0 OID 20577)
--- Dependencies: 219
 -- Data for Name: players; Type: TABLE DATA; Schema: public; Owner: postgres
 --
 
-COPY public.players (id, name, playing_role, nationality, is_male, date_of_birth, image_url, biography, batting_styles, primary_batting_style, bowling_styles, primary_bowling_style, teams_represented_id, test_stats, odi_stats, t20i_stats, fc_stats, lista_stats, t20_stats, cricsheet_id, cricinfo_id, cricbuzz_id) FROM stdin;
-2	Rohit Sharma	Top-order Batter	India	t	1993-04-30	\N	\N	\N	\N	\N	\N	\N	(,,,,,,,,,,,,,,,,,,,,,,,,,)	(,,,,,,,,,,,,,,,,,,,,,,,,,)	(,,,,,,,,,,,,,,,,,,,,,,,,,)	(,,,,,,,,,,,,,,,,,,,,,,,,,)	(,,,,,,,,,,,,,,,,,,,,,,,,,)	(,,,,,,,,,,,,,,,,,,,,,,,,,)	\N	\N	\N
-1	Virat Kohli	Top-order Batter	India	t	1994-11-05	\N	\N	\N	\N	\N	\N	{1,3}	(,,,,,,,,,,,,,,,,,,,,,,,,,)	(,,,,,,,,,,,,,,,,,,,,,,,,,)	(,,,,,,,,,,,,,,,,,,,,,,,,,)	(,,,,,,,,,,,,,,,,,,,,,,,,,)	(,,,,,,,,,,,,,,,,,,,,,,,,,)	(,,,,,,,,,,,,,,,,,,,,,,,,,)	\N	\N	\N
+COPY public.players (id, name, playing_role, nationality, is_male, date_of_birth, image_url, biography, teams_represented_id, test_stats, odi_stats, t20i_stats, fc_stats, lista_stats, t20_stats, cricsheet_id, cricinfo_id, cricbuzz_id, full_name, is_rhb, bowling_styles, primary_bowling_style) FROM stdin;
+1	Virat Kohli	Top-order Batter	India	t	1994-11-05	\N	\N	{1,3}	(,,,,,,,,,,,,,,,,,,,,,,,,,)	(,,,,,,,,,,,,,,,,,,,,,,,,,)	(,,,,,,,,,,,,,,,,,,,,,,,,,)	(,,,,,,,,,,,,,,,,,,,,,,,,,)	(,,,,,,,,,,,,,,,,,,,,,,,,,)	(,,,,,,,,,,,,,,,,,,,,,,,,,)	\N	\N	\N	Virat Kohli	t	\N	\N
+2	Rohit Sharma	Top-order Batter	India	t	1993-04-30	\N	\N	\N	(,,,,,,,,,,,,,,,,,,,,,,,,,)	(,,,,,,,,,,,,,,,,,,,,,,,,,)	(,,,,,,,,,,,,,,,,,,,,,,,,,)	(,,,,,,,,,,,,,,,,,,,,,,,,,)	(,,,,,,,,,,,,,,,,,,,,,,,,,)	(,,,,,,,,,,,,,,,,,,,,,,,,,)	\N	\N	\N	Rohit Gurunath Sharma	t	\N	\N
+3	Suryakumar Yadav	Batter	India	t	1990-09-14	\N	\N	{1,4}	(,,,,,,,,,,,,,,,,,,,,,,,,,)	(,,,,,,,,,,,,,,,,,,,,,,,,,)	(,,,,,,,,,,,,,,,,,,,,,,,,,)	(,,,,,,,,,,,,,,,,,,,,,,,,,)	(,,,,,,,,,,,,,,,,,,,,,,,,,)	(,,,,,,,,,,,,,,,,,,,,,,,,,)	\N	\N	\N	Suryakumar Ashok Yadav	t	\N	\N
 \.
 
 
 --
--- TOC entry 3398 (class 0 OID 20564)
--- Dependencies: 216
+-- Data for Name: seasons; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY public.seasons (season) FROM stdin;
+2023/24
+\.
+
+
+--
+-- Data for Name: series; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY public.series (id, name, is_male, playing_level, playing_format, season, teams_id, host_nations_id, tournament_id, parent_series_id, tour_id) FROM stdin;
+1	ICC Cricket World Cup 2023	t	international	odi	2023/24	{1,2}	{1}	1	\N	\N
+\.
+
+
+--
+-- Data for Name: squads; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY public.squads (player_id, series_id, match_id, is_captain, is_wk, is_debut, playing_status) FROM stdin;
+\.
+
+
+--
 -- Data for Name: teams; Type: TABLE DATA; Schema: public; Owner: postgres
 --
 
-COPY public.teams (id, name, is_male, image_url, playing_level) FROM stdin;
-1	India	t	\N	international
-2	Australia	t	\N	international
-3	Royal Challengers Bangalore	t	\N	domestic
+COPY public.teams (id, name, is_male, image_url, short_name, playing_level) FROM stdin;
+1	India	t	\N	IND	international
+2	Australia	t	\N	AUS	international
+3	Royal Challengers Bangalore	t	\N	RCB	domestic
+4	Mumbai Indians	t	\N	\N	domestic
 \.
 
 
 --
--- TOC entry 3414 (class 0 OID 0)
--- Dependencies: 222
+-- Data for Name: tournaments; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY public.tournaments (id, name, is_male, playing_level, playing_format) FROM stdin;
+1	ICC Men's World Cup	t	international	odi
+\.
+
+
+--
+-- Data for Name: tours; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY public.tours (id, "touring_team_Id", host_nations_id, season) FROM stdin;
+\.
+
+
+--
+-- Data for Name: users; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY public.users (id, name, email, password, role) FROM stdin;
+\.
+
+
+--
+-- Name: batting_scorecards_id_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
+--
+
+SELECT pg_catalog.setval('public.batting_scorecards_id_seq', 1, false);
+
+
+--
+-- Name: blog_articles_id_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
+--
+
+SELECT pg_catalog.setval('public.blog_articles_id_seq', 1, false);
+
+
+--
+-- Name: bowling_scorecards_id_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
+--
+
+SELECT pg_catalog.setval('public.bowling_scorecards_id_seq', 1, false);
+
+
+--
+-- Name: cities_id_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
+--
+
+SELECT pg_catalog.setval('public.cities_id_seq', 1, true);
+
+
+--
+-- Name: continents_id_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
+--
+
+SELECT pg_catalog.setval('public.continents_id_seq', 1, true);
+
+
+--
 -- Name: grounds_id_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
 --
 
-SELECT pg_catalog.setval('public.grounds_id_seq', 1, false);
+SELECT pg_catalog.setval('public.grounds_id_seq', 1, true);
 
 
 --
--- TOC entry 3415 (class 0 OID 0)
--- Dependencies: 220
+-- Name: host_nations_id_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
+--
+
+SELECT pg_catalog.setval('public.host_nations_id_seq', 1, true);
+
+
+--
+-- Name: innings_id_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
+--
+
+SELECT pg_catalog.setval('public.innings_id_seq', 1, false);
+
+
+--
 -- Name: matches_id_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
 --
 
@@ -993,25 +1835,88 @@ SELECT pg_catalog.setval('public.matches_id_seq', 1, false);
 
 
 --
--- TOC entry 3416 (class 0 OID 0)
--- Dependencies: 218
 -- Name: players_id_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
 --
 
-SELECT pg_catalog.setval('public.players_id_seq', 2, true);
+SELECT pg_catalog.setval('public.players_id_seq', 3, true);
 
 
 --
--- TOC entry 3417 (class 0 OID 0)
--- Dependencies: 215
+-- Name: series_id_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
+--
+
+SELECT pg_catalog.setval('public.series_id_seq', 1, true);
+
+
+--
 -- Name: teams_id_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
 --
 
-SELECT pg_catalog.setval('public.teams_id_seq', 3, true);
+SELECT pg_catalog.setval('public.teams_id_seq', 4, true);
 
 
 --
--- TOC entry 3253 (class 2606 OID 20606)
+-- Name: tournaments_id_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
+--
+
+SELECT pg_catalog.setval('public.tournaments_id_seq', 1, true);
+
+
+--
+-- Name: tours_id_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
+--
+
+SELECT pg_catalog.setval('public.tours_id_seq', 1, false);
+
+
+--
+-- Name: users_id_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
+--
+
+SELECT pg_catalog.setval('public.users_id_seq', 1, false);
+
+
+--
+-- Name: batting_scorecards batting_scorecards_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.batting_scorecards
+    ADD CONSTRAINT batting_scorecards_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: blog_articles blog_articles_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.blog_articles
+    ADD CONSTRAINT blog_articles_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: bowling_scorecards bowling_scorecards_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.bowling_scorecards
+    ADD CONSTRAINT bowling_scorecards_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: cities cities_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.cities
+    ADD CONSTRAINT cities_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: continents continents_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.continents
+    ADD CONSTRAINT continents_pkey PRIMARY KEY (id);
+
+
+--
 -- Name: grounds grounds_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -1020,7 +1925,22 @@ ALTER TABLE ONLY public.grounds
 
 
 --
--- TOC entry 3251 (class 2606 OID 20597)
+-- Name: host_nations host_nations_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.host_nations
+    ADD CONSTRAINT host_nations_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: innings innings_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.innings
+    ADD CONSTRAINT innings_pkey PRIMARY KEY (id);
+
+
+--
 -- Name: matches matches_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -1029,7 +1949,6 @@ ALTER TABLE ONLY public.matches
 
 
 --
--- TOC entry 3249 (class 2606 OID 20587)
 -- Name: players players_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -1038,7 +1957,22 @@ ALTER TABLE ONLY public.players
 
 
 --
--- TOC entry 3247 (class 2606 OID 20572)
+-- Name: seasons seasons_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.seasons
+    ADD CONSTRAINT seasons_pkey PRIMARY KEY (season);
+
+
+--
+-- Name: series series_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.series
+    ADD CONSTRAINT series_pkey PRIMARY KEY (id);
+
+
+--
 -- Name: teams teams_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -1046,7 +1980,357 @@ ALTER TABLE ONLY public.teams
     ADD CONSTRAINT teams_pkey PRIMARY KEY (id);
 
 
--- Completed on 2024-10-22 20:44:55 IST
+--
+-- Name: tournaments tournaments_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.tournaments
+    ADD CONSTRAINT tournaments_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: tours tours_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.tours
+    ADD CONSTRAINT tours_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: continents unique_continent_name; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.continents
+    ADD CONSTRAINT unique_continent_name UNIQUE (name);
+
+
+--
+-- Name: users users_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.users
+    ADD CONSTRAINT users_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: batting_scorecards batting_scorecards_batter_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.batting_scorecards
+    ADD CONSTRAINT batting_scorecards_batter_id_fkey FOREIGN KEY (batter_id) REFERENCES public.players(id);
+
+
+--
+-- Name: batting_scorecards batting_scorecards_dismissed_by_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.batting_scorecards
+    ADD CONSTRAINT batting_scorecards_dismissed_by_id_fkey FOREIGN KEY (dismissed_by_id) REFERENCES public.players(id);
+
+
+--
+-- Name: batting_scorecards batting_scorecards_fielder1_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.batting_scorecards
+    ADD CONSTRAINT batting_scorecards_fielder1_id_fkey FOREIGN KEY (fielder1_id) REFERENCES public.players(id);
+
+
+--
+-- Name: batting_scorecards batting_scorecards_fielder2_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.batting_scorecards
+    ADD CONSTRAINT batting_scorecards_fielder2_id_fkey FOREIGN KEY (fielder2_id) REFERENCES public.players(id);
+
+
+--
+-- Name: batting_scorecards batting_scorecards_innings_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.batting_scorecards
+    ADD CONSTRAINT batting_scorecards_innings_id_fkey FOREIGN KEY (innings_id) REFERENCES public.innings(id);
+
+
+--
+-- Name: bowling_scorecards bowling_scorecards_bowler_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.bowling_scorecards
+    ADD CONSTRAINT bowling_scorecards_bowler_id_fkey FOREIGN KEY (bowler_id) REFERENCES public.players(id);
+
+
+--
+-- Name: bowling_scorecards bowling_scorecards_innings_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.bowling_scorecards
+    ADD CONSTRAINT bowling_scorecards_innings_id_fkey FOREIGN KEY (innings_id) REFERENCES public.innings(id);
+
+
+--
+-- Name: cities cities_host_nation_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.cities
+    ADD CONSTRAINT cities_host_nation_id_fkey FOREIGN KEY (host_nation_id) REFERENCES public.host_nations(id);
+
+
+--
+-- Name: grounds grounds_city_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.grounds
+    ADD CONSTRAINT grounds_city_id_fkey FOREIGN KEY (city_id) REFERENCES public.cities(id) NOT VALID;
+
+
+--
+-- Name: grounds grounds_host_nation_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.grounds
+    ADD CONSTRAINT grounds_host_nation_id_fkey FOREIGN KEY (host_nation_id) REFERENCES public.host_nations(id) NOT VALID;
+
+
+--
+-- Name: host_nations host_nations_continent_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.host_nations
+    ADD CONSTRAINT host_nations_continent_id_fkey FOREIGN KEY (continent_id) REFERENCES public.continents(id);
+
+
+--
+-- Name: innings innings_batting_team_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.innings
+    ADD CONSTRAINT innings_batting_team_id_fkey FOREIGN KEY (batting_team_id) REFERENCES public.teams(id);
+
+
+--
+-- Name: innings innings_bowling_team_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.innings
+    ADD CONSTRAINT innings_bowling_team_id_fkey FOREIGN KEY (bowling_team_id) REFERENCES public.teams(id);
+
+
+--
+-- Name: innings innings_match_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.innings
+    ADD CONSTRAINT innings_match_id_fkey FOREIGN KEY (match_id) REFERENCES public.matches(id);
+
+
+--
+-- Name: matches matches_away_team_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.matches
+    ADD CONSTRAINT matches_away_team_id_fkey FOREIGN KEY (away_team_id) REFERENCES public.teams(id) NOT VALID;
+
+
+--
+-- Name: matches matches_continent_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.matches
+    ADD CONSTRAINT matches_continent_id_fkey FOREIGN KEY (continent_id) REFERENCES public.continents(id) NOT VALID;
+
+
+--
+-- Name: matches matches_ground_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.matches
+    ADD CONSTRAINT matches_ground_id_fkey FOREIGN KEY (ground_id) REFERENCES public.grounds(id) NOT VALID;
+
+
+--
+-- Name: matches matches_home_team_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.matches
+    ADD CONSTRAINT matches_home_team_id_fkey FOREIGN KEY (home_team_id) REFERENCES public.teams(id) NOT VALID;
+
+
+--
+-- Name: matches matches_host_nation_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.matches
+    ADD CONSTRAINT matches_host_nation_id_fkey FOREIGN KEY (host_nation_id) REFERENCES public.host_nations(id) NOT VALID;
+
+
+--
+-- Name: matches matches_match_loser_team_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.matches
+    ADD CONSTRAINT matches_match_loser_team_id_fkey FOREIGN KEY (match_loser_team_id) REFERENCES public.teams(id) NOT VALID;
+
+
+--
+-- Name: matches matches_match_winner_team_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.matches
+    ADD CONSTRAINT matches_match_winner_team_id_fkey FOREIGN KEY (match_winner_team_id) REFERENCES public.teams(id) NOT VALID;
+
+
+--
+-- Name: matches matches_parent_series_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.matches
+    ADD CONSTRAINT matches_parent_series_id_fkey FOREIGN KEY (parent_series_id) REFERENCES public.series(id) NOT VALID;
+
+
+--
+-- Name: matches matches_potm_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.matches
+    ADD CONSTRAINT matches_potm_id_fkey FOREIGN KEY (potm_id) REFERENCES public.players(id) NOT VALID;
+
+
+--
+-- Name: matches matches_season_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.matches
+    ADD CONSTRAINT matches_season_fkey FOREIGN KEY (season) REFERENCES public.seasons(season) NOT VALID;
+
+
+--
+-- Name: matches matches_series_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.matches
+    ADD CONSTRAINT matches_series_id_fkey FOREIGN KEY (series_id) REFERENCES public.series(id) NOT VALID;
+
+
+--
+-- Name: matches matches_team1_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.matches
+    ADD CONSTRAINT matches_team1_id_fkey FOREIGN KEY (team1_id) REFERENCES public.teams(id) NOT VALID;
+
+
+--
+-- Name: matches matches_team2_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.matches
+    ADD CONSTRAINT matches_team2_id_fkey FOREIGN KEY (team2_id) REFERENCES public.teams(id) NOT VALID;
+
+
+--
+-- Name: matches matches_toss_loser_team_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.matches
+    ADD CONSTRAINT matches_toss_loser_team_id_fkey FOREIGN KEY (toss_loser_team_id) REFERENCES public.teams(id) NOT VALID;
+
+
+--
+-- Name: matches matches_toss_winner_team_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.matches
+    ADD CONSTRAINT matches_toss_winner_team_id_fkey FOREIGN KEY (toss_winner_team_id) REFERENCES public.teams(id) NOT VALID;
+
+
+--
+-- Name: matches matches_tour_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.matches
+    ADD CONSTRAINT matches_tour_id_fkey FOREIGN KEY (tour_id) REFERENCES public.tours(id) NOT VALID;
+
+
+--
+-- Name: matches matches_tournament_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.matches
+    ADD CONSTRAINT matches_tournament_id_fkey FOREIGN KEY (tournament_id) REFERENCES public.tournaments(id) NOT VALID;
+
+
+--
+-- Name: series series_parent_series_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.series
+    ADD CONSTRAINT series_parent_series_id_fkey FOREIGN KEY (parent_series_id) REFERENCES public.series(id) NOT VALID;
+
+
+--
+-- Name: series series_season_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.series
+    ADD CONSTRAINT series_season_fkey FOREIGN KEY (season) REFERENCES public.seasons(season);
+
+
+--
+-- Name: series series_tour_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.series
+    ADD CONSTRAINT series_tour_id_fkey FOREIGN KEY (tour_id) REFERENCES public.tours(id);
+
+
+--
+-- Name: series series_tournament_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.series
+    ADD CONSTRAINT series_tournament_id_fkey FOREIGN KEY (tournament_id) REFERENCES public.tournaments(id);
+
+
+--
+-- Name: squads squads_match_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.squads
+    ADD CONSTRAINT squads_match_id_fkey FOREIGN KEY (match_id) REFERENCES public.matches(id);
+
+
+--
+-- Name: squads squads_player_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.squads
+    ADD CONSTRAINT squads_player_id_fkey FOREIGN KEY (player_id) REFERENCES public.players(id);
+
+
+--
+-- Name: squads squads_series_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.squads
+    ADD CONSTRAINT squads_series_id_fkey FOREIGN KEY (series_id) REFERENCES public.series(id);
+
+
+--
+-- Name: tours tours_season_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.tours
+    ADD CONSTRAINT tours_season_fkey FOREIGN KEY (season) REFERENCES public.seasons(season);
+
+
+--
+-- Name: tours tours_touring_team_Id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.tours
+    ADD CONSTRAINT "tours_touring_team_Id_fkey" FOREIGN KEY ("touring_team_Id") REFERENCES public.teams(id);
+
 
 --
 -- PostgreSQL database dump complete

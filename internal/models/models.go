@@ -5,73 +5,74 @@ import (
 )
 
 type CareerStats struct {
-	MatchesPlayed pgtype.Int8 `json:"matchesPlayed"`
-	DebutMatchId  pgtype.Int8 `json:"debutMatchId"`
-	LastMatchId   pgtype.Int8 `json:"lastMatchId"`
+	MatchesPlayed pgtype.Int8 `json:"matches_played"`
+	DebutMatchId  pgtype.Int8 `json:"debut_match_id"`
+	LastMatchId   pgtype.Int8 `json:"last_match_id"`
 
-	InningsBatted     pgtype.Int8 `json:"inningsBatted"`
-	RunsScored        pgtype.Int8 `json:"runsScored"`
-	BattingDismissals pgtype.Int8 `json:"battingDismissals"`
-	BallsFaced        pgtype.Int8 `json:"ballsFaced"`
-	FoursScored       pgtype.Int8 `json:"foursScored"`
-	SixesScored       pgtype.Int8 `json:"sixesScored"`
-	CenturiesScored   pgtype.Int8 `json:"centuriesScored"`
-	FiftiesScored     pgtype.Int8 `json:"fiftiesScored"`
-	HighestScore      pgtype.Int8 `json:"highestScore"`
-	IsHighestNotOut   pgtype.Bool `json:"isHighestScoreNotOut"`
+	InningsBatted     pgtype.Int8 `json:"innings_batted"`
+	RunsScored        pgtype.Int8 `json:"runs_scored"`
+	BattingDismissals pgtype.Int8 `json:"batting_dismissals"`
+	BallsFaced        pgtype.Int8 `json:"balls_faced"`
+	FoursScored       pgtype.Int8 `json:"fours_scored"`
+	SixesScored       pgtype.Int8 `json:"sixes_scored"`
+	CenturiesScored   pgtype.Int8 `json:"centuries_scored"`
+	FiftiesScored     pgtype.Int8 `json:"fifties_scored"`
+	HighestScore      pgtype.Int8 `json:"highest_score"`
+	IsHighestNotOut   pgtype.Bool `json:"is_highest_not_out"`
 
-	InningsBowled    pgtype.Int8 `json:"inningsBowled"`
-	RunsConceded     pgtype.Int8 `json:"runsConceded"`
-	WicketsTaken     pgtype.Int8 `json:"wicketsTaken"`
-	BallsBowled      pgtype.Int8 `json:"ballsBowled"`
-	FoursConceded    pgtype.Int8 `json:"foursConceded"`
-	SixesConceded    pgtype.Int8 `json:"sixesConceded"`
-	FourWktHauls     pgtype.Int8 `json:"fourWicketHauls"`
-	FiveWktHauls     pgtype.Int8 `json:"fiveWicketHauls"`
-	TenWktHauls      pgtype.Int8 `json:"tenWicketHauls"`
-	BestInnFigRuns   pgtype.Int8 `json:"bestInningsFiguresRuns"`
-	BestInnFigWkts   pgtype.Int8 `json:"bestInningsFiguresWickets"`
-	BestMatchFigRuns pgtype.Int8 `json:"bestMatchFiguresRuns"`
-	BestMatchFigWkts pgtype.Int8 `json:"bestMatchFiguresWickets"`
+	InningsBowled    pgtype.Int8 `json:"innings_bowled"`
+	RunsConceded     pgtype.Int8 `json:"runs_conceded"`
+	WicketsTaken     pgtype.Int8 `json:"wickets_taken"`
+	BallsBowled      pgtype.Int8 `json:"balls_bowled"`
+	FoursConceded    pgtype.Int8 `json:"fours_conceded"`
+	SixesConceded    pgtype.Int8 `json:"sixes_conceded"`
+	FourWktHauls     pgtype.Int8 `json:"four_wkt_hauls"`
+	FiveWktHauls     pgtype.Int8 `json:"five_wkt_hauls"`
+	TenWktHauls      pgtype.Int8 `json:"ten_wkt_hauls"`
+	BestInnFigRuns   pgtype.Int8 `json:"best_inn_fig_runs"`
+	BestInnFigWkts   pgtype.Int8 `json:"best_inn_fig_wkts"`
+	BestMatchFigRuns pgtype.Int8 `json:"best_match_fig_runs"`
+	BestMatchFigWkts pgtype.Int8 `json:"best_match_fig_wkts"`
 }
 
 type Team struct {
 	Id           pgtype.Int8 `json:"id"`
 	Name         pgtype.Text `json:"name"`
-	IsMale       pgtype.Bool `json:"isMale"`
-	ImageURL     pgtype.Text `json:"imageURL"`
-	PlayingLevel pgtype.Text `json:"playingLevel"`
+	IsMale       pgtype.Bool `json:"is_male"`
+	ImageURL     pgtype.Text `json:"image_url"`
+	PlayingLevel pgtype.Text `json:"playing_level"`
+	ShortName    pgtype.Text `json:"short_name"`
 }
 
 type Player struct {
 	Id          pgtype.Int8 `json:"id"`
 	Name        pgtype.Text `json:"name"`
-	PlayingRole pgtype.Text `json:"playingRole"`
+	FullName    pgtype.Text `json:"full_name"`
+	PlayingRole pgtype.Text `json:"playing_role"`
 	Nationality pgtype.Text `json:"nationality"`
-	IsMale      pgtype.Bool `json:"isMale"`
-	DateOfBirth pgtype.Date `json:"dateOfBirth"`
-	ImageURL    pgtype.Text `json:"imageURL"`
+	IsMale      pgtype.Bool `json:"is_male"`
+	DateOfBirth pgtype.Date `json:"date_of_birth"`
+	ImageURL    pgtype.Text `json:"image_url"`
 	Biography   pgtype.Text `json:"biography"`
 
-	BattingStyles       []pgtype.Text `json:"battingStyles"`
-	PrimaryBattingStyle pgtype.Text   `json:"primaryBattingStyle"`
-	BowlingStyles       []pgtype.Text `json:"primaryBowlingStyles"`
-	PrimaryBowlingStyle pgtype.Text   `json:"primaryBowlingStyle"`
-	TeamsRepresentedId  []pgtype.Int8 `json:"teamsRepresented"`
+	IsRHB               pgtype.Bool   `json:"is_rhb"`
+	BowlingStyles       []pgtype.Text `json:"bowling_styles"`
+	PrimaryBowlingStyle pgtype.Text   `json:"primary_bowling_style"`
+	TeamsRepresentedId  []pgtype.Int8 `json:"teams_represented_id"`
 
-	TestStats  CareerStats `json:"testStats"`
-	OdiStats   CareerStats `json:"odiStats"`
-	T20iStats  CareerStats `json:"t20iStats"`
-	FcStats    CareerStats `json:"fcStats"`
-	ListAStats CareerStats `json:"listAStats"`
-	T20Stats   CareerStats `json:"t20Stats"`
+	TestStats  CareerStats `json:"test_stats"`
+	OdiStats   CareerStats `json:"odi_stats"`
+	T20iStats  CareerStats `json:"t20i_stats"`
+	FcStats    CareerStats `json:"fc_stats"`
+	ListAStats CareerStats `json:"lista_stats"`
+	T20Stats   CareerStats `json:"t20_stats"`
 
-	CricsheetId pgtype.Text `json:"cricsheetId"`
-	CricinfoId  pgtype.Text `json:"cricinfoId"`
-	CricbuzzId  pgtype.Text `json:"cricbuzzId"`
+	CricsheetId pgtype.Text `json:"cricsheet_id"`
+	CricinfoId  pgtype.Text `json:"cricinfo_id"`
+	CricbuzzId  pgtype.Text `json:"cricbuzz_id"`
 }
 
-type Continents struct {
+type Continent struct {
 	Id   pgtype.Int8 `json:"id"`
 	Name pgtype.Text `json:"name"`
 }
@@ -79,188 +80,208 @@ type Continents struct {
 type HostNation struct {
 	Id          pgtype.Int8 `json:"id"`
 	Name        pgtype.Text `json:"name"`
-	ContinentId pgtype.Int8 `json:"continent"`
+	ContinentId pgtype.Int8 `json:"continent_id"`
+}
+
+type City struct {
+	Id           pgtype.Int8 `json:"id"`
+	Name         pgtype.Text `json:"name"`
+	HostNationId pgtype.Int8 `json:"host_nation_id"`
 }
 
 type Ground struct {
 	Id           pgtype.Int8 `json:"id"`
 	Name         pgtype.Text `json:"name"`
-	HostNationId pgtype.Int8 `json:"hostNationId"`
-	CityId       pgtype.Text `json:"cityId"`
+	HostNationId pgtype.Int8 `json:"host_nation_id"`
+	CityId       pgtype.Int8 `json:"city_id"`
 }
 
 type Tournament struct {
 	Id            pgtype.Int8 `json:"id"`
 	Name          pgtype.Text `json:"name"`
-	IsMale        pgtype.Bool `json:"isMale"`
-	PlayingLevel  pgtype.Text `json:"playingLevel"`
-	PlayingFormat pgtype.Text `json:"playingFormat"`
+	IsMale        pgtype.Bool `json:"is_male"`
+	PlayingLevel  pgtype.Text `json:"playing_level"`
+	PlayingFormat pgtype.Text `json:"playing_format"`
+}
+
+type Season struct {
+	Season pgtype.Text `json:"season"`
+}
+
+type Tour struct {
+	Id            pgtype.Int8   `json:"id"`
+	TouringTeamId pgtype.Int8   `json:"touring_team_id"`
+	HostNationsId []pgtype.Int8 `json:"host_nations_id"`
+	Season        pgtype.Text   `json:"season"`
 }
 
 type Series struct {
 	Id             pgtype.Int8   `json:"id"`
 	Name           pgtype.Text   `json:"name"`
-	IsMale         pgtype.Bool   `json:"isMale"`
-	PlayingLevel   pgtype.Text   `json:"playingLevel"`
-	PlayingFormat  pgtype.Text   `json:"playingFormat"`
-	SeasonId       pgtype.Text   `json:"season"`
-	TeamsId        []pgtype.Int8 `json:"teams"`
-	HostNationsId  []pgtype.Int8 `json:"hostNations"`
-	TournamentId   pgtype.Int8   `json:"tournament"`
-	ParentSeriesId pgtype.Int8   `json:"parentSeries"`
+	IsMale         pgtype.Bool   `json:"is_male"`
+	PlayingLevel   pgtype.Text   `json:"playing_level"`
+	PlayingFormat  pgtype.Text   `json:"playing_format"`
+	Season         pgtype.Text   `json:"season"`
+	TeamsId        []pgtype.Int8 `json:"teams_id"`
+	HostNationsId  []pgtype.Int8 `json:"host_nations_id"`
+	TournamentId   pgtype.Int8   `json:"tournament_id"`
+	ParentSeriesId pgtype.Int8   `json:"parent_series_id"`
+	TourId         pgtype.Int8   `json:"tour_id"`
 }
 
 type Squad struct {
-	PlayerId      pgtype.Int8 `json:"player"`
-	SeriesId      pgtype.Int8 `json:"seriesId"`
-	MatchId       pgtype.Int8 `json:"matchId"`
-	IsCaptain     pgtype.Bool `json:"isCaptain"`
-	IsWk          pgtype.Bool `json:"isWk"`
-	IsDebut       pgtype.Bool `json:"isDebut"`
-	PlayingStatus pgtype.Text `json:"playingStatus"` // withdrawn, playing XI, bench, substitute
+	PlayerId      pgtype.Int8 `json:"player_id"`
+	SeriesId      pgtype.Int8 `json:"series_id"`
+	MatchId       pgtype.Int8 `json:"match_id"`
+	IsCaptain     pgtype.Bool `json:"is_captain"`
+	IsWk          pgtype.Bool `json:"is_wk"`
+	IsDebut       pgtype.Bool `json:"is_debut"`
+	PlayingStatus pgtype.Text `json:"playing_status"` // withdrawn, playing XI, bench, substitute
 }
 
 type Match struct {
-	Id            pgtype.Int8        `json:"id"`
-	StartDateTime pgtype.Timestamptz `json:"startDateTime"`
-	Team1Id       pgtype.Int8        `json:"team1"`
-	Team2Id       pgtype.Int8        `json:"team2"`
-	IsMale        pgtype.Bool        `json:"isMale"`
-	TournamentId  pgtype.Int8        `json:"tournament"`
-	SeriesId      pgtype.Int8        `json:"series"`
-	HostNationId  pgtype.Int8        `json:"hostNation"`
-	ContinentId   pgtype.Int8        `json:"continent"`
-	GroundId      pgtype.Int8        `json:"groundId"`
-	CurrentStatus pgtype.Text        `json:"currentStatus"`
-	FinalResult   pgtype.Text        `json:"finalResult"` // completed, abandoned, no result
-	HomeTeamId    pgtype.Int8        `json:"homeTeam"`
-	AwayTeamId    pgtype.Int8        `json:"awayTeam"`
-	MatchType     pgtype.Text        `json:"matchType"` // preliminary, semifinal, final
-	PlayingLevel  pgtype.Text        `json:"playingLevel"`
-	PlayingFormat pgtype.Text        `json:"playingFormat"`
-	SeasonId      pgtype.Text        `json:"season"`
-	IsDayNight    pgtype.Bool        `json:"isDayNight"`
-	IsDLS         pgtype.Bool        `json:"isDLS"`
-	TossWinnerId  pgtype.Int8        `json:"tossWinnerTeam"`
-	TossLoserId   pgtype.Int8        `json:"tossLoserTeam"`
-	TossDecision  pgtype.Text        `json:"tossDecision"`
-	MatchWinnerId pgtype.Int8        `json:"matchWinnerTeam"`
-	MatchLoserId  pgtype.Int8        `json:"matchLoserTeam"`
-	IsWonByRuns   pgtype.Bool        `json:"isWonByRuns"`
-	WinMargin     pgtype.Int8        `json:"winMargin"`             // runs or wickets
-	BallsMargin   pgtype.Int8        `json:"ballsRemainingAferWin"` // successful chases
-	PotmId        pgtype.Int8        `json:"playerOfTheMatch"`
+	Id                pgtype.Int8        `json:"id"`
+	StartDateTime     pgtype.Timestamptz `json:"start_datetime"`
+	Team1Id           pgtype.Int8        `json:"team1_id"`
+	Team2Id           pgtype.Int8        `json:"team2_id"`
+	IsMale            pgtype.Bool        `json:"is_male"`
+	TournamentId      pgtype.Int8        `json:"tournament_id"`
+	SeriesId          pgtype.Int8        `json:"series_id"`
+	ParentSeriesId    pgtype.Int8        `json:"parent_series_id"`
+	TourId            pgtype.Int8        `json:"tour_id"`
+	HostNationId      pgtype.Int8        `json:"host_nation_id"`
+	ContinentId       pgtype.Int8        `json:"continent_id"`
+	GroundId          pgtype.Int8        `json:"ground_id"`
+	CurrentStatus     pgtype.Text        `json:"current_status"`
+	FinalResult       pgtype.Text        `json:"final_result"` // completed, abandoned, no result
+	HomeTeamId        pgtype.Int8        `json:"home_team_id"`
+	AwayTeamId        pgtype.Int8        `json:"away_team_id"`
+	MatchType         pgtype.Text        `json:"match_type"` // preliminary, semifinal, final
+	PlayingLevel      pgtype.Text        `json:"playing_level"`
+	PlayingFormat     pgtype.Text        `json:"playing_format"`
+	Season            pgtype.Text        `json:"season"`
+	IsDayNight        pgtype.Bool        `json:"is_day_night"`
+	IsDLS             pgtype.Bool        `json:"is_dls"`
+	TossWinnerId      pgtype.Int8        `json:"toss_winner_team_id"`
+	TossLoserId       pgtype.Int8        `json:"toss_loser_team_id"`
+	IsTossDecisionBat pgtype.Bool        `json:"is_toss_decision_bat"`
+	MatchWinnerId     pgtype.Int8        `json:"match_winner_team_id"`
+	MatchLoserId      pgtype.Int8        `json:"match_loser_team_id"`
+	IsWonByRuns       pgtype.Bool        `json:"is_won_by_runs"`
+	WinMargin         pgtype.Int8        `json:"win_margin"`                // runs or wickets
+	BallsMargin       pgtype.Int8        `json:"balls_remaining_after_win"` // successful chases
+	PotmId            pgtype.Int8        `json:"potm_id"`
+	BallsPerOver      pgtype.Int8        `json:"balls_per_over"`
 
-	ScorersId      []pgtype.Int8 `json:"scorers"`
-	CommentatorsId []pgtype.Int8 `json:"commentators"`
+	ScorersId      []pgtype.Int8 `json:"scorers_id"`
+	CommentatorsId []pgtype.Int8 `json:"commentators_id"`
 }
 
 type Innings struct {
 	Id            pgtype.Int8 `json:"id"`
-	MatchId       pgtype.Int8 `json:"matchId"`
-	IsMale        pgtype.Bool `json:"isMale"`
-	InningsNumber pgtype.Int8 `json:"inningsNumber"`
-	BattingTeamId pgtype.Int8 `json:"battingTeamId"`
-	BowlingTeamId pgtype.Int8 `json:"bowlingTeamId"`
-	TotalRuns     pgtype.Int8 `json:"totalRuns"`
-	TotalWkts     pgtype.Int8 `json:"totalWickets"`
+	MatchId       pgtype.Int8 `json:"match_id"`
+	InningsNumber pgtype.Int8 `json:"innings_number"`
+	BattingTeamId pgtype.Int8 `json:"batting_team_id"`
+	BowlingTeamId pgtype.Int8 `json:"bowling_team_id"`
+	TotalRuns     pgtype.Int8 `json:"total_runs"`
+	TotalWkts     pgtype.Int8 `json:"total_wickets"`
 	Byes          pgtype.Int8 `json:"byes"`
-	Legbyes       pgtype.Int8 `json:"legbyes"`
+	Legbyes       pgtype.Int8 `json:"leg_byes"`
 	Wides         pgtype.Int8 `json:"wides"`
 	Noballs       pgtype.Int8 `json:"noballs"`
 	Penalty       pgtype.Int8 `json:"penalty"`
-	IsSuperOver   pgtype.Bool `json:"isSuperOver"`
-	Status        pgtype.Text `json:"Status"` // live, completed, declared
+	IsSuperOver   pgtype.Bool `json:"is_super_over"`
+	Status        pgtype.Text `json:"status"` // completed, declared, fortfeited, all out
 }
 
 type BattingScorecard struct {
 	Id              pgtype.Int8 `json:"id"`
-	InningsId       pgtype.Int8 `json:"inningsId"`
-	BatterId        pgtype.Int8 `json:"batterId"`
-	BattingPosition pgtype.Int8 `json:"battingPosition"`
-	RunsScored      pgtype.Int8 `json:"runsScored"`
-	BallsFaced      pgtype.Int8 `json:"ballsFaced"`
-	MinutesBatted   pgtype.Int8 `json:"minutesBatted"`
-	FoursScored     pgtype.Int8 `json:"foursScored"`
-	SixesScored     pgtype.Int8 `json:"sixesScored"`
-	DismissedById   pgtype.Int8 `json:"dismissedById"`
-	WicketType      pgtype.Text `json:"wicketType"`
-	DismissalBallId pgtype.Int8 `json:"dismissalBallId"`
-	Fielder1Id      pgtype.Int8 `json:"fielder1Id"`
-	Fielder2Id      pgtype.Int8 `json:"fielder2Id"`
+	InningsId       pgtype.Int8 `json:"innings_id"`
+	BatterId        pgtype.Int8 `json:"batter_id"`
+	BattingPosition pgtype.Int8 `json:"batting_position"`
+	RunsScored      pgtype.Int8 `json:"runs_scored"`
+	BallsFaced      pgtype.Int8 `json:"balls_faced"`
+	MinutesBatted   pgtype.Int8 `json:"minutes_batted"`
+	FoursScored     pgtype.Int8 `json:"fours_scored"`
+	SixesScored     pgtype.Int8 `json:"sixes_scored"`
+	DismissedById   pgtype.Int8 `json:"dismissed_by_id"`
+	DismissalType   pgtype.Text `json:"dismissal_type"`
+	DismissalBallId pgtype.Int8 `json:"dismissal_ball_id"`
+	Fielder1Id      pgtype.Int8 `json:"fielder1_id"`
+	Fielder2Id      pgtype.Int8 `json:"fielder2_id"`
 }
 
 type BowlingScorecard struct {
 	Id              pgtype.Int8 `json:"id"`
-	InningsId       pgtype.Int8 `json:"inningsId"`
-	BowlerId        pgtype.Int8 `json:"bowlerId"`
-	BowlingPosition pgtype.Int8 `json:"bowlingPosition"`
-	WicketsTaken    pgtype.Int8 `json:"wicketsTaken"`
-	RunsConceded    pgtype.Int8 `json:"runsConceded"`
-	BallsBowled     pgtype.Int8 `json:"ballsBowled"`
-	FoursConceded   pgtype.Int8 `json:"foursConceded"`
-	SixesConceded   pgtype.Int8 `json:"sixesConceded"`
-	WidesConceded   pgtype.Int8 `json:"widesConceded"`
-	NoballsConceded pgtype.Int8 `json:"noballsConceded"`
+	InningsId       pgtype.Int8 `json:"innings_id"`
+	BowlerId        pgtype.Int8 `json:"bowler_id"`
+	BowlingPosition pgtype.Int8 `json:"bowling_position"`
+	WicketsTaken    pgtype.Int8 `json:"wickets_taken"`
+	RunsConceded    pgtype.Int8 `json:"runs_conceded"`
+	BallsBowled     pgtype.Int8 `json:"balls_bowled"`
+	FoursConceded   pgtype.Int8 `json:"fours_conceded"`
+	SixesConceded   pgtype.Int8 `json:"sixes_conceded"`
+	WidesConceded   pgtype.Int8 `json:"wides_conceded"`
+	NoballsConceded pgtype.Int8 `json:"noballs_conceded"`
 }
 
 type Deliveries struct {
 	Id                   pgtype.Int8        `json:"id"`
-	InningsId            pgtype.Int8        `json:"inningsId"`
-	BallNumber           pgtype.Float8      `json:"ballNumber"`
-	OverNumber           pgtype.Int8        `json:"overNumber"`
-	BatterId             pgtype.Int8        `json:"batterId"`
-	BowlerId             pgtype.Int8        `json:"bowlerId"`
-	NonStrikerId         pgtype.Int8        `json:"nonStrikerId"`
-	BattingTeamId        pgtype.Int8        `json:"battingTeamId"`
-	BowlingTeamId        pgtype.Int8        `json:"bowlingTeamId"`
-	BatterRuns           pgtype.Int8        `json:"batterRuns"`
+	InningsId            pgtype.Int8        `json:"innings_id"`
+	BallNumber           pgtype.Float8      `json:"ball_number"`
+	OverNumber           pgtype.Int8        `json:"over_number"`
+	BatterId             pgtype.Int8        `json:"batter_id"`
+	BowlerId             pgtype.Int8        `json:"bowler_id"`
+	NonStrikerId         pgtype.Int8        `json:"non_striker_id"`
+	BattingTeamId        pgtype.Int8        `json:"batting_team_id"`
+	BowlingTeamId        pgtype.Int8        `json:"bowling_team_id"`
+	BatterRuns           pgtype.Int8        `json:"batter_runs"`
 	Wides                pgtype.Int8        `json:"wides"`
 	Noballs              pgtype.Int8        `json:"noballs"`
 	Legbyes              pgtype.Int8        `json:"legbyes"`
 	Byes                 pgtype.Int8        `json:"byes"`
 	Penalty              pgtype.Int8        `json:"penalty"`
-	TotalExtras          pgtype.Int8        `json:"totalExtras"`
-	TotalRuns            pgtype.Int8        `json:"totalRuns"`
-	BowlerRuns           pgtype.Int8        `json:"bowlerRuns"`
-	IsFour               pgtype.Bool        `json:"isFour"`
-	IsSix                pgtype.Bool        `json:"isSix"`
-	Player1DismissedId   pgtype.Int8        `json:"player1DismissedId"`
-	Player1DismissalType pgtype.Text        `json:"player1DismissalType"`
-	Player2DismissedId   pgtype.Int8        `json:"player2DismissedId"`
-	Player2DismissalType pgtype.Text        `json:"player2DismissalType"`
-	IsPace               pgtype.Bool        `json:"isPace"`          // true if pacer, false if spin
-	BowlingStyle         pgtype.Text        `json:"bowlingStyle"`    // RAFM, LAFM, LAF etc
-	IsBatterRHB          pgtype.Bool        `json:"isBatterRHB"`     // true if batter is RHB, false if LHB
-	IsNonStrikerRHB      pgtype.Bool        `json:"isNonStrikerRHB"` // true if non-striker is RHB, false if LHB
+	TotalExtras          pgtype.Int8        `json:"total_extras"`
+	TotalRuns            pgtype.Int8        `json:"total_runs"`
+	BowlerRuns           pgtype.Int8        `json:"bowler_runs"`
+	IsFour               pgtype.Bool        `json:"is_four"`
+	IsSix                pgtype.Bool        `json:"is_six"`
+	Player1DismissedId   pgtype.Int8        `json:"player1_dismissed_id"`
+	Player1DismissalType pgtype.Text        `json:"player1_dismissal_type"`
+	Player2DismissedId   pgtype.Int8        `json:"player2_dismissed_id"`
+	Player2DismissalType pgtype.Text        `json:"player2_dismissal_type"`
+	IsPace               pgtype.Bool        `json:"is_pace"`            // true if pacer, false if spin
+	BowlingStyle         pgtype.Text        `json:"bowling_style"`      // RAFM, LAFM, LAF etc
+	IsBatterRHB          pgtype.Bool        `json:"is_batter_rhb"`      // true if batter is RHB, false if LHB
+	IsNonStrikerRHB      pgtype.Bool        `json:"is_non_striker_rhb"` // true if non-striker is RHB, false if LHB
 	Line                 pgtype.Text        `json:"line"`
 	Length               pgtype.Text        `json:"length"`
-	BallType             pgtype.Text        `json:"ballType"`  // inswinger, googly
-	BallSpeed            pgtype.Float8      `json:"ballSpeed"` // mph
-	Misc                 pgtype.Text        `json:"misc"`      // edged, missed
-	WwRegion             pgtype.Text        `json:"wwRegion"`  // cover, mid-wkt
-	FootType             pgtype.Text        `json:"footType"`  // front foot, back foot, step out
-	ShotType             pgtype.Text        `json:"shotType"`  // straight drive, pull shot
-	Fielder1Id           pgtype.Int8        `json:"fielder1Id"`
-	Fielder2Id           pgtype.Int8        `json:"fielder2Id"`
+	BallType             pgtype.Text        `json:"ball_type"`  // inswinger, googly
+	BallSpeed            pgtype.Float8      `json:"ball_speed"` // kph
+	Misc                 pgtype.Text        `json:"misc"`       // edged, missed
+	WwRegion             pgtype.Text        `json:"ww_region"`  // cover, mid-wkt
+	FootType             pgtype.Text        `json:"foot_type"`  // front foot, back foot, step out
+	ShotType             pgtype.Text        `json:"shot_type"`  // straight drive, pull shot
+	Fielder1Id           pgtype.Int8        `json:"fielder1_id"`
+	Fielder2Id           pgtype.Int8        `json:"fielder2_id"`
 	Commentary           pgtype.Text        `json:"commentary"`
-	CreatedAt            pgtype.Timestamptz `json:"createdAt"`
-	UpdatedAt            pgtype.Timestamptz `json:"updatedAt"`
+	CreatedAt            pgtype.Timestamptz `json:"created_at"`
+	UpdatedAt            pgtype.Timestamptz `json:"updated_at"`
 }
 
 type BlogArticles struct {
 	Id             pgtype.Int8        `json:"id"`
 	Title          pgtype.Text        `json:"title"`
 	Content        pgtype.Text        `json:"content"`
-	AuthorId       pgtype.Int8        `json:"authorId"`
+	AuthorId       pgtype.Int8        `json:"author_id"`
 	Category       pgtype.Int8        `json:"category"`
 	Status         pgtype.Text        `json:"status"`
-	PlayerTags     []pgtype.Int8      `json:"playerTags"`
-	TeamTags       []pgtype.Int8      `json:"teamTags"`
-	SeriesTags     []pgtype.Int8      `json:"seriesTags"`
-	TournamentTags []pgtype.Int8      `json:"tournamentTags"`
-	CreatedAt      pgtype.Timestamptz `json:"createdAt"`
-	UpdatedAt      pgtype.Timestamptz `json:"updatedAt"`
+	PlayerTags     []pgtype.Int8      `json:"player_tags"`
+	TeamTags       []pgtype.Int8      `json:"team_tags"`
+	SeriesTags     []pgtype.Int8      `json:"series_tags"`
+	TournamentTags []pgtype.Int8      `json:"tournament_tags"`
+	CreatedAt      pgtype.Timestamptz `json:"created_at"`
+	UpdatedAt      pgtype.Timestamptz `json:"updated_at"`
 }
 
 type User struct {
