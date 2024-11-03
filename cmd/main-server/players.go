@@ -13,9 +13,17 @@ import (
 
 func playersRouter() *chi.Mux {
 	r := chi.NewRouter()
+
+	r.Get("/bowling-style-options", getBowlingStyleOptions)
+
+	r.Get("/dismissal-type-options", getDismissalTypeOptions)
+
+	r.Get("/playing-status-options", getPlayingStatusOptions)
+
 	r.Get("/{playerId}", getPlayerById)
 	r.Get("/", getPlayers)
 	r.Post("/", createPlayer)
+
 	return r
 }
 
@@ -38,7 +46,7 @@ func createPlayer(w http.ResponseWriter, r *http.Request) {
 }
 
 func getPlayers(w http.ResponseWriter, r *http.Request) {
-	players, err := dbutils.ReadPlayers(r.Context(), DB_POOL)
+	players, err := dbutils.ReadPlayers(r.Context(), DB_POOL, r.URL.Query())
 
 	if err != nil {
 		responses.WriteJsonResponse(w, responses.ApiResponse{Success: false, Message: "error while reading players", Data: err}, http.StatusBadRequest)
@@ -64,4 +72,37 @@ func getPlayerById(w http.ResponseWriter, r *http.Request) {
 	}
 
 	responses.WriteJsonResponse(w, responses.ApiResponse{Success: true, Message: "fetched player successfully", Data: players}, http.StatusOK)
+}
+
+func getBowlingStyleOptions(w http.ResponseWriter, r *http.Request) {
+	teams, err := dbutils.ReadBowlingStyleOptions(r.Context(), DB_POOL)
+
+	if err != nil {
+		responses.WriteJsonResponse(w, responses.ApiResponse{Success: false, Message: "error while reading bowling style options", Data: err}, http.StatusBadRequest)
+		return
+	}
+
+	responses.WriteJsonResponse(w, responses.ApiResponse{Success: true, Message: "bowling style options read successfully", Data: teams}, http.StatusOK)
+}
+
+func getDismissalTypeOptions(w http.ResponseWriter, r *http.Request) {
+	teams, err := dbutils.ReadDismissalTypeOptions(r.Context(), DB_POOL)
+
+	if err != nil {
+		responses.WriteJsonResponse(w, responses.ApiResponse{Success: false, Message: "error while reading dismissal type options", Data: err}, http.StatusBadRequest)
+		return
+	}
+
+	responses.WriteJsonResponse(w, responses.ApiResponse{Success: true, Message: "dismissal type options read successfully", Data: teams}, http.StatusOK)
+}
+
+func getPlayingStatusOptions(w http.ResponseWriter, r *http.Request) {
+	teams, err := dbutils.ReadPlayingStatusOptions(r.Context(), DB_POOL)
+
+	if err != nil {
+		responses.WriteJsonResponse(w, responses.ApiResponse{Success: false, Message: "error while reading playing status options", Data: err}, http.StatusBadRequest)
+		return
+	}
+
+	responses.WriteJsonResponse(w, responses.ApiResponse{Success: true, Message: "playing status options read successfully", Data: teams}, http.StatusOK)
 }

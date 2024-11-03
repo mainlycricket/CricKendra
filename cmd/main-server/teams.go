@@ -36,12 +36,12 @@ func createTeam(w http.ResponseWriter, r *http.Request) {
 }
 
 func getTeams(w http.ResponseWriter, r *http.Request) {
-	teams, err := dbutils.ReadTeams(r.Context(), DB_POOL)
+	response, err := dbutils.ReadTeams(r.Context(), DB_POOL, r.URL.Query())
 
 	if err != nil {
 		responses.WriteJsonResponse(w, responses.ApiResponse{Success: false, Message: "error while reading teams", Data: err}, http.StatusBadRequest)
 		return
 	}
 
-	responses.WriteJsonResponse(w, responses.ApiResponse{Success: true, Message: "teams read successfully", Data: teams}, http.StatusOK)
+	responses.WriteJsonResponse(w, responses.ApiResponse{Success: true, Message: "teams read successfully", Data: response}, http.StatusOK)
 }

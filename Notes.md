@@ -5,4 +5,4 @@
 - Pagination
 - Delete / Update
 - Authentication
-- Handle DB Errors
+- Handle DB Errors (https://www.postgresql.org/docs/current/errcodes-appendix.html)

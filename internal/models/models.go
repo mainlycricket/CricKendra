@@ -127,6 +127,7 @@ type Series struct {
 	TournamentId   pgtype.Int8   `json:"tournament_id"`
 	ParentSeriesId pgtype.Int8   `json:"parent_series_id"`
 	TourId         pgtype.Int8   `json:"tour_id"`
+	PoTSsId        []pgtype.Int8 `json:"players_of_the_series_id"`
 }
 
 type Squad struct {
@@ -140,38 +141,44 @@ type Squad struct {
 }
 
 type Match struct {
-	Id                pgtype.Int8        `json:"id"`
-	StartDateTime     pgtype.Timestamptz `json:"start_datetime"`
-	Team1Id           pgtype.Int8        `json:"team1_id"`
-	Team2Id           pgtype.Int8        `json:"team2_id"`
-	IsMale            pgtype.Bool        `json:"is_male"`
-	TournamentId      pgtype.Int8        `json:"tournament_id"`
-	SeriesId          pgtype.Int8        `json:"series_id"`
-	ParentSeriesId    pgtype.Int8        `json:"parent_series_id"`
-	TourId            pgtype.Int8        `json:"tour_id"`
-	HostNationId      pgtype.Int8        `json:"host_nation_id"`
-	ContinentId       pgtype.Int8        `json:"continent_id"`
-	GroundId          pgtype.Int8        `json:"ground_id"`
-	CurrentStatus     pgtype.Text        `json:"current_status"`
-	FinalResult       pgtype.Text        `json:"final_result"` // completed, abandoned, no result
-	HomeTeamId        pgtype.Int8        `json:"home_team_id"`
-	AwayTeamId        pgtype.Int8        `json:"away_team_id"`
-	MatchType         pgtype.Text        `json:"match_type"` // preliminary, semifinal, final
-	PlayingLevel      pgtype.Text        `json:"playing_level"`
-	PlayingFormat     pgtype.Text        `json:"playing_format"`
-	Season            pgtype.Text        `json:"season"`
-	IsDayNight        pgtype.Bool        `json:"is_day_night"`
-	IsDLS             pgtype.Bool        `json:"is_dls"`
-	TossWinnerId      pgtype.Int8        `json:"toss_winner_team_id"`
-	TossLoserId       pgtype.Int8        `json:"toss_loser_team_id"`
-	IsTossDecisionBat pgtype.Bool        `json:"is_toss_decision_bat"`
-	MatchWinnerId     pgtype.Int8        `json:"match_winner_team_id"`
-	MatchLoserId      pgtype.Int8        `json:"match_loser_team_id"`
-	IsWonByRuns       pgtype.Bool        `json:"is_won_by_runs"`
-	WinMargin         pgtype.Int8        `json:"win_margin"`                // runs or wickets
-	BallsMargin       pgtype.Int8        `json:"balls_remaining_after_win"` // successful chases
-	PotmId            pgtype.Int8        `json:"potm_id"`
-	BallsPerOver      pgtype.Int8        `json:"balls_per_over"`
+	Id                   pgtype.Int8        `json:"id"`
+	CricsheetId          pgtype.Text        `json:"cricsheet_id"`
+	EventMatchNumber     pgtype.Int8        `json:"event_match_number"`
+	StartDate            pgtype.Date        `json:"start_date"`
+	StartTime            pgtype.Timestamptz `json:"start_time"`
+	Team1Id              pgtype.Int8        `json:"team1_id"`
+	Team2Id              pgtype.Int8        `json:"team2_id"`
+	IsMale               pgtype.Bool        `json:"is_male"`
+	TournamentId         pgtype.Int8        `json:"tournament_id"`
+	SeriesId             pgtype.Int8        `json:"series_id"`
+	ParentSeriesId       pgtype.Int8        `json:"parent_series_id"`
+	TourId               pgtype.Int8        `json:"tour_id"`
+	HostNationId         pgtype.Int8        `json:"host_nation_id"`
+	ContinentId          pgtype.Int8        `json:"continent_id"`
+	GroundId             pgtype.Int8        `json:"ground_id"`
+	CurrentStatus        pgtype.Text        `json:"current_status"`
+	FinalResult          pgtype.Text        `json:"final_result"` // completed, abandoned, no result
+	HomeTeamId           pgtype.Int8        `json:"home_team_id"`
+	AwayTeamId           pgtype.Int8        `json:"away_team_id"`
+	MatchType            pgtype.Text        `json:"match_type"` // preliminary, semifinal, final
+	PlayingLevel         pgtype.Text        `json:"playing_level"`
+	PlayingFormat        pgtype.Text        `json:"playing_format"`
+	Season               pgtype.Text        `json:"season"`
+	IsDayNight           pgtype.Bool        `json:"is_day_night"`
+	OutcomeSpecialMethod pgtype.Text        `json:"outcome_special_method"`
+	TossWinnerId         pgtype.Int8        `json:"toss_winner_team_id"`
+	TossLoserId          pgtype.Int8        `json:"toss_loser_team_id"`
+	IsTossDecisionBat    pgtype.Bool        `json:"is_toss_decision_bat"`
+	MatchWinnerId        pgtype.Int8        `json:"match_winner_team_id"`
+	MatchLoserId         pgtype.Int8        `json:"match_loser_team_id"`
+	BowlOutWinnerId      pgtype.Int8        `json:"bowl_out_winner_id"`
+	SuperOverWinnerId    pgtype.Int8        `json:"super_over_winner_id"`
+	IsWonByInnings       pgtype.Bool        `json:"is_won_by_innings"`
+	IsWonByRuns          pgtype.Bool        `json:"is_won_by_runs"`
+	WinMargin            pgtype.Int8        `json:"win_margin"`                // runs or wickets
+	BallsMargin          pgtype.Int8        `json:"balls_remaining_after_win"` // successful chases
+	PoTMsId              []pgtype.Int8      `json:"players_of_the_match_id"`
+	BallsPerOver         pgtype.Int8        `json:"balls_per_over"`
 
 	ScorersId      []pgtype.Int8 `json:"scorers_id"`
 	CommentatorsId []pgtype.Int8 `json:"commentators_id"`
@@ -191,7 +198,7 @@ type Innings struct {
 	Noballs       pgtype.Int8 `json:"noballs"`
 	Penalty       pgtype.Int8 `json:"penalty"`
 	IsSuperOver   pgtype.Bool `json:"is_super_over"`
-	Status        pgtype.Text `json:"status"` // completed, declared, fortfeited, all out
+	InningsEnd    pgtype.Text `json:"innings_end"` // completed, declared, fortfeited, all out
 }
 
 type BattingScorecard struct {
@@ -225,7 +232,7 @@ type BowlingScorecard struct {
 	NoballsConceded pgtype.Int8 `json:"noballs_conceded"`
 }
 
-type Deliveries struct {
+type Delivery struct {
 	Id                   pgtype.Int8        `json:"id"`
 	InningsId            pgtype.Int8        `json:"innings_id"`
 	BallNumber           pgtype.Float8      `json:"ball_number"`

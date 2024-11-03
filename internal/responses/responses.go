@@ -4,6 +4,11 @@ import "github.com/jackc/pgx/v5/pgtype"
 
 // Players
 
+type AllPlayersResponse struct {
+	Players []AllPlayers `json:"players"`
+	Next    bool         `json:"next"`
+}
+
 type AllPlayers struct {
 	Id                  pgtype.Int8 `json:"id"`
 	Name                pgtype.Text `json:"name"`
@@ -45,6 +50,10 @@ type SinglePlayer struct {
 
 // Teams
 
+type AllTeamsResponse struct {
+	Teams []AllTeams `json:"teams"`
+	Next  bool       `json:"next"`
+}
 type AllTeams struct {
 	Id           pgtype.Int8 `json:"id"`
 	Name         pgtype.Text `json:"name"`
@@ -53,6 +62,70 @@ type AllTeams struct {
 	PlayingLevel pgtype.Text `json:"playing_level"`
 	ShortName    pgtype.Text `json:"short_name"`
 }
+
+// Seasons
+type AllSeasonsResponse struct {
+	Seasons []string `json:"seasons"`
+	Next    bool     `json:"next"`
+}
+
+// Cities
+type AllCitiesResponse struct {
+	Cities []AllCities `json:"cities"`
+	Next   bool        `json:"next"`
+}
+
+type AllCities struct {
+	Id             pgtype.Int8 `json:"id"`
+	Name           pgtype.Text `json:"name"`
+	HostNationId   pgtype.Int8 `json:"host_nation_id"`
+	HostNationName pgtype.Text `json:"host_nation_name"`
+}
+
+// Grounds
+
+// Cities
+type AllGroundsResponse struct {
+	Grounds []AllGrounds `json:"grounds"`
+	Next    bool         `json:"next"`
+}
+
+type AllGrounds struct {
+	Id             pgtype.Int8 `json:"id"`
+	Name           pgtype.Text `json:"name"`
+	HostNationId   pgtype.Int8 `json:"host_nation_id"`
+	HostNationName pgtype.Text `json:"host_nation_name"`
+	CityId         pgtype.Int8 `json:"city_id"`
+	CityName       pgtype.Text `json:"city_name"`
+}
+
+// Cricsheet People
+
+type CricsheetPeople struct {
+	Identifier pgtype.Text `json:"cricsheet_id"`
+	Name       pgtype.Text `json:"name"`
+	UniqueName pgtype.Text `json:"unique_name"`
+	CricinfoId pgtype.Text `json:"cricinfo_id"`
+	CricbuzzId pgtype.Text `json:"cricbuzz_id"`
+}
+
+// Series
+
+type AllSeriesResponse struct {
+	Series []AllSeries `json:"series"`
+	Next   bool        `json:"next"`
+}
+
+type AllSeries struct {
+	Id            pgtype.Int8 `json:"id"`
+	Name          pgtype.Text `json:"name"`
+	IsMale        pgtype.Bool `json:"is_male"`
+	PlayingLevel  pgtype.Text `json:"playing_level"`
+	PlayingFormat pgtype.Text `json:"playing_format"`
+	Season        pgtype.Text `json:"season"`
+}
+
+// Extras
 
 type CareerStats struct {
 	MatchesPlayed pgtype.Int8         `json:"matches_played"`

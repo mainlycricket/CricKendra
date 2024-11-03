@@ -21,7 +21,9 @@ func WriteJsonResponse(w http.ResponseWriter, response ApiResponse, status int) 
 		var pgErr *pgconn.PgError
 
 		if errors.As(err, &pgErr) {
-			response.Message += fmt.Sprintf(`: %v`, pgErr.Message)
+			var pgMessage string
+			status, pgMessage = handlePgErr(pgErr)
+			response.Message += fmt.Sprintf(`: %v`, pgMessage)
 		} else {
 			response.Message += fmt.Sprintf(`: %v`, err)
 		}
@@ -40,4 +42,25 @@ func WriteJsonResponse(w http.ResponseWriter, response ApiResponse, status int) 
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(status)
 	w.Write(jsonData)
+}
+
+func handlePgErr(pgErr *pgconn.PgError) (int, string) {
+	var status int
+	var message string
+
+	sqlErrCode := pgErr.SQLState()
+
+	switch sqlErrCode[:2] {
+	case "42":
+		status = http.StatusInternalServerError
+		message = pgErr.Message
+	case "23":
+		status = http.StatusBadRequest
+		message = pgErr.Message
+	default:
+		status = http.StatusBadRequest
+		message = pgErr.Message
+	}
+
+	return status, message
 }

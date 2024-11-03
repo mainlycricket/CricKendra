@@ -3,11 +3,14 @@ package dbutils
 import (
 	"context"
 	"errors"
+	"fmt"
+	"net/url"
 
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/mainlycricket/CricKendra/internal/models"
 	"github.com/mainlycricket/CricKendra/internal/responses"
+	"github.com/mainlycricket/CricKendra/pkg/pgxutils"
 )
 
 func InsertTeam(ctx context.Context, db *pgxpool.Pool, team *models.Team) error {
@@ -26,16 +29,29 @@ func InsertTeam(ctx context.Context, db *pgxpool.Pool, team *models.Team) error 
 	return nil
 }
 
-func ReadTeams(ctx context.Context, db *pgxpool.Pool) ([]responses.AllTeams, error) {
-	query := `SELECT id, name, is_male, image_url, playing_level, short_name FROM teams`
+func ReadTeams(ctx context.Context, db *pgxpool.Pool, queryMap url.Values) (responses.AllTeamsResponse, error) {
+	var response responses.AllTeamsResponse
 
-	rows, err := db.Query(ctx, query)
-
-	if err != nil {
-		return nil, err
+	queryInfoInput := pgxutils.QueryInfoInput{
+		UrlQuery:     queryMap,
+		TableName:    "teams",
+		DefaultLimit: 20,
+		DefaultSort:  []string{"id"},
 	}
 
-	data, err := pgx.CollectRows(rows, func(row pgx.CollectableRow) (responses.AllTeams, error) {
+	queryInfoOutput, err := pgxutils.ParseQuery[models.Team](queryInfoInput)
+	if err != nil {
+		return response, err
+	}
+
+	query := fmt.Sprintf(`SELECT id, name, is_male, image_url, playing_level, short_name FROM teams %s %s %s`, queryInfoOutput.WhereClause, queryInfoOutput.OrderByClause, queryInfoOutput.PaginationClause)
+
+	rows, err := db.Query(ctx, query, queryInfoOutput.Args...)
+	if err != nil {
+		return response, err
+	}
+
+	teams, err := pgx.CollectRows(rows, func(row pgx.CollectableRow) (responses.AllTeams, error) {
 		var team responses.AllTeams
 
 		err := rows.Scan(&team.Id, &team.Name, &team.IsMale, &team.ImageURL, &team.PlayingLevel, &team.ShortName)
@@ -43,5 +59,13 @@ func ReadTeams(ctx context.Context, db *pgxpool.Pool) ([]responses.AllTeams, err
 		return team, err
 	})
 
-	return data, err
+	if len(teams) > queryInfoOutput.RecordsCount {
+		response.Teams = teams[:queryInfoOutput.RecordsCount]
+		response.Next = true
+	} else {
+		response.Teams = teams
+		response.Next = false
+	}
+
+	return response, err
 }

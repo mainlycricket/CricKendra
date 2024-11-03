@@ -38,6 +38,11 @@ func main() {
 	r.Mount("/host-nations", hostNationsRouter())
 	r.Mount("/cities", citiesRouter())
 	r.Mount("/grounds", groundsRouter())
+	r.Mount("/tours", toursRouter())
+	r.Mount("/matches", matchesRouter())
+	r.Mount("/innings", inningsRouter())
+	r.Mount("/users", usersRouter())
+	r.Mount("/blog-articles", blogArticlesRouter())
 
 	err = http.ListenAndServe(":8080", r)
 	if err != nil {

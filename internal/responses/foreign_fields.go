@@ -14,3 +14,8 @@ type MatchAsForeignField struct {
 	Date  pgtype.Date `json:"date"`
 	City  pgtype.Text `json:"city"`
 }
+
+type HostNationAsForeignField struct {
+	Id   pgtype.Int8 `json:"id"`
+	Name pgtype.Text `json:"name"`
+}
