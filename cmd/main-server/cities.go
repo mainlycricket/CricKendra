@@ -13,6 +13,7 @@ import (
 func citiesRouter() *chi.Mux {
 	r := chi.NewRouter()
 	r.Post("/", createCity)
+	r.Get("/", getCities)
 	return r
 }
 
@@ -32,4 +33,15 @@ func createCity(w http.ResponseWriter, r *http.Request) {
 	}
 
 	responses.WriteJsonResponse(w, responses.ApiResponse{Success: true, Message: "city created successfully", Data: nil}, http.StatusCreated)
+}
+
+func getCities(w http.ResponseWriter, r *http.Request) {
+	response, err := dbutils.ReadCities(r.Context(), DB_POOL, r.URL.Query())
+
+	if err != nil {
+		responses.WriteJsonResponse(w, responses.ApiResponse{Success: false, Message: "error while reading cities", Data: err}, http.StatusBadRequest)
+		return
+	}
+
+	responses.WriteJsonResponse(w, responses.ApiResponse{Success: true, Message: "cities read successfully", Data: response}, http.StatusOK)
 }

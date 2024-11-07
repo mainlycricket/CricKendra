@@ -22,7 +22,7 @@ func main() {
 
 	match_info_path := "/home/tushar/Desktop/Cricsheet/odis_male_csv2/64814_info.csv"
 
-	match, err := extractMatchInfo(match_info_path, "international", "odi")
+	match, err := extractMatchInfo(match_info_path, "international", "ODI")
 
 	if err != nil {
 		log.Fatalf("error while extracting match info: %v", err)

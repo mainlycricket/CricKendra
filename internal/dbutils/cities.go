@@ -44,7 +44,7 @@ func ReadCities(ctx context.Context, db *pgxpool.Pool, queryMap url.Values) (res
 		return response, err
 	}
 
-	query := fmt.Sprintf(`SELECT cities.id, cities.name, cities.host_nation_id, host_nations.name FROM cities LEFT JOIN host_nations ON cities.host_nation_id = host_nations.id %s %s %s`, queryInfoOutput.WhereClause, queryInfoOutput.OrderByClause, queryInfoOutput.PaginationClause)
+	query := fmt.Sprintf(`SELECT cities.id, cities.name, cities.host_nation_id, host_nations.name, host_nations.continent_id, continents.name FROM cities LEFT JOIN host_nations ON cities.host_nation_id = host_nations.id LEFT JOIN continents ON host_nations.continent_id = continents.id %s %s %s`, queryInfoOutput.WhereClause, queryInfoOutput.OrderByClause, queryInfoOutput.PaginationClause)
 
 	rows, err := db.Query(ctx, query, queryInfoOutput.Args...)
 	if err != nil {
@@ -53,7 +53,7 @@ func ReadCities(ctx context.Context, db *pgxpool.Pool, queryMap url.Values) (res
 
 	cities, err := pgx.CollectRows(rows, func(row pgx.CollectableRow) (responses.AllCities, error) {
 		var city responses.AllCities
-		err := rows.Scan(&city.Id, &city.Name, &city.HostNationId, &city.HostNationName)
+		err := rows.Scan(&city.Id, &city.Name, &city.HostNationId, &city.HostNationName, &city.ContinetId, &city.ContinentName)
 		return city, err
 	})
 

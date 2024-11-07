@@ -46,7 +46,7 @@ func ReadPlayers(ctx context.Context, db *pgxpool.Pool, queryMap url.Values) (re
 
 	query := fmt.Sprintf(`SELECT id, name, playing_role, nationality, is_male, date_of_birth, is_rhb, primary_bowling_style FROM players %s %s %s`, queryInfoOutput.WhereClause, queryInfoOutput.OrderByClause, queryInfoOutput.PaginationClause)
 
-	rows, err := db.Query(ctx, query)
+	rows, err := db.Query(ctx, query, queryInfoOutput.Args...)
 	if err != nil {
 		return response, err
 	}

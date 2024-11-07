@@ -184,9 +184,9 @@ ALTER TYPE public.outcome_special_method OWNER TO postgres;
 --
 
 CREATE TYPE public.playing_format AS ENUM (
-    'test',
-    'odi',
-    't20i',
+    'Test',
+    'ODI',
+    'T20I',
     'first_class',
     'list_a',
     't20'
@@ -1009,7 +1009,7 @@ ALTER SEQUENCE public.bowling_scorecards_id_seq OWNED BY public.bowling_scorecar
 CREATE TABLE public.cities (
     id integer NOT NULL,
     name text NOT NULL,
-    host_nation_id integer NOT NULL
+    host_nation_id integer
 );
 
 
@@ -1179,7 +1179,6 @@ ALTER SEQUENCE public.deliveries_id_seq OWNED BY public.deliveries.id;
 CREATE TABLE public.grounds (
     id integer NOT NULL,
     name text NOT NULL,
-    host_nation_id integer,
     city_id integer
 );
 
@@ -1215,7 +1214,7 @@ ALTER SEQUENCE public.grounds_id_seq OWNED BY public.grounds.id;
 CREATE TABLE public.host_nations (
     id integer NOT NULL,
     name text NOT NULL,
-    continent_id integer NOT NULL
+    continent_id integer
 );
 
 
@@ -1301,8 +1300,6 @@ CREATE TABLE public.matches (
     is_male boolean NOT NULL,
     tournament_id integer,
     series_id integer,
-    host_nation_id integer,
-    continent_id integer,
     ground_id integer,
     current_status text,
     home_team_id integer,
@@ -1324,7 +1321,6 @@ CREATE TABLE public.matches (
     playing_format public.playing_format NOT NULL,
     tour_id integer,
     final_result public.match_final_result,
-    parent_series_id integer,
     balls_per_over integer DEFAULT 6,
     players_of_the_match_id integer[],
     event_match_number integer,
@@ -1334,7 +1330,8 @@ CREATE TABLE public.matches (
     super_over_winner_id integer,
     is_won_by_innings boolean,
     outcome_special_method public.outcome_special_method,
-    cricsheet_id text
+    cricsheet_id text,
+    is_neutral_venue boolean
 );
 
 
@@ -1370,9 +1367,9 @@ CREATE TABLE public.players (
     id integer NOT NULL,
     name text NOT NULL,
     playing_role text,
-    nationality text NOT NULL,
+    nationality text,
     is_male boolean NOT NULL,
-    date_of_birth date NOT NULL,
+    date_of_birth date,
     image_url text,
     biography text,
     teams_represented_id integer[],
@@ -1781,6 +1778,7 @@ COPY public.bowling_scorecards (id, innings_id, bowler_id, bowling_position, wic
 
 COPY public.cities (id, name, host_nation_id) FROM stdin;
 1	Mumbai	1
+2	Napier	\N
 \.
 
 
@@ -17364,8 +17362,9 @@ COPY public.deliveries (id, innings_id, ball_number, over_number, batter_id, bow
 -- Data for Name: grounds; Type: TABLE DATA; Schema: public; Owner: postgres
 --
 
-COPY public.grounds (id, name, host_nation_id, city_id) FROM stdin;
-1	Wankhede Stadium	1	1
+COPY public.grounds (id, name, city_id) FROM stdin;
+1	Wankhede Stadium	1
+2	McLean Park, Napier	2
 \.
 
 
@@ -17375,6 +17374,7 @@ COPY public.grounds (id, name, host_nation_id, city_id) FROM stdin;
 
 COPY public.host_nations (id, name, continent_id) FROM stdin;
 1	India	1
+2	New Zealand	\N
 \.
 
 
@@ -17390,9 +17390,9 @@ COPY public.innings (id, match_id, innings_number, batting_team_id, bowling_team
 -- Data for Name: matches; Type: TABLE DATA; Schema: public; Owner: postgres
 --
 
-COPY public.matches (id, team1_id, team2_id, is_male, tournament_id, series_id, host_nation_id, continent_id, ground_id, current_status, home_team_id, away_team_id, season, is_day_night, toss_winner_team_id, toss_loser_team_id, match_winner_team_id, match_loser_team_id, is_won_by_runs, win_margin, balls_remaining_after_win, scorers_id, commentators_id, is_toss_decision_bat, match_type, playing_level, playing_format, tour_id, final_result, parent_series_id, balls_per_over, players_of_the_match_id, event_match_number, start_date, start_time, bowl_out_winner_id, super_over_winner_id, is_won_by_innings, outcome_special_method, cricsheet_id) FROM stdin;
-2	1	5	t	2	6	1	1	1	completed	1	1	2024/25	f	2	1	2	1	t	113	\N	\N	\N	t	\N	international	test	2	winner_decided	5	6	\N	\N	\N	\N	\N	\N	\N	\N	\N
-1	1	5	t	2	6	1	1	1	upcoming	1	1	2024/25	f	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	international	test	2	\N	5	6	\N	\N	\N	\N	\N	\N	\N	\N	\N
+COPY public.matches (id, team1_id, team2_id, is_male, tournament_id, series_id, ground_id, current_status, home_team_id, away_team_id, season, is_day_night, toss_winner_team_id, toss_loser_team_id, match_winner_team_id, match_loser_team_id, is_won_by_runs, win_margin, balls_remaining_after_win, scorers_id, commentators_id, is_toss_decision_bat, match_type, playing_level, playing_format, tour_id, final_result, balls_per_over, players_of_the_match_id, event_match_number, start_date, start_time, bowl_out_winner_id, super_over_winner_id, is_won_by_innings, outcome_special_method, cricsheet_id, is_neutral_venue) FROM stdin;
+2	1	5	t	2	6	1	completed	1	1	2024/25	f	2	1	2	1	t	113	\N	\N	\N	t	\N	international	Test	2	winner_decided	6	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N
+1	1	5	t	2	6	1	upcoming	1	1	2024/25	f	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	international	Test	2	\N	6	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N
 \.
 
 
@@ -17401,9 +17401,31 @@ COPY public.matches (id, team1_id, team2_id, is_male, tournament_id, series_id, 
 --
 
 COPY public.players (id, name, playing_role, nationality, is_male, date_of_birth, image_url, biography, teams_represented_id, test_stats, odi_stats, t20i_stats, fc_stats, lista_stats, t20_stats, cricsheet_id, cricinfo_id, cricbuzz_id, full_name, is_rhb, bowling_styles, primary_bowling_style) FROM stdin;
+20	R Dravid	\N	\N	t	\N	\N	\N	{8}	(,,,,,,,,,,,,,,,,,,,,,,,,,)	(,,,,,,,,,,,,,,,,,,,,,,,,,)	(,,,,,,,,,,,,,,,,,,,,,,,,,)	(,,,,,,,,,,,,,,,,,,,,,,,,,)	(,,,,,,,,,,,,,,,,,,,,,,,,,)	(,,,,,,,,,,,,,,,,,,,,,,,,,)	0184dc35	28114	\N	R Dravid	\N	\N	\N
+21	SB Bangar	\N	\N	t	\N	\N	\N	{8}	(,,,,,,,,,,,,,,,,,,,,,,,,,)	(,,,,,,,,,,,,,,,,,,,,,,,,,)	(,,,,,,,,,,,,,,,,,,,,,,,,,)	(,,,,,,,,,,,,,,,,,,,,,,,,,)	(,,,,,,,,,,,,,,,,,,,,,,,,,)	(,,,,,,,,,,,,,,,,,,,,,,,,,)	0604ef16	27225	\N	SB Bangar	\N	\N	\N
+22	SC Ganguly	\N	\N	t	\N	\N	\N	{8}	(,,,,,,,,,,,,,,,,,,,,,,,,,)	(,,,,,,,,,,,,,,,,,,,,,,,,,)	(,,,,,,,,,,,,,,,,,,,,,,,,,)	(,,,,,,,,,,,,,,,,,,,,,,,,,)	(,,,,,,,,,,,,,,,,,,,,,,,,,)	(,,,,,,,,,,,,,,,,,,,,,,,,,)	725529bc	28779	\N	SC Ganguly	\N	\N	\N
+23	SP Fleming	\N	\N	t	\N	\N	\N	{7}	(,,,,,,,,,,,,,,,,,,,,,,,,,)	(,,,,,,,,,,,,,,,,,,,,,,,,,)	(,,,,,,,,,,,,,,,,,,,,,,,,,)	(,,,,,,,,,,,,,,,,,,,,,,,,,)	(,,,,,,,,,,,,,,,,,,,,,,,,,)	(,,,,,,,,,,,,,,,,,,,,,,,,,)	eea6b7f1	37000	\N	SP Fleming	\N	\N	\N
+24	V Sehwag	\N	\N	t	\N	\N	\N	{8}	(,,,,,,,,,,,,,,,,,,,,,,,,,)	(,,,,,,,,,,,,,,,,,,,,,,,,,)	(,,,,,,,,,,,,,,,,,,,,,,,,,)	(,,,,,,,,,,,,,,,,,,,,,,,,,)	(,,,,,,,,,,,,,,,,,,,,,,,,,)	(,,,,,,,,,,,,,,,,,,,,,,,,,)	8ba8195d	35263	\N	V Sehwag	\N	\N	\N
+25	VVS Laxman	\N	\N	t	\N	\N	\N	{8}	(,,,,,,,,,,,,,,,,,,,,,,,,,)	(,,,,,,,,,,,,,,,,,,,,,,,,,)	(,,,,,,,,,,,,,,,,,,,,,,,,,)	(,,,,,,,,,,,,,,,,,,,,,,,,,)	(,,,,,,,,,,,,,,,,,,,,,,,,,)	(,,,,,,,,,,,,,,,,,,,,,,,,,)	de8cce37	30750	\N	VVS Laxman	\N	\N	\N
+26	Yuvraj Singh	\N	\N	t	\N	\N	\N	{8}	(,,,,,,,,,,,,,,,,,,,,,,,,,)	(,,,,,,,,,,,,,,,,,,,,,,,,,)	(,,,,,,,,,,,,,,,,,,,,,,,,,)	(,,,,,,,,,,,,,,,,,,,,,,,,,)	(,,,,,,,,,,,,,,,,,,,,,,,,,)	(,,,,,,,,,,,,,,,,,,,,,,,,,)	1c914163	36084	\N	Yuvraj Singh	\N	\N	\N
 1	Virat Kohli	Top-order Batter	India	t	1994-11-05	\N	\N	{1,3}	(,,,,,,,,,,,,,,,,,,,,,,,,,)	(,,,,,,,,,,,,,,,,,,,,,,,,,)	(,,,,,,,,,,,,,,,,,,,,,,,,,)	(,,,,,,,,,,,,,,,,,,,,,,,,,)	(,,,,,,,,,,,,,,,,,,,,,,,,,)	(,,,,,,,,,,,,,,,,,,,,,,,,,)	\N	\N	\N	Virat Kohli	t	\N	\N
 2	Rohit Sharma	Top-order Batter	India	t	1993-04-30	\N	\N	\N	(,,,,,,,,,,,,,,,,,,,,,,,,,)	(,,,,,,,,,,,,,,,,,,,,,,,,,)	(,,,,,,,,,,,,,,,,,,,,,,,,,)	(,,,,,,,,,,,,,,,,,,,,,,,,,)	(,,,,,,,,,,,,,,,,,,,,,,,,,)	(,,,,,,,,,,,,,,,,,,,,,,,,,)	\N	\N	\N	Rohit Gurunath Sharma	t	\N	\N
 3	Suryakumar Yadav	Batter	India	t	1990-09-14	\N	\N	{1,4}	(,,,,,,,,,,,,,,,,,,,,,,,,,)	(,,,,,,,,,,,,,,,,,,,,,,,,,)	(,,,,,,,,,,,,,,,,,,,,,,,,,)	(,,,,,,,,,,,,,,,,,,,,,,,,,)	(,,,,,,,,,,,,,,,,,,,,,,,,,)	(,,,,,,,,,,,,,,,,,,,,,,,,,)	\N	\N	\N	Suryakumar Ashok Yadav	t	\N	\N
+6	A Nehra	\N	\N	t	\N	\N	\N	{8}	(,,,,,,,,,,,,,,,,,,,,,,,,,)	(,,,,,,,,,,,,,,,,,,,,,,,,,)	(,,,,,,,,,,,,,,,,,,,,,,,,,)	(,,,,,,,,,,,,,,,,,,,,,,,,,)	(,,,,,,,,,,,,,,,,,,,,,,,,,)	(,,,,,,,,,,,,,,,,,,,,,,,,,)	96fd40ae	31820	\N	A Nehra	\N	\N	\N
+7	BB McCullum	\N	\N	t	\N	\N	\N	{7}	(,,,,,,,,,,,,,,,,,,,,,,,,,)	(,,,,,,,,,,,,,,,,,,,,,,,,,)	(,,,,,,,,,,,,,,,,,,,,,,,,,)	(,,,,,,,,,,,,,,,,,,,,,,,,,)	(,,,,,,,,,,,,,,,,,,,,,,,,,)	(,,,,,,,,,,,,,,,,,,,,,,,,,)	b8a55852	37737	\N	BB McCullum	\N	\N	\N
+8	CD McMillan	\N	\N	t	\N	\N	\N	{7}	(,,,,,,,,,,,,,,,,,,,,,,,,,)	(,,,,,,,,,,,,,,,,,,,,,,,,,)	(,,,,,,,,,,,,,,,,,,,,,,,,,)	(,,,,,,,,,,,,,,,,,,,,,,,,,)	(,,,,,,,,,,,,,,,,,,,,,,,,,)	(,,,,,,,,,,,,,,,,,,,,,,,,,)	f5390243	37712	\N	CD McMillan	\N	\N	\N
+9	DL Vettori	\N	\N	t	\N	\N	\N	{7}	(,,,,,,,,,,,,,,,,,,,,,,,,,)	(,,,,,,,,,,,,,,,,,,,,,,,,,)	(,,,,,,,,,,,,,,,,,,,,,,,,,)	(,,,,,,,,,,,,,,,,,,,,,,,,,)	(,,,,,,,,,,,,,,,,,,,,,,,,,)	(,,,,,,,,,,,,,,,,,,,,,,,,,)	d7c6af50	38710	\N	DL Vettori	\N	\N	\N
+10	DR Tuffey	\N	\N	t	\N	\N	\N	{7}	(,,,,,,,,,,,,,,,,,,,,,,,,,)	(,,,,,,,,,,,,,,,,,,,,,,,,,)	(,,,,,,,,,,,,,,,,,,,,,,,,,)	(,,,,,,,,,,,,,,,,,,,,,,,,,)	(,,,,,,,,,,,,,,,,,,,,,,,,,)	(,,,,,,,,,,,,,,,,,,,,,,,,,)	43936951	38620	\N	DR Tuffey	\N	\N	\N
+11	Harbhajan Singh	\N	\N	t	\N	\N	\N	{8}	(,,,,,,,,,,,,,,,,,,,,,,,,,)	(,,,,,,,,,,,,,,,,,,,,,,,,,)	(,,,,,,,,,,,,,,,,,,,,,,,,,)	(,,,,,,,,,,,,,,,,,,,,,,,,,)	(,,,,,,,,,,,,,,,,,,,,,,,,,)	(,,,,,,,,,,,,,,,,,,,,,,,,,)	8b5b6769	29264	\N	Harbhajan Singh	\N	\N	\N
+12	J Srinath	\N	\N	t	\N	\N	\N	{8}	(,,,,,,,,,,,,,,,,,,,,,,,,,)	(,,,,,,,,,,,,,,,,,,,,,,,,,)	(,,,,,,,,,,,,,,,,,,,,,,,,,)	(,,,,,,,,,,,,,,,,,,,,,,,,,)	(,,,,,,,,,,,,,,,,,,,,,,,,,)	(,,,,,,,,,,,,,,,,,,,,,,,,,)	bad31fac	34105	\N	J Srinath	\N	\N	\N
+13	JDP Oram	\N	\N	t	\N	\N	\N	{7}	(,,,,,,,,,,,,,,,,,,,,,,,,,)	(,,,,,,,,,,,,,,,,,,,,,,,,,)	(,,,,,,,,,,,,,,,,,,,,,,,,,)	(,,,,,,,,,,,,,,,,,,,,,,,,,)	(,,,,,,,,,,,,,,,,,,,,,,,,,)	(,,,,,,,,,,,,,,,,,,,,,,,,,)	3eac9d95	38062	\N	JDP Oram	\N	\N	\N
+14	KD Mills	\N	\N	t	\N	\N	\N	{7}	(,,,,,,,,,,,,,,,,,,,,,,,,,)	(,,,,,,,,,,,,,,,,,,,,,,,,,)	(,,,,,,,,,,,,,,,,,,,,,,,,,)	(,,,,,,,,,,,,,,,,,,,,,,,,,)	(,,,,,,,,,,,,,,,,,,,,,,,,,)	(,,,,,,,,,,,,,,,,,,,,,,,,,)	7fb32e5b	37740	\N	KD Mills	\N	\N	\N
+15	L Vincent	\N	\N	t	\N	\N	\N	{7}	(,,,,,,,,,,,,,,,,,,,,,,,,,)	(,,,,,,,,,,,,,,,,,,,,,,,,,)	(,,,,,,,,,,,,,,,,,,,,,,,,,)	(,,,,,,,,,,,,,,,,,,,,,,,,,)	(,,,,,,,,,,,,,,,,,,,,,,,,,)	(,,,,,,,,,,,,,,,,,,,,,,,,,)	2764133a	38714	\N	L Vincent	\N	\N	\N
+16	M Kaif	\N	\N	t	\N	\N	\N	{8}	(,,,,,,,,,,,,,,,,,,,,,,,,,)	(,,,,,,,,,,,,,,,,,,,,,,,,,)	(,,,,,,,,,,,,,,,,,,,,,,,,,)	(,,,,,,,,,,,,,,,,,,,,,,,,,)	(,,,,,,,,,,,,,,,,,,,,,,,,,)	(,,,,,,,,,,,,,,,,,,,,,,,,,)	d84378a4	29990	\N	M Kaif	\N	\N	\N
+17	MS Sinclair	\N	\N	t	\N	\N	\N	{7}	(,,,,,,,,,,,,,,,,,,,,,,,,,)	(,,,,,,,,,,,,,,,,,,,,,,,,,)	(,,,,,,,,,,,,,,,,,,,,,,,,,)	(,,,,,,,,,,,,,,,,,,,,,,,,,)	(,,,,,,,,,,,,,,,,,,,,,,,,,)	(,,,,,,,,,,,,,,,,,,,,,,,,,)	1b668884	38393	\N	MS Sinclair	\N	\N	\N
+18	NJ Astle	\N	\N	t	\N	\N	\N	{7}	(,,,,,,,,,,,,,,,,,,,,,,,,,)	(,,,,,,,,,,,,,,,,,,,,,,,,,)	(,,,,,,,,,,,,,,,,,,,,,,,,,)	(,,,,,,,,,,,,,,,,,,,,,,,,,)	(,,,,,,,,,,,,,,,,,,,,,,,,,)	(,,,,,,,,,,,,,,,,,,,,,,,,,)	99639abf	36185	\N	NJ Astle	\N	\N	\N
+19	PA Hitchcock	\N	\N	t	\N	\N	\N	{7}	(,,,,,,,,,,,,,,,,,,,,,,,,,)	(,,,,,,,,,,,,,,,,,,,,,,,,,)	(,,,,,,,,,,,,,,,,,,,,,,,,,)	(,,,,,,,,,,,,,,,,,,,,,,,,,)	(,,,,,,,,,,,,,,,,,,,,,,,,,)	(,,,,,,,,,,,,,,,,,,,,,,,,,)	27d1cc51	37263	\N	PA Hitchcock	\N	\N	\N
+27	Z Khan	\N	\N	t	\N	\N	\N	{8}	(,,,,,,,,,,,,,,,,,,,,,,,,,)	(,,,,,,,,,,,,,,,,,,,,,,,,,)	(,,,,,,,,,,,,,,,,,,,,,,,,,)	(,,,,,,,,,,,,,,,,,,,,,,,,,)	(,,,,,,,,,,,,,,,,,,,,,,,,,)	(,,,,,,,,,,,,,,,,,,,,,,,,,)	91a4a398	30102	\N	Z Khan	\N	\N	\N
 \.
 
 
@@ -17414,6 +17436,7 @@ COPY public.players (id, name, playing_role, nationality, is_male, date_of_birth
 COPY public.seasons (season) FROM stdin;
 2023/24
 2024/25
+2002/03
 \.
 
 
@@ -17422,9 +17445,10 @@ COPY public.seasons (season) FROM stdin;
 --
 
 COPY public.series (id, name, is_male, playing_level, playing_format, season, teams_id, host_nations_id, tournament_id, parent_series_id, tour_id, players_of_the_series_id) FROM stdin;
-1	ICC Cricket World Cup 2023	t	international	odi	2023/24	{1,2}	{1}	1	\N	\N	\N
-5	ICC World Test Championship 2023-25	t	international	test	\N	{1,2,5}	\N	2	\N	\N	\N
-6	India vs New Zealand	t	international	test	2024/25	{1,5}	{1}	2	5	2	\N
+1	ICC Cricket World Cup 2023	t	international	ODI	2023/24	{1,2}	{1}	1	\N	\N	\N
+5	ICC World Test Championship 2023-25	t	international	Test	\N	{1,2,5}	\N	2	\N	\N	\N
+6	India vs New Zealand	t	international	Test	2024/25	{1,5}	{1}	2	5	2	\N
+7	New Zealand in India ODI Series	t	international	ODI	2002/03	{7,8}	\N	\N	\N	7	\N
 \.
 
 
@@ -17446,6 +17470,8 @@ COPY public.teams (id, name, is_male, image_url, short_name, playing_level) FROM
 3	Royal Challengers Bangalore	t	\N	RCB	domestic
 4	Mumbai Indians	t	\N	\N	domestic
 5	New Zealand	t	\N	\N	international
+7	New Zealand	f	\N	\N	international
+8	India	f	\N	\N	international
 \.
 
 
@@ -17454,8 +17480,8 @@ COPY public.teams (id, name, is_male, image_url, short_name, playing_level) FROM
 --
 
 COPY public.tournaments (id, name, is_male, playing_level, playing_format) FROM stdin;
-1	ICC Men's World Cup	t	international	odi
-2	ICC Men's World Test Championship	t	international	test
+1	ICC Men's World Cup	t	international	ODI
+2	ICC Men's World Test Championship	t	international	Test
 \.
 
 
@@ -17465,6 +17491,7 @@ COPY public.tournaments (id, name, is_male, playing_level, playing_format) FROM 
 
 COPY public.tours (id, touring_team_id, host_nations_id, season) FROM stdin;
 2	5	{1}	2024/25
+7	1	{2}	2002/03
 \.
 
 
@@ -17501,7 +17528,7 @@ SELECT pg_catalog.setval('public.bowling_scorecards_id_seq', 1, false);
 -- Name: cities_id_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
 --
 
-SELECT pg_catalog.setval('public.cities_id_seq', 1, true);
+SELECT pg_catalog.setval('public.cities_id_seq', 2, true);
 
 
 --
@@ -17522,14 +17549,14 @@ SELECT pg_catalog.setval('public.deliveries_id_seq', 1, false);
 -- Name: grounds_id_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
 --
 
-SELECT pg_catalog.setval('public.grounds_id_seq', 1, true);
+SELECT pg_catalog.setval('public.grounds_id_seq', 2, true);
 
 
 --
 -- Name: host_nations_id_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
 --
 
-SELECT pg_catalog.setval('public.host_nations_id_seq', 1, true);
+SELECT pg_catalog.setval('public.host_nations_id_seq', 2, true);
 
 
 --
@@ -17550,21 +17577,21 @@ SELECT pg_catalog.setval('public.matches_id_seq', 2, true);
 -- Name: players_id_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
 --
 
-SELECT pg_catalog.setval('public.players_id_seq', 3, true);
+SELECT pg_catalog.setval('public.players_id_seq', 27, true);
 
 
 --
 -- Name: series_id_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
 --
 
-SELECT pg_catalog.setval('public.series_id_seq', 6, true);
+SELECT pg_catalog.setval('public.series_id_seq', 7, true);
 
 
 --
 -- Name: teams_id_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
 --
 
-SELECT pg_catalog.setval('public.teams_id_seq', 5, true);
+SELECT pg_catalog.setval('public.teams_id_seq', 8, true);
 
 
 --
@@ -17578,7 +17605,7 @@ SELECT pg_catalog.setval('public.tournaments_id_seq', 2, true);
 -- Name: tours_id_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
 --
 
-SELECT pg_catalog.setval('public.tours_id_seq', 6, true);
+SELECT pg_catalog.setval('public.tours_id_seq', 7, true);
 
 
 --
@@ -17813,14 +17840,6 @@ ALTER TABLE ONLY public.grounds
 
 
 --
--- Name: grounds grounds_host_nation_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
---
-
-ALTER TABLE ONLY public.grounds
-    ADD CONSTRAINT grounds_host_nation_id_fkey FOREIGN KEY (host_nation_id) REFERENCES public.host_nations(id) NOT VALID;
-
-
---
 -- Name: host_nations host_nations_continent_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -17861,14 +17880,6 @@ ALTER TABLE ONLY public.matches
 
 
 --
--- Name: matches matches_continent_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
---
-
-ALTER TABLE ONLY public.matches
-    ADD CONSTRAINT matches_continent_id_fkey FOREIGN KEY (continent_id) REFERENCES public.continents(id) NOT VALID;
-
-
---
 -- Name: matches matches_ground_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -17885,14 +17896,6 @@ ALTER TABLE ONLY public.matches
 
 
 --
--- Name: matches matches_host_nation_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
---
-
-ALTER TABLE ONLY public.matches
-    ADD CONSTRAINT matches_host_nation_id_fkey FOREIGN KEY (host_nation_id) REFERENCES public.host_nations(id) NOT VALID;
-
-
---
 -- Name: matches matches_match_loser_team_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -17906,14 +17909,6 @@ ALTER TABLE ONLY public.matches
 
 ALTER TABLE ONLY public.matches
     ADD CONSTRAINT matches_match_winner_team_id_fkey FOREIGN KEY (match_winner_team_id) REFERENCES public.teams(id) NOT VALID;
-
-
---
--- Name: matches matches_parent_series_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
---
-
-ALTER TABLE ONLY public.matches
-    ADD CONSTRAINT matches_parent_series_id_fkey FOREIGN KEY (parent_series_id) REFERENCES public.series(id) NOT VALID;
 
 
 --

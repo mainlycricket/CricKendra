@@ -14,9 +14,9 @@ import (
 )
 
 func InsertGround(ctx context.Context, db *pgxpool.Pool, ground *models.Ground) error {
-	query := `INSERT INTO grounds (name, host_nation_id, city_id) VALUES($1, $2, $3)`
+	query := `INSERT INTO grounds (name, city_id) VALUES($1, $2)`
 
-	cmd, err := db.Exec(ctx, query, ground.Name, ground.HostNationId, ground.CityId)
+	cmd, err := db.Exec(ctx, query, ground.Name, ground.CityId)
 
 	if err != nil {
 		return err
@@ -44,7 +44,7 @@ func ReadGrounds(ctx context.Context, db *pgxpool.Pool, queryMap url.Values) (re
 		return response, err
 	}
 
-	query := fmt.Sprintf(`SELECT grounds.id, grounds.name, grounds.host_nation_id, host_nations.name, grounds.city_id, cities.name FROM grounds LEFT JOIN host_nations ON grounds.host_nation_id = host_nations.id LEFT JOIN cities ON grounds.city_id = cities.id %s %s %s`, queryInfoOutput.WhereClause, queryInfoOutput.OrderByClause, queryInfoOutput.PaginationClause)
+	query := fmt.Sprintf(`SELECT grounds.id, grounds.name, grounds.city_id, cities.name, cities.host_nation_id, host_nations.name, host_nations.continent_id, continents.name FROM grounds LEFT JOIN cities ON grounds.city_id = cities.id LEFT JOIN host_nations ON cities.host_nation_id = host_nations.id LEFT JOIN continents ON host_nations.continent_id = continents.id %s %s %s`, queryInfoOutput.WhereClause, queryInfoOutput.OrderByClause, queryInfoOutput.PaginationClause)
 
 	rows, err := db.Query(ctx, query, queryInfoOutput.Args...)
 	if err != nil {
@@ -53,7 +53,7 @@ func ReadGrounds(ctx context.Context, db *pgxpool.Pool, queryMap url.Values) (re
 
 	grounds, err := pgx.CollectRows(rows, func(row pgx.CollectableRow) (responses.AllGrounds, error) {
 		var ground responses.AllGrounds
-		err := rows.Scan(&ground.Id, &ground.Name, &ground.HostNationId, &ground.HostNationName, &ground.CityId, &ground.CityName)
+		err := rows.Scan(&ground.Id, &ground.Name, &ground.CityId, &ground.CityName, &ground.HostNationId, &ground.HostNationName, &ground.ContinetId, &ground.ContinentName)
 		return ground, err
 	})
 

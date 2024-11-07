@@ -90,10 +90,9 @@ type City struct {
 }
 
 type Ground struct {
-	Id           pgtype.Int8 `json:"id"`
-	Name         pgtype.Text `json:"name"`
-	HostNationId pgtype.Int8 `json:"host_nation_id"`
-	CityId       pgtype.Int8 `json:"city_id"`
+	Id     pgtype.Int8 `json:"id"`
+	Name   pgtype.Text `json:"name"`
+	CityId pgtype.Int8 `json:"city_id"`
 }
 
 type Tournament struct {
@@ -151,11 +150,9 @@ type Match struct {
 	IsMale               pgtype.Bool        `json:"is_male"`
 	TournamentId         pgtype.Int8        `json:"tournament_id"`
 	SeriesId             pgtype.Int8        `json:"series_id"`
-	ParentSeriesId       pgtype.Int8        `json:"parent_series_id"`
 	TourId               pgtype.Int8        `json:"tour_id"`
-	HostNationId         pgtype.Int8        `json:"host_nation_id"`
-	ContinentId          pgtype.Int8        `json:"continent_id"`
 	GroundId             pgtype.Int8        `json:"ground_id"`
+	IsNeutralVenue       pgtype.Bool        `json:"is_neutral_venue"`
 	CurrentStatus        pgtype.Text        `json:"current_status"`
 	FinalResult          pgtype.Text        `json:"final_result"` // completed, abandoned, no result
 	HomeTeamId           pgtype.Int8        `json:"home_team_id"`

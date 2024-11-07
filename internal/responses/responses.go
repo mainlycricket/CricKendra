@@ -64,12 +64,28 @@ type AllTeams struct {
 }
 
 // Seasons
+
 type AllSeasonsResponse struct {
 	Seasons []string `json:"seasons"`
 	Next    bool     `json:"next"`
 }
 
+// HostNations
+
+type AllHostNationsResponse struct {
+	HostNations []AllHostNations `json:"host_nations"`
+	Next        bool             `json:"next"`
+}
+
+type AllHostNations struct {
+	Id            pgtype.Int8 `json:"id"`
+	Name          pgtype.Text `json:"name"`
+	ContinetId    pgtype.Int8 `json:"continent_id"`
+	ContinentName pgtype.Text `json:"continent_name"`
+}
+
 // Cities
+
 type AllCitiesResponse struct {
 	Cities []AllCities `json:"cities"`
 	Next   bool        `json:"next"`
@@ -80,11 +96,12 @@ type AllCities struct {
 	Name           pgtype.Text `json:"name"`
 	HostNationId   pgtype.Int8 `json:"host_nation_id"`
 	HostNationName pgtype.Text `json:"host_nation_name"`
+	ContinetId     pgtype.Int8 `json:"continent_id"`
+	ContinentName  pgtype.Text `json:"continent_name"`
 }
 
 // Grounds
 
-// Cities
 type AllGroundsResponse struct {
 	Grounds []AllGrounds `json:"grounds"`
 	Next    bool         `json:"next"`
@@ -93,10 +110,26 @@ type AllGroundsResponse struct {
 type AllGrounds struct {
 	Id             pgtype.Int8 `json:"id"`
 	Name           pgtype.Text `json:"name"`
-	HostNationId   pgtype.Int8 `json:"host_nation_id"`
-	HostNationName pgtype.Text `json:"host_nation_name"`
 	CityId         pgtype.Int8 `json:"city_id"`
 	CityName       pgtype.Text `json:"city_name"`
+	HostNationId   pgtype.Int8 `json:"host_nation_id"`
+	HostNationName pgtype.Text `json:"host_nation_name"`
+	ContinetId     pgtype.Int8 `json:"continent_id"`
+	ContinentName  pgtype.Text `json:"continent_name"`
+}
+
+// Tournaments
+
+type AllTournamentsResponse struct {
+	Tournaments []AllTournaments `json:"tournaments"`
+	Next        bool             `json:"next"`
+}
+type AllTournaments struct {
+	Id            pgtype.Int8 `json:"id"`
+	Name          pgtype.Text `json:"name"`
+	IsMale        pgtype.Bool `json:"is_male"`
+	PlayingLevel  pgtype.Text `json:"playing_level"`
+	PlayingFormat pgtype.Text `json:"playing_format"`
 }
 
 // Cricsheet People
@@ -123,6 +156,21 @@ type AllSeries struct {
 	PlayingLevel  pgtype.Text `json:"playing_level"`
 	PlayingFormat pgtype.Text `json:"playing_format"`
 	Season        pgtype.Text `json:"season"`
+}
+
+// Tours
+
+type AllToursResponse struct {
+	Tours []AllTours `json:"tours"`
+	Next  bool       `json:"next"`
+}
+
+type AllTours struct {
+	Id              pgtype.Int8                `json:"id"`
+	TouringTeamId   pgtype.Int8                `json:"touring_team_id"`
+	TouringTeamName pgtype.Text                `json:"touring_team_name"`
+	HostNations     []HostNationAsForeignField `json:"host_nations"`
+	Season          pgtype.Text                `json:"season"`
 }
 
 // Extras

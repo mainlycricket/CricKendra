@@ -6,11 +6,17 @@ build-main:
 build-live:
 	go build -o bin/ ./cmd/live-server/
 
+build-csv-parser:
+	go build -o bin/ ./cmd/csv-parser/
+
 run-main: build-main
 	./bin/main-server
 
 run-live: build-live
 	./bin/live-server
+
+run-csv-parser: build-csv-parser
+	./bin/csv-parser
 
 install-tools:
 	go install github.com/cespare/reflex@latest

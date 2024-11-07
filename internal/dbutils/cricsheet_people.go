@@ -8,7 +8,7 @@ import (
 )
 
 func ReadCricsheetPeopleById(ctx context.Context, db *pgxpool.Pool, identifier string) (responses.CricsheetPeople, error) {
-	query := `SELECT identifier, name, unique_name, key_cricinfo, key_cricbuzz FROM cricsheet_people WHERE identifider = $1`
+	query := `SELECT identifier, name, unique_name, key_cricinfo, key_cricbuzz FROM cricsheet_people WHERE identifier = $1`
 
 	row := db.QueryRow(ctx, query, identifier)
 

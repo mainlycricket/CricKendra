@@ -45,44 +45,36 @@ func ParseQuery[T any](input QueryInfoInput) (QueryInfoOutput, error) {
 	for i := 0; i < t.NumField(); i++ {
 		field := t.Field(i)
 
-		kind := field.Type.Kind()
-
 		columnName := field.Tag.Get("json")
 		columnNames = append(columnNames, columnName)
 
-		var datatype string
-		if kind == reflect.Slice || kind == reflect.Array {
-			datatype = field.Type.Elem().Name()
-		} else {
-			datatype = field.Type.Name()
-		}
-
-		pgType := getPgType(datatype)
+		datatype, pgType, isArray := GetFieldType(field)
 		if pgType == "" {
 			continue
 		}
 
-		values := input.UrlQuery[columnName]
-		var argPlaceHolders []string
-		for _, value := range values {
-			parsed, err := ParseArg(value, datatype)
-			if err == nil {
-				res.Args = append(res.Args, parsed)
-				argPlaceHolders = append(argPlaceHolders, fmt.Sprintf(`$%d`, len(res.Args)))
-			}
+		var keysWithOperator [][]string
+		if isArray {
+			keysWithOperator = append(keysWithOperator,
+				[]string{columnName, "array_or"},
+				[]string{columnName + "__all", "array_all"},
+				[]string{columnName + "__exact", "array_exact"},
+			)
+		} else {
+			keysWithOperator = append(keysWithOperator, []string{columnName, "IN"})
 		}
 
-		if len(argPlaceHolders) > 0 {
-			condition := fmt.Sprintf(`%s.%s `, input.TableName, columnName)
-			placeholderString := strings.Join(argPlaceHolders, ",")
+		for _, item := range keysWithOperator {
+			key, operator := item[0], item[1]
 
-			if kind == reflect.Slice || kind == reflect.Array {
-				condition += fmt.Sprintf(`&& ARRAY[%v]::%s`, placeholderString, pgType)
-			} else {
-				condition += fmt.Sprintf(`IN (%s)`, placeholderString)
+			if values := input.UrlQuery[key]; len(values) > 0 {
+				args, placeholders := GetConditionArgs(values, datatype, len(res.Args))
+				if len(placeholders) > 0 {
+					condition := GetCondition(input.TableName, columnName, operator, pgType, placeholders)
+					res.Args = append(res.Args, args...)
+					conditions = append(conditions, condition)
+				}
 			}
-
-			conditions = append(conditions, condition)
 		}
 	}
 
@@ -176,4 +168,52 @@ func ParseArg(value string, datatype string) (any, error) {
 	default:
 		return nil, errors.New("unsupported type")
 	}
+}
+
+func GetConditionArgs(values []string, datatype string, argsLen int) ([]any, []string) {
+	var argPlaceHolders []string
+	var args []any
+
+	for _, value := range values {
+		parsed, err := ParseArg(value, datatype)
+		if err == nil {
+			args = append(args, parsed)
+			argsLen++
+			argPlaceHolders = append(argPlaceHolders, fmt.Sprintf(`$%d`, argsLen))
+		}
+	}
+
+	return args, argPlaceHolders
+}
+
+func GetCondition(tableName, columnName, operator, pgType string, placeholders []string) string {
+	condition := fmt.Sprintf(`%s.%s `, tableName, columnName)
+	placeholderString := strings.Join(placeholders, ",")
+
+	switch operator {
+	case "array_or":
+		condition += fmt.Sprintf(`&& ARRAY[%v]::%s[]`, placeholderString, pgType)
+	case "array_exact":
+		condition += fmt.Sprintf(`@> ARRAY[%v]::%s[] AND ARRAY[%v]::%s[] @> %s.%s`, placeholderString, pgType, placeholderString, pgType, tableName, columnName)
+	case "array_all":
+		condition += fmt.Sprintf(`@> ARRAY[%v]::%s[]`, placeholderString, pgType)
+	default:
+		condition += fmt.Sprintf(`IN (%s)`, placeholderString)
+	}
+
+	return condition
+}
+
+func GetFieldType(field reflect.StructField) (datatype, pgType string, isArray bool) {
+	kind := field.Type.Kind()
+
+	if kind == reflect.Slice || kind == reflect.Array {
+		isArray = true
+		datatype = field.Type.Elem().Name()
+	} else {
+		datatype = field.Type.Name()
+	}
+
+	pgType = getPgType(datatype)
+	return
 }

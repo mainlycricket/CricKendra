@@ -13,6 +13,7 @@ import (
 func groundsRouter() *chi.Mux {
 	r := chi.NewRouter()
 	r.Post("/", createGround)
+	r.Get("/", getGrounds)
 	return r
 }
 
@@ -32,4 +33,15 @@ func createGround(w http.ResponseWriter, r *http.Request) {
 	}
 
 	responses.WriteJsonResponse(w, responses.ApiResponse{Success: true, Message: "ground created successfully", Data: nil}, http.StatusCreated)
+}
+
+func getGrounds(w http.ResponseWriter, r *http.Request) {
+	response, err := dbutils.ReadGrounds(r.Context(), DB_POOL, r.URL.Query())
+
+	if err != nil {
+		responses.WriteJsonResponse(w, responses.ApiResponse{Success: false, Message: "error while reading grounds", Data: err}, http.StatusBadRequest)
+		return
+	}
+
+	responses.WriteJsonResponse(w, responses.ApiResponse{Success: true, Message: "grounds read successfully", Data: response}, http.StatusOK)
 }
