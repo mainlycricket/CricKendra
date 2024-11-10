@@ -237,8 +237,6 @@ type Delivery struct {
 	BatterId             pgtype.Int8        `json:"batter_id"`
 	BowlerId             pgtype.Int8        `json:"bowler_id"`
 	NonStrikerId         pgtype.Int8        `json:"non_striker_id"`
-	BattingTeamId        pgtype.Int8        `json:"batting_team_id"`
-	BowlingTeamId        pgtype.Int8        `json:"bowling_team_id"`
 	BatterRuns           pgtype.Int8        `json:"batter_runs"`
 	Wides                pgtype.Int8        `json:"wides"`
 	Noballs              pgtype.Int8        `json:"noballs"`

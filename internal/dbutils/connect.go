@@ -5,8 +5,14 @@ import (
 	"fmt"
 
 	"github.com/jackc/pgx/v5"
+	"github.com/jackc/pgx/v5/pgconn"
 	"github.com/jackc/pgx/v5/pgxpool"
 )
+
+type DB_Exec interface {
+	Exec(context.Context, string, ...any) (pgconn.CommandTag, error)
+	Query(context.Context, string, ...any) (pgx.Rows, error)
+}
 
 func Connect(ctx context.Context, connectionUrl string) (*pgxpool.Pool, error) {
 	config, err := pgxpool.ParseConfig(connectionUrl)

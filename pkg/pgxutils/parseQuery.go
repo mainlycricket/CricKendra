@@ -45,7 +45,8 @@ func ParseQuery[T any](input QueryInfoInput) (QueryInfoOutput, error) {
 	for i := 0; i < t.NumField(); i++ {
 		field := t.Field(i)
 
-		columnName := field.Tag.Get("json")
+		tag := field.Tag.Get("json")
+		columnName := strings.Split(tag, ",")[0]
 		columnNames = append(columnNames, columnName)
 
 		datatype, pgType, isArray := GetFieldType(field)

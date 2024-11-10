@@ -49,21 +49,22 @@ winner_wickets: done
 */
 
 type TeamInfo struct {
-	Id      int8
+	Id      int64
 	Name    string
-	Players map[string]int64
+	Players map[string]string
 }
 
-func extractMatchInfo(filePath, playingLevel, playingFormat string) (models.Match, error) {
+func extractMatchInfo(filePath, playingLevel, playingFormat string) (models.Match, TeamInfo, TeamInfo, error) {
 	var match models.Match
 	var team1, team2 TeamInfo
-	var potmName, venue, city, eventName, alternateEventName string
+	var venue, city, eventName, alternateEventName string
+	var potmNames []string
 
-	team1.Players, team2.Players = make(map[string]int64, 11), make(map[string]int64, 11)
+	team1.Players, team2.Players = make(map[string]string, 11), make(map[string]string, 11)
 
 	fp, err := os.Open(filePath)
 	if err != nil {
-		return match, err
+		return match, TeamInfo{}, TeamInfo{}, err
 	}
 	defer fp.Close()
 
@@ -86,7 +87,7 @@ func extractMatchInfo(filePath, playingLevel, playingFormat string) (models.Matc
 		}
 
 		if err != nil {
-			return match, err
+			return match, TeamInfo{}, TeamInfo{}, err
 		}
 
 		if row[0] != "info" {
@@ -96,7 +97,7 @@ func extractMatchInfo(filePath, playingLevel, playingFormat string) (models.Matc
 		if row[1] == "balls_per_over" {
 			balls_per_over, err := strconv.ParseInt(row[2], 10, 64)
 			if err != nil {
-				return match, err
+				return match, TeamInfo{}, TeamInfo{}, err
 			}
 
 			match.BallsPerOver = pgtype.Int8{Int64: balls_per_over, Valid: true}
@@ -116,7 +117,7 @@ func extractMatchInfo(filePath, playingLevel, playingFormat string) (models.Matc
 		if row[1] == "match_number" {
 			match_number, err := strconv.ParseInt(row[2], 10, 64)
 			if err != nil {
-				return match, err
+				return match, TeamInfo{}, TeamInfo{}, err
 			}
 
 			match.EventMatchNumber = pgtype.Int8{Int64: match_number, Valid: true}
@@ -135,7 +136,7 @@ func extractMatchInfo(filePath, playingLevel, playingFormat string) (models.Matc
 		if row[1] == "season" {
 			match.Season, err = handleSeason(row[2])
 			if err != nil {
-				return match, err
+				return match, TeamInfo{}, TeamInfo{}, err
 			}
 			continue
 		}
@@ -145,15 +146,15 @@ func extractMatchInfo(filePath, playingLevel, playingFormat string) (models.Matc
 
 			teamField, err := handleTeam(teamName, playingLevel, match.IsMale.Bool)
 			if err != nil {
-				return match, err
+				return match, TeamInfo{}, TeamInfo{}, err
 			}
 
 			if match.Team1Id.Valid {
 				match.Team2Id = teamField
-				team2.Id, team2.Name = int8(teamField.Int64), teamName
+				team2.Id, team2.Name = teamField.Int64, teamName
 			} else {
 				match.Team1Id = teamField
-				team1.Id, team1.Name = int8(teamField.Int64), teamName
+				team1.Id, team1.Name = teamField.Int64, teamName
 			}
 			continue
 		}
@@ -161,7 +162,7 @@ func extractMatchInfo(filePath, playingLevel, playingFormat string) (models.Matc
 		if row[1] == "date" {
 			date, err := time.Parse("2006/01/02", row[2])
 			if err != nil {
-				return match, err
+				return match, TeamInfo{}, TeamInfo{}, err
 			}
 
 			match.StartDate = pgtype.Date{Time: date, Valid: true}
@@ -171,7 +172,7 @@ func extractMatchInfo(filePath, playingLevel, playingFormat string) (models.Matc
 		if row[1] == "bowl_out" {
 			teamField, err := handleTeam(row[2], playingLevel, match.IsMale.Bool)
 			if err != nil {
-				return match, err
+				return match, TeamInfo{}, TeamInfo{}, err
 			}
 
 			match.BowlOutWinnerId = teamField
@@ -181,7 +182,7 @@ func extractMatchInfo(filePath, playingLevel, playingFormat string) (models.Matc
 		if row[1] == "eliminator" {
 			teamField, err := handleTeam(row[2], playingLevel, match.IsMale.Bool)
 			if err != nil {
-				return match, err
+				return match, TeamInfo{}, TeamInfo{}, err
 			}
 
 			match.SuperOverWinnerId = teamField
@@ -191,7 +192,7 @@ func extractMatchInfo(filePath, playingLevel, playingFormat string) (models.Matc
 		if row[1] == "winner" {
 			teamField, err := handleTeam(row[2], playingLevel, match.IsMale.Bool)
 			if err != nil {
-				return match, err
+				return match, TeamInfo{}, TeamInfo{}, err
 			}
 
 			match.MatchWinnerId = teamField
@@ -217,7 +218,7 @@ func extractMatchInfo(filePath, playingLevel, playingFormat string) (models.Matc
 		if row[1] == "winner_runs" || row[1] == "winner_wickets" {
 			margin, err := strconv.ParseInt(row[2], 10, 64)
 			if err != nil {
-				return match, err
+				return match, TeamInfo{}, TeamInfo{}, err
 			}
 
 			match.WinMargin = pgtype.Int8{Int64: margin, Valid: true}
@@ -233,7 +234,7 @@ func extractMatchInfo(filePath, playingLevel, playingFormat string) (models.Matc
 		if row[1] == "toss_winner" {
 			teamField, err := handleTeam(row[2], playingLevel, match.IsMale.Bool)
 			if err != nil {
-				return match, err
+				return match, TeamInfo{}, TeamInfo{}, err
 			}
 
 			match.TossWinnerId = teamField
@@ -259,9 +260,9 @@ func extractMatchInfo(filePath, playingLevel, playingFormat string) (models.Matc
 		if row[1] == "player" {
 			playerName := row[3]
 			if row[2] == team1.Name {
-				team1.Players[playerName] = 0
+				team1.Players[playerName] = ""
 			} else {
-				team2.Players[playerName] = 0
+				team2.Players[playerName] = ""
 			}
 			continue
 		}
@@ -270,17 +271,15 @@ func extractMatchInfo(filePath, playingLevel, playingFormat string) (models.Matc
 			playerName, cricsheetId := row[3], row[4]
 
 			if _, ok := team1.Players[playerName]; ok {
-				player_id, err := handlePlayer(cricsheetId, match.IsMale.Bool, int64(team1.Id))
-				if err != nil {
-					return match, err
+				if err := handlePlayer(cricsheetId, match.IsMale.Bool, int64(team1.Id)); err != nil {
+					return match, TeamInfo{}, TeamInfo{}, err
 				}
-				team1.Players[playerName] = player_id
+				team1.Players[playerName] = cricsheetId
 			} else if _, ok := team2.Players[playerName]; ok {
-				player_id, err := handlePlayer(cricsheetId, match.IsMale.Bool, int64(team2.Id))
-				if err != nil {
-					return match, err
+				if err := handlePlayer(cricsheetId, match.IsMale.Bool, int64(team2.Id)); err != nil {
+					return match, TeamInfo{}, TeamInfo{}, err
 				}
-				team2.Players[playerName] = player_id
+				team2.Players[playerName] = cricsheetId
 			}
 			continue
 		}
@@ -301,20 +300,26 @@ func extractMatchInfo(filePath, playingLevel, playingFormat string) (models.Matc
 		}
 
 		if row[1] == "player_of_match" {
-			potmName = row[2]
+			potmNames = append(potmNames, row[2])
 			continue
 		}
 	}
 
-	if potmId, ok := team1.Players[potmName]; ok {
-		match.PoTMsId = append(match.PoTMsId, pgtype.Int8{Int64: potmId, Valid: true})
-	} else if potmId, ok := team2.Players[potmName]; ok {
-		match.PoTMsId = append(match.PoTMsId, pgtype.Int8{Int64: potmId, Valid: true})
+	for _, potmName := range potmNames {
+		var cacheKey PlayerKey
+
+		if cricsheetId, ok := team1.Players[potmName]; ok {
+			cacheKey.CricsheetId = cricsheetId
+		} else if cricsheetId, ok := team2.Players[potmName]; ok {
+			cacheKey.CricsheetId = cricsheetId
+		}
+
+		match.PoTMsId = append(match.PoTMsId, PlayersCache[cacheKey].Id)
 	}
 
 	match.GroundId, err = handleVenue(venue, city)
 	if err != nil {
-		return match, err
+		return match, TeamInfo{}, TeamInfo{}, err
 	}
 
 	if match.IsNeutralVenue.Bool {
@@ -327,17 +332,17 @@ func extractMatchInfo(filePath, playingLevel, playingFormat string) (models.Matc
 
 	match.SeriesId, err = handleEvent(eventName, alternateEventName, &match)
 	if err != nil {
-		return match, err
+		return match, TeamInfo{}, TeamInfo{}, err
 	}
 
-	return match, nil
+	return match, team1, team2, nil
 }
 
-func handlePlayer(cricsheetId string, isMale bool, teamId int64) (int64, error) {
+func handlePlayer(cricsheetId string, isMale bool, teamId int64) error {
 	cacheKey := PlayerKey{CricsheetId: cricsheetId}
 	player, exists := PlayersCache[cacheKey]
 	if exists {
-		return player.Id.Int64, nil
+		return nil
 	}
 
 	filters := url.Values{
@@ -347,14 +352,14 @@ func handlePlayer(cricsheetId string, isMale bool, teamId int64) (int64, error) 
 
 	dbResponse, err := dbutils.ReadPlayers(context.Background(), DB_POOL, filters)
 	if err != nil {
-		return 0, err
+		return err
 	}
 
 	if len(dbResponse.Players) == 0 {
 		cricsheetPeople, err := dbutils.ReadCricsheetPeopleById(context.Background(), DB_POOL, cricsheetId)
 
 		if err != nil {
-			return 0, err
+			return err
 		}
 
 		newPlayer := models.Player{
@@ -369,18 +374,18 @@ func handlePlayer(cricsheetId string, isMale bool, teamId int64) (int64, error) 
 
 		err = dbutils.InsertPlayer(context.Background(), DB_POOL, &newPlayer)
 		if err != nil {
-			return 0, err
+			return err
 		}
 
 		dbResponse, err = dbutils.ReadPlayers(context.Background(), DB_POOL, filters)
 		if err != nil {
-			return 0, err
+			return err
 		}
 	}
 
 	player = dbResponse.Players[0]
 	PlayersCache[cacheKey] = player
-	return player.Id.Int64, nil
+	return nil
 }
 
 func handleEvent(eventName, alternateEventName string, match *models.Match) (pgtype.Int8, error) {

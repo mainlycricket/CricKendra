@@ -173,6 +173,31 @@ type AllTours struct {
 	Season          pgtype.Text                `json:"season"`
 }
 
+// Innings
+
+type AllMatchesResponse struct {
+	Matches []AllMatches `json:"matches"`
+	Next    bool         `json:"next"`
+}
+
+type AllMatches struct {
+	Id          pgtype.Int8 `json:"id"`
+	CricsheetId pgtype.Text `json:"cricsheet_id"`
+}
+
+// Innings
+
+type AllInningsResponse struct {
+	Innings []AllInnings `json:"innings"`
+	Next    bool         `json:"next"`
+}
+
+type AllInnings struct {
+	Id            pgtype.Int8 `json:"id"`
+	MatchId       pgtype.Int8 `json:"match_id"`
+	InningsNumber pgtype.Int8 `json:"innings_number"`
+}
+
 // Extras
 
 type CareerStats struct {

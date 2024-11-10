@@ -4,8 +4,10 @@ import (
 	"context"
 	"fmt"
 	"log"
+	"net/url"
 	"os"
 	"path/filepath"
+	"strings"
 
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/mainlycricket/CricKendra/internal/dbutils"
@@ -21,14 +23,33 @@ func main() {
 	}
 
 	match_info_path := "/home/tushar/Desktop/Cricsheet/odis_male_csv2/64814_info.csv"
+	match_bbb_path := "/home/tushar/Desktop/Cricsheet/odis_male_csv2/64814.csv"
+	match_cricsheet_id := strings.TrimSuffix(filepath.Base(match_bbb_path), ".csv")
 
-	match, err := extractMatchInfo(match_info_path, "international", "ODI")
+	match, team1, team2, err := extractMatchInfo(match_info_path, "international", "ODI")
 
 	if err != nil {
 		log.Fatalf("error while extracting match info: %v", err)
 	}
 
-	fmt.Println(match)
+	if err := dbutils.InsertMatch(context.Background(), DB_POOL, &match); err != nil {
+		log.Fatalf(`failed to insert match: %v`, err)
+	}
+
+	matchQuery := url.Values{
+		"cricsheet_id": []string{match_cricsheet_id},
+		"limit":        []string{"1"},
+	}
+
+	dbResponse, err := dbutils.ReadMatches(context.Background(), DB_POOL, matchQuery)
+	if err != nil {
+		return
+	}
+	match.Id = dbResponse.Matches[0].Id
+
+	if err := insertBBB(match_bbb_path, &match, team1, team2); err != nil {
+		log.Fatalf(`error while inserting BBB: %v`, err)
+	}
 }
 
 func initDB() error {
