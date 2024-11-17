@@ -7,13 +7,12 @@ import (
 	"net/url"
 
 	"github.com/jackc/pgx/v5"
-	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/mainlycricket/CricKendra/internal/models"
 	"github.com/mainlycricket/CricKendra/internal/responses"
 	"github.com/mainlycricket/CricKendra/pkg/pgxutils"
 )
 
-func InsertSeason(ctx context.Context, db *pgxpool.Pool, season *models.Season) error {
+func InsertSeason(ctx context.Context, db DB_Exec, season *models.Season) error {
 	query := `INSERT INTO seasons (season) VALUES($1)`
 
 	cmd, err := db.Exec(ctx, query, season.Season)
@@ -29,7 +28,7 @@ func InsertSeason(ctx context.Context, db *pgxpool.Pool, season *models.Season) 
 	return nil
 }
 
-func ReadSeasons(ctx context.Context, db *pgxpool.Pool, queryMap url.Values) (responses.AllSeasonsResponse, error) {
+func ReadSeasons(ctx context.Context, db DB_Exec, queryMap url.Values) (responses.AllSeasonsResponse, error) {
 	var response responses.AllSeasonsResponse
 
 	queryInfoInput := pgxutils.QueryInfoInput{

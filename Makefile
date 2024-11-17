@@ -28,9 +28,16 @@ watch-live:
 	reflex -r '\.go$$' -s -- sh -c './bin/live-server'
 
 backup-db:
-	pg_dump -h localhost -U postgres crickendra > db.sql
+	pg_dump -h localhost -U postgres crickendra > ./db_files/full_db.sql
+	pg_dump -h localhost -U postgres --schema-only crickendra > ./db_files/schema.sql
 
 setup-db:
 	psql -h localhost -U postgres -c "DROP DATABASE IF EXISTS crickendra;"
 	psql -h localhost -U postgres -c "CREATE DATABASE crickendra;"
-	psql -h localhost -U postgres -d crickendra -f db.sql
+	psql -h localhost -U postgres -d crickendra -f ./db_files/full_db.sql
+
+reset-db:
+	psql -h localhost -U postgres -c "DROP DATABASE IF EXISTS crickendra;"
+	psql -h localhost -U postgres -c "CREATE DATABASE crickendra;"
+	psql -h localhost -U postgres -d crickendra -f ./db_files/schema.sql
+	psql -h localhost -U postgres -d crickendra -c "\COPY cricsheet_people FROM './db_files/people.csv' WITH (FORMAT csv);"

@@ -1,6 +1,31 @@
 package main
 
-import "github.com/mainlycricket/CricKendra/internal/responses"
+import (
+	"sync"
+
+	"github.com/mainlycricket/CricKendra/internal/responses"
+)
+
+// Generic Sync Cache
+
+type CacheMap[K comparable, V any] struct {
+	sync.Map
+}
+
+func (cache *CacheMap[K, V]) Set(key K, value V) {
+	cache.Store(key, value)
+}
+
+func (cache *CacheMap[K, V]) Get(key K) (V, bool) {
+	var value V
+
+	data, ok := cache.Load(key)
+	if !ok {
+		return value, false
+	}
+
+	return data.(V), true
+}
 
 // Teams
 
@@ -10,7 +35,7 @@ type TeamKey struct {
 	PlayingLevel string
 }
 
-var TeamsCache = make(map[TeamKey]responses.AllTeams, 10)
+var TeamsCache CacheMap[TeamKey, responses.AllTeams]
 
 // Players
 
@@ -18,7 +43,7 @@ type PlayerKey struct {
 	CricsheetId string
 }
 
-var PlayersCache = make(map[PlayerKey]responses.AllPlayers, 10)
+var PlayersCache CacheMap[PlayerKey, responses.AllPlayers]
 
 // Tours
 
@@ -28,7 +53,7 @@ type TourKey struct {
 	HostNationsId string // ids joined by a "_"
 }
 
-var ToursCache = make(map[TourKey]responses.AllTours, 10)
+var ToursCache CacheMap[TourKey, responses.AllTours]
 
 // Tournament
 
@@ -39,7 +64,7 @@ type TournamentKey struct {
 	PlayingFormat string
 }
 
-var TournamentsCache = make(map[TournamentKey]responses.AllTournaments, 10)
+var TournamentsCache CacheMap[TournamentKey, responses.AllTournaments]
 
 // Series
 
@@ -51,15 +76,24 @@ type SeriesKey struct {
 	PlayingFormat string
 }
 
-var SeriesCache = make(map[SeriesKey]responses.AllSeries, 10)
+var SeriesCache CacheMap[SeriesKey, responses.AllSeries]
+
+// Series Squad
+
+type SeriesSquadKey struct {
+	SeriesId int64
+	TeamId   int64
+}
+
+var SeriesSquadCache CacheMap[SeriesSquadKey, responses.AllSeriesSquads]
 
 // Seasons
 
-var SeasonsCache = make(map[string]bool, 10)
+var SeasonsCache CacheMap[string, bool]
 
 // HostNations
 
-var HostNationCache = make(map[string]responses.AllHostNations, 10)
+var HostNationCache CacheMap[string, responses.AllHostNations]
 
 // Grounds
 
@@ -68,8 +102,8 @@ type GroundKey struct {
 	City  string
 }
 
-var GroundsCache = make(map[GroundKey]responses.AllGrounds, 10)
+var GroundsCache CacheMap[GroundKey, responses.AllGrounds]
 
 // Cities
 
-var CitiesCache = make(map[string]responses.AllCities, 10)
+var CitiesCache CacheMap[string, responses.AllCities]

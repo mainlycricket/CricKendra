@@ -7,13 +7,12 @@ import (
 	"net/url"
 
 	"github.com/jackc/pgx/v5"
-	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/mainlycricket/CricKendra/internal/models"
 	"github.com/mainlycricket/CricKendra/internal/responses"
 	"github.com/mainlycricket/CricKendra/pkg/pgxutils"
 )
 
-func InsertSeries(ctx context.Context, db *pgxpool.Pool, series *models.Series) error {
+func InsertSeries(ctx context.Context, db DB_Exec, series *models.Series) error {
 	query := `INSERT INTO series (name, is_male, playing_level, playing_format, season, teams_id, host_nations_id, tournament_id, parent_series_id, tour_id, players_of_the_series_id) VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)`
 
 	cmd, err := db.Exec(ctx, query, series.Name, series.IsMale, series.PlayingLevel, series.PlayingFormat, series.Season, series.TeamsId, series.HostNationsId, series.TournamentId, series.ParentSeriesId, series.TourId, series.PoTSsId)
@@ -29,7 +28,7 @@ func InsertSeries(ctx context.Context, db *pgxpool.Pool, series *models.Series) 
 	return nil
 }
 
-func ReadSeries(ctx context.Context, db *pgxpool.Pool, queryMap url.Values) (responses.AllSeriesResponse, error) {
+func ReadSeries(ctx context.Context, db DB_Exec, queryMap url.Values) (responses.AllSeriesResponse, error) {
 	var response responses.AllSeriesResponse
 
 	queryInfoInput := pgxutils.QueryInfoInput{

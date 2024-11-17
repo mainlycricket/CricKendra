@@ -7,13 +7,12 @@ import (
 	"net/url"
 
 	"github.com/jackc/pgx/v5"
-	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/mainlycricket/CricKendra/internal/models"
 	"github.com/mainlycricket/CricKendra/internal/responses"
 	"github.com/mainlycricket/CricKendra/pkg/pgxutils"
 )
 
-func InsertGround(ctx context.Context, db *pgxpool.Pool, ground *models.Ground) error {
+func InsertGround(ctx context.Context, db DB_Exec, ground *models.Ground) error {
 	query := `INSERT INTO grounds (name, city_id) VALUES($1, $2)`
 
 	cmd, err := db.Exec(ctx, query, ground.Name, ground.CityId)
@@ -29,7 +28,7 @@ func InsertGround(ctx context.Context, db *pgxpool.Pool, ground *models.Ground) 
 	return nil
 }
 
-func ReadGrounds(ctx context.Context, db *pgxpool.Pool, queryMap url.Values) (responses.AllGroundsResponse, error) {
+func ReadGrounds(ctx context.Context, db DB_Exec, queryMap url.Values) (responses.AllGroundsResponse, error) {
 	var response responses.AllGroundsResponse
 
 	queryInfoInput := pgxutils.QueryInfoInput{

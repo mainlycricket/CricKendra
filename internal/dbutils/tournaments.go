@@ -29,7 +29,7 @@ func InsertTournament(ctx context.Context, db *pgxpool.Pool, tournament *models.
 	return nil
 }
 
-func ReadTournaments(ctx context.Context, db *pgxpool.Pool, queryMap url.Values) (responses.AllTournamentsResponse, error) {
+func ReadTournaments(ctx context.Context, db DB_Exec, queryMap url.Values) (responses.AllTournamentsResponse, error) {
 	var response responses.AllTournamentsResponse
 
 	queryInfoInput := pgxutils.QueryInfoInput{
@@ -44,7 +44,7 @@ func ReadTournaments(ctx context.Context, db *pgxpool.Pool, queryMap url.Values)
 		return response, err
 	}
 
-	query := fmt.Sprintf(`SELECT id, name, is_male, playing_level, playing_format FROM tournmanets %s %s %s`, queryInfoOutput.WhereClause, queryInfoOutput.OrderByClause, queryInfoOutput.PaginationClause)
+	query := fmt.Sprintf(`SELECT id, name, is_male, playing_level, playing_format FROM tournaments %s %s %s`, queryInfoOutput.WhereClause, queryInfoOutput.OrderByClause, queryInfoOutput.PaginationClause)
 
 	rows, err := db.Query(ctx, query, queryInfoOutput.Args...)
 	if err != nil {

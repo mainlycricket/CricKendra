@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"log"
-	"net/url"
 	"os"
 	"path/filepath"
 	"strings"
@@ -17,38 +16,78 @@ import (
 var DB_POOL *pgxpool.Pool
 
 func main() {
-	err := initDB()
-	if err != nil {
+	if err := initDB(); err != nil {
 		log.Fatalf("db init failed: %v", err)
 	}
 
-	match_info_path := "/home/tushar/Desktop/Cricsheet/odis_male_csv2/64814_info.csv"
-	match_bbb_path := "/home/tushar/Desktop/Cricsheet/odis_male_csv2/64814.csv"
-	match_cricsheet_id := strings.TrimSuffix(filepath.Base(match_bbb_path), ".csv")
+	matchInfoChannel := make(chan MatchInfoResponse)
+	bbbErrChannel := make(chan error)
 
-	match, team1, team2, err := extractMatchInfo(match_info_path, "international", "ODI")
+	basePath := "/home/tushar/Desktop/Cricsheet/odis_male_csv2"
+	playingFormat, playingLevel, isMale := "ODI", "international", true
 
+	dirEntries, err := os.ReadDir(basePath)
 	if err != nil {
-		log.Fatalf("error while extracting match info: %v", err)
+		log.Fatalf("error while reading directory")
 	}
 
-	if err := dbutils.InsertMatch(context.Background(), DB_POOL, &match); err != nil {
-		log.Fatalf(`failed to insert match: %v`, err)
+	for _, dirEntry := range dirEntries {
+		fileName := dirEntry.Name()
+		if strings.HasSuffix(fileName, "_info.csv") {
+			matchCricsheetId := strings.TrimSuffix(fileName, "_info.csv")
+
+			match, _ := dbutils.ReadMatchByCricsheetId(context.Background(), DB_POOL, matchCricsheetId)
+			if match.IsBBBDone.Bool {
+				continue
+			}
+
+			matchInfoPath := filepath.Join(basePath, fileName)
+
+			matchThreadCounter.increase()
+			go extractMatchInfo(matchInfoPath, playingLevel, playingFormat, isMale, matchInfoChannel)
+		}
 	}
 
-	matchQuery := url.Values{
-		"cricsheet_id": []string{match_cricsheet_id},
-		"limit":        []string{"1"},
+	if !matchThreadCounter.isZero() {
+		for matchInfoResponse := range matchInfoChannel {
+			if matchInfoResponse.Err != nil {
+				log.Printf("error while extracting match info: %v", matchInfoResponse.Err)
+				matchThreadCounter.decrease()
+				if matchThreadCounter.isZero() {
+					fmt.Println("closing match channel")
+					close(matchInfoChannel)
+				}
+
+				continue
+			}
+
+			matchCricsheetId := matchInfoResponse.Match.CricsheetId.String
+			match_bbb_path := filepath.Join(basePath, matchCricsheetId+".csv")
+
+			bbbThreadCounter.increase()
+			go insertBBB(match_bbb_path, &matchInfoResponse.Match, matchInfoResponse.Team1Info, matchInfoResponse.Team2Info, bbbErrChannel)
+			matchThreadCounter.decrease()
+
+			if matchThreadCounter.isZero() {
+				fmt.Println("closing match channel")
+				close(matchInfoChannel)
+			}
+		}
 	}
 
-	dbResponse, err := dbutils.ReadMatches(context.Background(), DB_POOL, matchQuery)
-	if err != nil {
-		return
-	}
-	match.Id = dbResponse.Matches[0].Id
+	if !bbbThreadCounter.isZero() {
+		for err := range bbbErrChannel {
+			if err != nil {
+				log.Printf("error while inserting BBB data: %v", err)
+			}
 
-	if err := insertBBB(match_bbb_path, &match, team1, team2); err != nil {
-		log.Fatalf(`error while inserting BBB: %v`, err)
+			bbbThreadCounter.decrease()
+
+			if bbbThreadCounter.isZero() {
+				fmt.Println("closing bbb channel")
+				close(bbbErrChannel)
+			}
+		}
 	}
 }
 

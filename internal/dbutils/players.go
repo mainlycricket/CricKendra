@@ -13,7 +13,7 @@ import (
 	"github.com/mainlycricket/CricKendra/pkg/pgxutils"
 )
 
-func InsertPlayer(ctx context.Context, db *pgxpool.Pool, player *models.Player) error {
+func InsertPlayer(ctx context.Context, db DB_Exec, player *models.Player) error {
 	query := `INSERT INTO players (name, full_name, playing_role, nationality, is_male, date_of_birth, image_url, biography, is_rhb, bowling_styles, primary_bowling_style, teams_represented_id, test_stats, odi_stats, t20i_stats, fc_stats, lista_stats, t20_stats, cricsheet_id, cricinfo_id, cricbuzz_id) VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21)`
 
 	cmd, err := db.Exec(ctx, query, player.Name, player.FullName, player.PlayingRole, player.Nationality, player.IsMale, player.DateOfBirth, player.ImageURL, player.Biography, player.IsRHB, player.BowlingStyles, player.PrimaryBowlingStyle, player.TeamsRepresentedId, player.TestStats, player.OdiStats, player.T20iStats, player.FcStats, player.ListAStats, player.T20Stats, player.CricsheetId, player.CricinfoId, player.CricbuzzId)
@@ -29,7 +29,7 @@ func InsertPlayer(ctx context.Context, db *pgxpool.Pool, player *models.Player) 
 	return nil
 }
 
-func ReadPlayers(ctx context.Context, db *pgxpool.Pool, queryMap url.Values) (responses.AllPlayersResponse, error) {
+func ReadPlayers(ctx context.Context, db DB_Exec, queryMap url.Values) (responses.AllPlayersResponse, error) {
 	var response responses.AllPlayersResponse
 
 	queryInfoInput := pgxutils.QueryInfoInput{

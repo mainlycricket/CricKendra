@@ -129,14 +129,31 @@ type Series struct {
 	PoTSsId        []pgtype.Int8 `json:"players_of_the_series_id"`
 }
 
-type Squad struct {
+type MatchSquad struct {
 	PlayerId      pgtype.Int8 `json:"player_id"`
-	SeriesId      pgtype.Int8 `json:"series_id"`
 	MatchId       pgtype.Int8 `json:"match_id"`
+	TeamId        pgtype.Int8 `json:"team_id"`
 	IsCaptain     pgtype.Bool `json:"is_captain"`
+	IsViceCaptain pgtype.Bool `json:"is_vice_captain"`
 	IsWk          pgtype.Bool `json:"is_wk"`
 	IsDebut       pgtype.Bool `json:"is_debut"`
 	PlayingStatus pgtype.Text `json:"playing_status"` // withdrawn, playing XI, bench, substitute
+}
+
+type SeriesSquad struct {
+	Id         pgtype.Int8 `json:"id"`
+	SeriesId   pgtype.Int8 `json:"series_id"`
+	TeamId     pgtype.Int8 `json:"team_id"`
+	SquadLabel pgtype.Text `json:"squad_label"`
+}
+
+type SeriesSquadEntry struct {
+	SquadId       pgtype.Int8 `json:"squad_id"`
+	PlayerId      pgtype.Int8 `json:"player_id"`
+	IsCaptain     pgtype.Bool `json:"is_captain"`
+	IsViceCaptain pgtype.Bool `json:"is_vice_captain"`
+	IsWk          pgtype.Bool `json:"is_wk"`
+	PlayingStatus pgtype.Text `json:"playing_status"`
 }
 
 type Match struct {
@@ -176,6 +193,7 @@ type Match struct {
 	BallsMargin          pgtype.Int8        `json:"balls_remaining_after_win"` // successful chases
 	PoTMsId              []pgtype.Int8      `json:"players_of_the_match_id"`
 	BallsPerOver         pgtype.Int8        `json:"balls_per_over"`
+	IsBBBDone            pgtype.Bool        `json:"is_bbb_done"`
 
 	ScorersId      []pgtype.Int8 `json:"scorers_id"`
 	CommentatorsId []pgtype.Int8 `json:"commentators_id"`

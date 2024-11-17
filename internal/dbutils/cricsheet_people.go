@@ -3,11 +3,10 @@ package dbutils
 import (
 	"context"
 
-	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/mainlycricket/CricKendra/internal/responses"
 )
 
-func ReadCricsheetPeopleById(ctx context.Context, db *pgxpool.Pool, identifier string) (responses.CricsheetPeople, error) {
+func ReadCricsheetPeopleById(ctx context.Context, db DB_Exec, identifier string) (responses.CricsheetPeople, error) {
 	query := `SELECT identifier, name, unique_name, key_cricinfo, key_cricbuzz FROM cricsheet_people WHERE identifier = $1`
 
 	row := db.QueryRow(ctx, query, identifier)

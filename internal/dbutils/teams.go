@@ -7,13 +7,12 @@ import (
 	"net/url"
 
 	"github.com/jackc/pgx/v5"
-	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/mainlycricket/CricKendra/internal/models"
 	"github.com/mainlycricket/CricKendra/internal/responses"
 	"github.com/mainlycricket/CricKendra/pkg/pgxutils"
 )
 
-func InsertTeam(ctx context.Context, db *pgxpool.Pool, team *models.Team) error {
+func InsertTeam(ctx context.Context, db DB_Exec, team *models.Team) error {
 	query := `INSERT INTO teams (name, is_male, image_url, playing_level, short_name) VALUES($1, $2, $3, $4, $5)`
 
 	cmd, err := db.Exec(ctx, query, team.Name, team.IsMale, team.ImageURL, team.PlayingLevel, team.ShortName)
@@ -29,7 +28,7 @@ func InsertTeam(ctx context.Context, db *pgxpool.Pool, team *models.Team) error 
 	return nil
 }
 
-func ReadTeams(ctx context.Context, db *pgxpool.Pool, queryMap url.Values) (responses.AllTeamsResponse, error) {
+func ReadTeams(ctx context.Context, db DB_Exec, queryMap url.Values) (responses.AllTeamsResponse, error) {
 	var response responses.AllTeamsResponse
 
 	queryInfoInput := pgxutils.QueryInfoInput{
