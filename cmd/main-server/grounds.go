@@ -26,13 +26,13 @@ func createGround(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err = dbutils.InsertGround(r.Context(), DB_POOL, &ground)
+	groundId, err := dbutils.InsertGround(r.Context(), DB_POOL, &ground)
 	if err != nil {
 		responses.WriteJsonResponse(w, responses.ApiResponse{Success: false, Message: "error while inserting ground", Data: err}, http.StatusBadRequest)
 		return
 	}
 
-	responses.WriteJsonResponse(w, responses.ApiResponse{Success: true, Message: "ground created successfully", Data: nil}, http.StatusCreated)
+	responses.WriteJsonResponse(w, responses.ApiResponse{Success: true, Message: "ground created successfully", Data: groundId}, http.StatusCreated)
 }
 
 func getGrounds(w http.ResponseWriter, r *http.Request) {

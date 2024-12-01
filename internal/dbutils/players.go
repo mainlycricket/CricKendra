@@ -2,31 +2,68 @@ package dbutils
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"net/url"
 
 	"github.com/jackc/pgx/v5"
+	"github.com/jackc/pgx/v5/pgtype"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/mainlycricket/CricKendra/internal/models"
 	"github.com/mainlycricket/CricKendra/internal/responses"
 	"github.com/mainlycricket/CricKendra/pkg/pgxutils"
 )
 
-func InsertPlayer(ctx context.Context, db DB_Exec, player *models.Player) error {
-	query := `INSERT INTO players (name, full_name, playing_role, nationality, is_male, date_of_birth, image_url, biography, is_rhb, bowling_styles, primary_bowling_style, teams_represented_id, test_stats, odi_stats, t20i_stats, fc_stats, lista_stats, t20_stats, cricsheet_id, cricinfo_id, cricbuzz_id) VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21)`
+func InsertPlayer(ctx context.Context, db *pgxpool.Pool, player *models.Player) (int64, error) {
+	var playerId int64
+	var err error
 
-	cmd, err := db.Exec(ctx, query, player.Name, player.FullName, player.PlayingRole, player.Nationality, player.IsMale, player.DateOfBirth, player.ImageURL, player.Biography, player.IsRHB, player.BowlingStyles, player.PrimaryBowlingStyle, player.TeamsRepresentedId, player.TestStats, player.OdiStats, player.T20iStats, player.FcStats, player.ListAStats, player.T20Stats, player.CricsheetId, player.CricinfoId, player.CricbuzzId)
-
+	tx, err := db.Begin(ctx)
 	if err != nil {
-		return err
+		return playerId, err
 	}
 
-	if cmd.RowsAffected() < 1 {
-		return errors.New("failed to insert player")
+	defer func() {
+		if err != nil {
+			tx.Rollback(ctx)
+		} else {
+			tx.Commit(ctx)
+		}
+	}()
+
+	query := `INSERT INTO players (name, full_name, playing_role, nationality, is_male, date_of_birth, image_url, biography, is_rhb, bowling_styles, primary_bowling_style, unavailable_test_stats, unavailable_odi_stats, unavailable_t20i_stats, unavailable_fc_stats, unavailable_lista_stats, unavailable_t20_stats, cricsheet_id, cricinfo_id, cricbuzz_id) VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20) RETURNING id`
+
+	err = tx.QueryRow(ctx, query, player.Name, player.FullName, player.PlayingRole, player.Nationality, player.IsMale, player.DateOfBirth, player.ImageURL, player.Biography, player.IsRHB, player.BowlingStyles, player.PrimaryBowlingStyle, player.TestStats, player.OdiStats, player.T20iStats, player.FcStats, player.ListAStats, player.T20Stats, player.CricsheetId, player.CricinfoId, player.CricbuzzId).Scan(&playerId)
+	if err != nil {
+		return playerId, err
 	}
 
-	return nil
+	if len(player.TeamsRepresentedId) > 0 {
+		if err = UpsertPlayerTeamEntries(ctx, tx, playerId, player.TeamsRepresentedId); err != nil {
+			return playerId, err
+		}
+	}
+
+	return playerId, nil
+}
+
+func UpsertPlayerTeamEntries(ctx context.Context, db DB_Exec, playerId int64, teamsId []pgtype.Int8) error {
+	query := `INSERT INTO player_team_entries (player_id, team_id) VALUES ($1, $2) ON CONFLICT (player_id, team_id) DO NOTHING`
+
+	batch := &pgx.Batch{}
+	for _, teamId := range teamsId {
+		batch.Queue(query, playerId, teamId)
+	}
+
+	batchResults := db.SendBatch(ctx, batch)
+	return batchResults.Close()
+}
+
+func UpsertPlayerTeamEntry(ctx context.Context, db DB_Exec, entry *models.PlayerTeamEntry) error {
+	query := `INSERT INTO player_team_entries (player_id, team_id) VALUES($1, $2) ON CONFLICT (player_id, team_id) DO NOTHING`
+
+	_, err := db.Exec(ctx, query, entry.PlayerId, entry.TeamId)
+
+	return err
 }
 
 func ReadPlayers(ctx context.Context, db DB_Exec, queryMap url.Values) (responses.AllPlayersResponse, error) {
@@ -71,7 +108,21 @@ func ReadPlayers(ctx context.Context, db DB_Exec, queryMap url.Values) (response
 }
 
 func ReadPlayerById(ctx context.Context, db *pgxpool.Pool, id int) (responses.SinglePlayer, error) {
-	query := `SELECT id, name, full_name, playing_role, nationality, is_male, date_of_birth, image_url, biography, is_rhb, bowling_styles, primary_bowling_style, teams_represented, test_stats, odi_stats, t20i_stats, fc_stats, lista_stats, t20_stats, cricsheet_id, cricinfo_id, cricbuzz_id FROM get_player_profile_by_id($1)`
+	query := `SELECT 
+	
+	id, name, full_name, playing_role, nationality, is_male, date_of_birth, image_url, biography, is_rhb, bowling_styles, primary_bowling_style, 
+	
+	(SELECT 
+		ARRAY_AGG(ROW(pte.team_id, teams.name)) 
+		FROM player_team_entries pte
+		LEFT JOIN teams ON pte.team_id = teams.id
+		WHERE pte.player_id = players.id
+	) AS teams_represented, 
+	 
+	db_test_stats, db_odi_stats, db_t20i_stats, db_fc_stats, db_lista_stats, db_t20_stats, cricsheet_id, cricinfo_id, cricbuzz_id 
+	
+	FROM players 
+	WHERE id = $1`
 
 	row := db.QueryRow(ctx, query, id)
 

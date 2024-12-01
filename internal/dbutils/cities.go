@@ -2,7 +2,6 @@ package dbutils
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"net/url"
 
@@ -12,20 +11,14 @@ import (
 	"github.com/mainlycricket/CricKendra/pkg/pgxutils"
 )
 
-func InsertCity(ctx context.Context, db DB_Exec, city *models.City) error {
-	query := `INSERT INTO cities (name, host_nation_id) VALUES($1, $2)`
+func InsertCity(ctx context.Context, db DB_Exec, city *models.City) (int64, error) {
+	var id int64
 
-	cmd, err := db.Exec(ctx, query, city.Name, city.HostNationId)
+	query := `INSERT INTO cities (name, host_nation_id) VALUES($1, $2) RETURNING id`
 
-	if err != nil {
-		return err
-	}
+	err := db.QueryRow(ctx, query, city.Name, city.HostNationId).Scan(&id)
 
-	if cmd.RowsAffected() < 1 {
-		return errors.New("failed to insert city")
-	}
-
-	return nil
+	return id, err
 }
 
 func ReadCities(ctx context.Context, db DB_Exec, queryMap url.Values) (responses.AllCitiesResponse, error) {

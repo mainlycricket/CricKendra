@@ -26,13 +26,13 @@ func createTeam(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err = dbutils.InsertTeam(r.Context(), DB_POOL, &team)
+	teamId, err := dbutils.InsertTeam(r.Context(), DB_POOL, &team)
 	if err != nil {
 		responses.WriteJsonResponse(w, responses.ApiResponse{Success: false, Message: "error while inserting team", Data: err}, http.StatusBadRequest)
 		return
 	}
 
-	responses.WriteJsonResponse(w, responses.ApiResponse{Success: true, Message: "team created successfully", Data: nil}, http.StatusCreated)
+	responses.WriteJsonResponse(w, responses.ApiResponse{Success: true, Message: "team created successfully", Data: teamId}, http.StatusCreated)
 }
 
 func getTeams(w http.ResponseWriter, r *http.Request) {

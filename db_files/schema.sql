@@ -47,6 +47,74 @@ CREATE TYPE public.article_status AS ENUM (
 ALTER TYPE public.article_status OWNER TO postgres;
 
 --
+-- Name: dismissal_type; Type: TYPE; Schema: public; Owner: postgres
+--
+
+CREATE TYPE public.dismissal_type AS ENUM (
+    'caught',
+    'bowled',
+    'lbw',
+    'run out',
+    'stumped',
+    'hit wicket',
+    'handled the ball',
+    'obstructing the field',
+    'timed out',
+    'retired hurt',
+    'hit the ball twice',
+    'caught and bowled',
+    'retired out',
+    'retired not out'
+);
+
+
+ALTER TYPE public.dismissal_type OWNER TO postgres;
+
+--
+-- Name: batting_scorecard_record; Type: TYPE; Schema: public; Owner: postgres
+--
+
+CREATE TYPE public.batting_scorecard_record AS (
+	batter_id integer,
+	batter_name text,
+	batting_position integer,
+	runs_scored integer,
+	balls_faced integer,
+	fours_scored integer,
+	sixes_scored integer,
+	dismissed_by_id integer,
+	dismissed_by_name text,
+	fielder1_id integer,
+	fielder1_name text,
+	fielder2_id integer,
+	fielder2_name text,
+	dismissal_type public.dismissal_type
+);
+
+
+ALTER TYPE public.batting_scorecard_record OWNER TO postgres;
+
+--
+-- Name: bowling_scorecard_record; Type: TYPE; Schema: public; Owner: postgres
+--
+
+CREATE TYPE public.bowling_scorecard_record AS (
+	bowler_id integer,
+	bowler_name text,
+	bowling_position text,
+	wickets_taken integer,
+	runs_conceded integer,
+	balls_bowled integer,
+	fours_conceded integer,
+	sixes_conceded integer,
+	wides_conceded integer,
+	noballs_conceded integer
+);
+
+
+ALTER TYPE public.bowling_scorecard_record OWNER TO postgres;
+
+--
 -- Name: bowling_style; Type: TYPE; Schema: public; Owner: postgres
 --
 
@@ -90,37 +158,11 @@ CREATE TYPE public.career_stats AS (
 	best_inn_fig_runs integer,
 	best_inn_fig_wkts integer,
 	best_match_fig_runs integer,
-	best_match_fig_wkts integer,
-	debut_match_id integer,
-	last_match_id integer
+	best_match_fig_wkts integer
 );
 
 
 ALTER TYPE public.career_stats OWNER TO postgres;
-
---
--- Name: dismissal_type; Type: TYPE; Schema: public; Owner: postgres
---
-
-CREATE TYPE public.dismissal_type AS ENUM (
-    'caught',
-    'bowled',
-    'lbw',
-    'run out',
-    'stumped',
-    'hit wicket',
-    'handled the ball',
-    'obstructing the field',
-    'timed out',
-    'retired hurt',
-    'hit the ball twice',
-    'caught and bowled',
-    'retired out',
-    'retired not out'
-);
-
-
-ALTER TYPE public.dismissal_type OWNER TO postgres;
 
 --
 -- Name: innings_end; Type: TYPE; Schema: public; Owner: postgres
@@ -138,6 +180,35 @@ CREATE TYPE public.innings_end AS ENUM (
 ALTER TYPE public.innings_end OWNER TO postgres;
 
 --
+-- Name: innings_scorecard_record; Type: TYPE; Schema: public; Owner: postgres
+--
+
+CREATE TYPE public.innings_scorecard_record AS (
+	innings_number integer,
+	batting_team_id integer,
+	batting_team_name text,
+	bowling_team_id integer,
+	bowling_team_name text,
+	total_runs integer,
+	total_balls integer,
+	total_wickets integer,
+	byes integer,
+	leg_byes integer,
+	wides integer,
+	noballs integer,
+	penalty integer,
+	is_super_over boolean,
+	innings_end public.innings_end,
+	target_runs integer,
+	target_balls integer,
+	batting_scorecard_entries public.batting_scorecard_record[],
+	bowling_scorecard_entries public.bowling_scorecard_record[]
+);
+
+
+ALTER TYPE public.innings_scorecard_record OWNER TO postgres;
+
+--
 -- Name: match_final_result; Type: TYPE; Schema: public; Owner: postgres
 --
 
@@ -151,6 +222,64 @@ CREATE TYPE public.match_final_result AS ENUM (
 
 
 ALTER TYPE public.match_final_result OWNER TO postgres;
+
+--
+-- Name: team_innings_short_info; Type: TYPE; Schema: public; Owner: postgres
+--
+
+CREATE TYPE public.team_innings_short_info AS (
+	innings_number integer,
+	batting_team_id integer,
+	total_runs integer,
+	total_balls integer,
+	total_wickets integer,
+	innings_end text,
+	target_runs integer,
+	target_balls integer
+);
+
+
+ALTER TYPE public.team_innings_short_info OWNER TO postgres;
+
+--
+-- Name: match_short_info; Type: TYPE; Schema: public; Owner: postgres
+--
+
+CREATE TYPE public.match_short_info AS (
+	id integer,
+	playing_level text,
+	playing_format text,
+	match_type text,
+	cricsheet_id text,
+	balls_per_over integer,
+	event_match_number text,
+	start_date date,
+	end_date date,
+	start_time time without time zone,
+	is_day_night boolean,
+	ground_id integer,
+	ground_name text,
+	team1_id integer,
+	team1_name text,
+	team1_image_url text,
+	team2_id integer,
+	team2_name text,
+	team2_image_url text,
+	current_status text,
+	final_result text,
+	outcome_special_method text,
+	match_winner_team_id integer,
+	bowl_out_winner_id integer,
+	super_over_winner_id integer,
+	is_won_by_innings boolean,
+	is_won_by_runs boolean,
+	win_margin text,
+	balls_remaining_after_win integer,
+	innings public.team_innings_short_info[]
+);
+
+
+ALTER TYPE public.match_short_info OWNER TO postgres;
 
 --
 -- Name: match_type; Type: TYPE; Schema: public; Owner: postgres
@@ -172,15 +301,27 @@ ALTER TYPE public.match_type OWNER TO postgres;
 --
 
 CREATE TYPE public.outcome_special_method AS ENUM (
-    'dls',
-    'vjd',
-    'awarded',
-    'first_innings_score',
-    'lost_fewer_wickets'
+    'D/L',
+    'VJD',
+    'Awarded',
+    '1st innings score',
+    'Lost fewer wickets'
 );
 
 
 ALTER TYPE public.outcome_special_method OWNER TO postgres;
+
+--
+-- Name: player_award; Type: TYPE; Schema: public; Owner: postgres
+--
+
+CREATE TYPE public.player_award AS ENUM (
+    'player_of_the_match',
+    'player_of_the_series'
+);
+
+
+ALTER TYPE public.player_award OWNER TO postgres;
 
 --
 -- Name: playing_format; Type: TYPE; Schema: public; Owner: postgres
@@ -239,6 +380,142 @@ CREATE TYPE public.user_role AS ENUM (
 
 
 ALTER TYPE public.user_role OWNER TO postgres;
+
+--
+-- Name: get_batting_scorecard_entries(integer); Type: FUNCTION; Schema: public; Owner: postgres
+--
+
+CREATE FUNCTION public.get_batting_scorecard_entries(p_innings_id integer) RETURNS public.batting_scorecard_record[]
+    LANGUAGE plpgsql
+    AS $$
+BEGIN
+    RETURN ARRAY(
+         SELECT ROW(
+            bs.batter_id,
+            p.name,
+			bs.batting_position,
+            bs.runs_scored,
+            bs.balls_faced,
+            bs.fours_scored,
+            bs.sixes_scored,
+			bs.dismissed_by_id,
+			p2.name,
+			bs.fielder1_id,
+			p3.name,
+			bs.fielder2_id,
+			p4.name,
+            bs.dismissal_type
+        )::batting_scorecard_record
+        FROM batting_scorecards bs
+        LEFT JOIN players p ON p.id = bs.batter_id
+		LEFT JOIN players p2 ON p2.id = bs.dismissed_by_id
+		LEFT JOIN players p3 ON p3.id = bs.fielder1_id
+		LEFT JOIN players p4 ON p4.id = bs.fielder2_id
+        WHERE bs.innings_id = p_innings_id
+    );
+END;
+$$;
+
+
+ALTER FUNCTION public.get_batting_scorecard_entries(p_innings_id integer) OWNER TO postgres;
+
+--
+-- Name: get_bowling_scorecard_entries(integer); Type: FUNCTION; Schema: public; Owner: postgres
+--
+
+CREATE FUNCTION public.get_bowling_scorecard_entries(p_innings_id integer) RETURNS public.bowling_scorecard_record[]
+    LANGUAGE plpgsql
+    AS $$
+BEGIN
+    RETURN ARRAY(
+         SELECT ROW(
+            bs.bowler_id,
+            p.name,
+			bs.bowling_position,
+            bs.wickets_taken,
+			bs.runs_conceded,
+            bs.balls_bowled,
+            bs.fours_conceded,
+            bs.sixes_conceded,
+			bs.wides_conceded,
+			bs.noballs_conceded
+        )::bowling_scorecard_record
+        FROM bowling_scorecards bs
+        LEFT JOIN players p ON p.id = bs.bowler_id
+        WHERE bs.innings_id = p_innings_id
+    );
+END;
+$$;
+
+
+ALTER FUNCTION public.get_bowling_scorecard_entries(p_innings_id integer) OWNER TO postgres;
+
+--
+-- Name: get_innings_scorecard_entries(integer); Type: FUNCTION; Schema: public; Owner: postgres
+--
+
+CREATE FUNCTION public.get_innings_scorecard_entries(p_match_id integer) RETURNS public.innings_scorecard_record[]
+    LANGUAGE plpgsql
+    AS $$
+BEGIN
+    RETURN ARRAY(
+         SELECT ROW(
+            innings.innings_number,
+			innings.batting_team_id,
+			t1.name,
+			innings.bowling_team_id,
+			t2.name,
+			innings.total_runs,
+			innings.total_balls,
+			innings.total_wickets,
+			innings.byes,
+			innings.leg_byes,
+			innings.wides,
+			innings.noballs,
+			innings.penalty,
+			innings.is_super_over,
+			innings.innings_end,
+			innings.target_runs,
+			innings.target_balls,
+			get_batting_scorecard_entries(innings.id),
+			get_bowling_scorecard_entries(innings.id)
+        )::innings_scorecard_record
+        FROM innings
+		LEFT JOIN teams t1 on t1.id = innings.batting_team_id
+		LEFT JOIN teams t2 on t2.id = innings.bowling_team_id
+        WHERE innings.match_id = p_match_id
+    );
+END;
+$$;
+
+
+ALTER FUNCTION public.get_innings_scorecard_entries(p_match_id integer) OWNER TO postgres;
+
+--
+-- Name: get_match_innings(integer); Type: FUNCTION; Schema: public; Owner: postgres
+--
+
+CREATE FUNCTION public.get_match_innings(p_match_id integer) RETURNS public.team_innings_short_info[]
+    LANGUAGE sql
+    AS $$
+    SELECT ARRAY_AGG(
+        ROW(
+            innings_number, 
+            batting_team_id, 
+            total_runs, 
+            total_balls, 
+            total_wickets, 
+            innings_end, 
+            target_runs, 
+            target_balls
+        )::team_innings_short_info
+    )
+    FROM innings
+    WHERE match_id = p_match_id;
+$$;
+
+
+ALTER FUNCTION public.get_match_innings(p_match_id integer) OWNER TO postgres;
 
 --
 -- Name: get_player_profile_by_id(integer); Type: FUNCTION; Schema: public; Owner: postgres
@@ -869,556 +1146,103 @@ $$;
 ALTER FUNCTION public.get_player_profile_by_id(player_id integer) OWNER TO postgres;
 
 --
--- Name: handle_batting_scorecard_insertion(); Type: FUNCTION; Schema: public; Owner: postgres
+-- Name: get_series_matches(integer); Type: FUNCTION; Schema: public; Owner: postgres
 --
 
-CREATE FUNCTION public.handle_batting_scorecard_insertion() RETURNS trigger
+CREATE FUNCTION public.get_series_matches(p_series_id integer) RETURNS public.match_short_info[]
+    LANGUAGE sql
+    AS $$
+    SELECT ARRAY_AGG(
+        ROW(
+            matches.id,
+            matches.playing_level,
+            matches.playing_format,
+            matches.match_type,
+            matches.cricsheet_id,
+            matches.balls_per_over,
+            matches.event_match_number,
+            matches.start_date,
+            matches.end_date,
+            matches.start_time,
+            matches.is_day_night,
+            matches.ground_id,
+            grounds.name,
+            matches.team1_id,
+            t1.name,
+            t1.image_url,
+            matches.team2_id,
+            t2.name,
+            t2.image_url,
+            matches.current_status,
+            matches.final_result,
+            matches.outcome_special_method,
+            matches.match_winner_team_id,
+            matches.bowl_out_winner_id,
+            matches.super_over_winner_id,
+            matches.is_won_by_innings,
+            matches.is_won_by_runs,
+            matches.win_margin,
+            matches.balls_remaining_after_win,
+            get_match_innings(matches.id)
+        )::match_short_info
+    )
+    FROM matches 
+    LEFT JOIN teams t1 ON matches.team1_id = t1.id 
+    LEFT JOIN teams t2 ON matches.team2_id = t2.id 
+    LEFT JOIN grounds ON grounds.id = matches.ground_id
+    WHERE matches.series_id = p_series_id;
+$$;
+
+
+ALTER FUNCTION public.get_series_matches(p_series_id integer) OWNER TO postgres;
+
+--
+-- Name: update_series_dates(); Type: FUNCTION; Schema: public; Owner: postgres
+--
+
+CREATE FUNCTION public.update_series_dates() RETURNS trigger
     LANGUAGE plpgsql
     AS $$
-DECLARE 
-    v_is_super_over BOOLEAN;
-    v_format TEXT;
-	
 BEGIN
+    IF NEW.series_id IS NOT NULL THEN
+        -- Check if inserted/updated match start_date is earlier than series start_date
+        IF NEW.start_date < (SELECT start_date FROM series WHERE id = NEW.series_id) THEN
+            UPDATE series SET start_date = NEW.start_date WHERE id = NEW.series_id;
+        END IF;
 
-SELECT innings.is_super_over INTO v_is_super_over
-FROM innings
-WHERE innings.id = NEW.innings_id;
+        -- Check if inserted/updated match end_date is later than series end_date
+        IF NEW.end_date > (SELECT end_date FROM series WHERE id = NEW.series_id) THEN
+            UPDATE series SET end_date = NEW.end_date WHERE id = NEW.series_id;
+        END IF;
+    END IF;
+    
+    -- For DELETE operation, consider if any match dates are affected for the series
+    IF OLD.series_id IS NOT NULL AND TG_OP = 'DELETE' THEN
+        -- Update start_date to the earliest match date in the series
+        UPDATE series
+        SET start_date = (
+            SELECT MIN(start_date) 
+            FROM matches 
+            WHERE series_id = OLD.series_id
+        )
+        WHERE id = OLD.series_id;
+        
+        -- Update end_date to the latest match date in the series
+        UPDATE series
+        SET end_date = (
+            SELECT MAX(end_date) 
+            FROM matches 
+            WHERE series_id = OLD.series_id
+        )
+        WHERE id = OLD.series_id;
+    END IF;
 
-BEGIN IF v_is_super_over THEN RETURN NEW;
-END IF;
-
-SELECT matches.playing_format INTO v_format
-FROM matches
-WHERE matches.id = (SELECT innings.match_id FROM innings WHERE innings.id = NEW.innings_id);
-
-CASE
-    v_format
-    WHEN 'Test' THEN
-    UPDATE players
-    SET test_stats.innings_batted     = COALESCE((test_stats).innings_batted, 0) + 1,
-        test_stats.runs_scored        = COALESCE((test_stats).runs_conceded, 0) + NEW.runs_scored,
-        test_stats.balls_faced        = COALESCE((test_stats).balls_faced, 0) + NEW.balls_faced,
-        test_stats.fours_scored       = COALESCE((test_stats).fours_scored, 0) + NEW.fours_scored,
-        test_stats.sixes_scored       = COALESCE((test_stats).sixes_scored, 0) + NEW.sixes_scored,
-        test_stats.batting_dismissals = COALESCE((test_stats).batting_dismissals, 0) + CASE
-                                         WHEN NEW.dismissal_type NOT IN ('retired not out', 'retired hurt') THEN 1
-                                         ELSE 0
-                                       END,
-        test_stats.fifties_scored    = COALESCE((test_stats).fifties_scored, 0) + CASE
-                                         WHEN NEW.runs_scored >= 50 AND NEW.runs_scored < 100 THEN 1
-                                         ELSE 0
-                                       END,
-        test_stats.centuries_scored  = COALESCE((test_stats).centuries_scored, 0) + CASE
-                                         WHEN NEW.runs_scored >= 100 THEN 1
-                                         ELSE 0
-                                       END,
-        test_stats.highest_score     = GREATEST(COALESCE((test_stats).highest_score, 0), NEW.runs_scored),
-        test_stats.is_highest_not_out = GREATEST(COALESCE((test_stats).highest_score, 0), NEW.runs_scored) = NEW.runs_scored
-          AND NEW.dismissal_type IN ('retired not out', 'retired hurt'),
-        fc_stats.innings_batted     = COALESCE((fc_stats).innings_batted, 0) + 1,
-        fc_stats.runs_scored        = COALESCE((fc_stats).runs_conceded, 0) + NEW.runs_scored,
-        fc_stats.balls_faced        = COALESCE((fc_stats).balls_faced, 0) + NEW.balls_faced,
-        fc_stats.fours_scored       = COALESCE((fc_stats).fours_scored, 0) + NEW.fours_scored,
-        fc_stats.sixes_scored       = COALESCE((fc_stats).sixes_scored, 0) + NEW.sixes_scored,
-        fc_stats.batting_dismissals = COALESCE((fc_stats).batting_dismissals, 0) + CASE
-                                         WHEN NEW.dismissal_type NOT IN ('retired not out', 'retired hurt') THEN 1
-                                         ELSE 0
-                                       END,
-        fc_stats.fifties_scored    = COALESCE((fc_stats).fifties_scored, 0) + CASE
-                                         WHEN NEW.runs_scored >= 50 AND NEW.runs_scored < 100 THEN 1
-                                         ELSE 0
-                                       END,
-        fc_stats.centuries_scored  = COALESCE((fc_stats).centuries_scored, 0) + CASE
-                                         WHEN NEW.runs_scored >= 100 THEN 1
-                                         ELSE 0
-                                       END,
-        fc_stats.highest_score     = GREATEST(COALESCE((fc_stats).highest_score, 0), NEW.runs_scored),
-        fc_stats.is_highest_not_out = GREATEST(COALESCE((fc_stats).highest_score, 0), NEW.runs_scored) = NEW.runs_scored
-          AND NEW.dismissal_type IN ('retired not out', 'retired hurt')
-    WHERE players.id = NEW.batter_id;
-WHEN 'ODI' THEN
-    UPDATE players
-    SET odi_stats.innings_batted     = COALESCE((odi_stats).innings_batted, 0) + 1,
-        odi_stats.runs_scored        = COALESCE((odi_stats).runs_conceded, 0) + NEW.runs_scored,
-        odi_stats.balls_faced        = COALESCE((odi_stats).balls_faced, 0) + NEW.balls_faced,
-        odi_stats.fours_scored       = COALESCE((odi_stats).fours_scored, 0) + NEW.fours_scored,
-        odi_stats.sixes_scored       = COALESCE((odi_stats).sixes_scored, 0) + NEW.sixes_scored,
-        odi_stats.batting_dismissals = COALESCE((odi_stats).batting_dismissals, 0) + CASE
-                                         WHEN NEW.dismissal_type NOT IN ('retired not out', 'retired hurt') THEN 1
-                                         ELSE 0
-                                       END,
-        odi_stats.fifties_scored    = COALESCE((odi_stats).fifties_scored, 0) + CASE
-                                         WHEN NEW.runs_scored >= 50 AND NEW.runs_scored < 100 THEN 1
-                                         ELSE 0
-                                       END,
-        odi_stats.centuries_scored  = COALESCE((odi_stats).centuries_scored, 0) + CASE
-                                         WHEN NEW.runs_scored >= 100 THEN 1
-                                         ELSE 0
-                                       END,
-        odi_stats.highest_score     = GREATEST(COALESCE((odi_stats).highest_score, 0), NEW.runs_scored),
-        odi_stats.is_highest_not_out = GREATEST(COALESCE((odi_stats).highest_score, 0), NEW.runs_scored) = NEW.runs_scored
-          AND NEW.dismissal_type IN ('retired not out', 'retired hurt'),
-        lista_stats.innings_batted     = COALESCE((lista_stats).innings_batted, 0) + 1,
-        lista_stats.runs_scored        = COALESCE((lista_stats).runs_conceded, 0) + NEW.runs_scored,
-        lista_stats.balls_faced        = COALESCE((lista_stats).balls_faced, 0) + NEW.balls_faced,
-        lista_stats.fours_scored       = COALESCE((lista_stats).fours_scored, 0) + NEW.fours_scored,
-        lista_stats.sixes_scored       = COALESCE((lista_stats).sixes_scored, 0) + NEW.sixes_scored,
-        lista_stats.batting_dismissals = COALESCE((lista_stats).batting_dismissals, 0) + CASE
-                                         WHEN NEW.dismissal_type NOT IN ('retired not out', 'retired hurt') THEN 1
-                                         ELSE 0
-                                       END,
-        lista_stats.fifties_scored    = COALESCE((lista_stats).fifties_scored, 0) + CASE
-                                         WHEN NEW.runs_scored >= 50 AND NEW.runs_scored < 100 THEN 1
-                                         ELSE 0
-                                       END,
-        lista_stats.centuries_scored  = COALESCE((lista_stats).centuries_scored, 0) + CASE
-                                         WHEN NEW.runs_scored >= 100 THEN 1
-                                         ELSE 0
-                                       END,
-        lista_stats.highest_score     = GREATEST(COALESCE((lista_stats).highest_score, 0), NEW.runs_scored),
-        lista_stats.is_highest_not_out = GREATEST(COALESCE((lista_stats).highest_score, 0), NEW.runs_scored) = NEW.runs_scored
-          AND NEW.dismissal_type IN ('retired not out', 'retired hurt')
-    WHERE players.id = NEW.batter_id;
-WHEN 'T20I' THEN
-UPDATE players
-SET t20i_stats.innings_batted     = COALESCE((t20i_stats).innings_batted, 0) + 1,
-    t20i_stats.runs_scored        = COALESCE((t20i_stats).runs_conceded, 0) + NEW.runs_scored,
-    t20i_stats.balls_faced        = COALESCE((t20i_stats).balls_faced, 0) + NEW.balls_faced,
-    t20i_stats.fours_scored       = COALESCE((t20i_stats).fours_scored, 0) + NEW.fours_scored,
-    t20i_stats.sixes_scored       = COALESCE((t20i_stats).sixes_scored, 0) + NEW.sixes_scored,
-    t20i_stats.batting_dismissals = COALESCE((t20i_stats).batting_dismissals, 0) + CASE
-                                     WHEN NEW.dismissal_type NOT IN ('retired not out', 'retired hurt') THEN 1
-                                     ELSE 0
-                                   END,
-    t20i_stats.fifties_scored    = COALESCE((t20i_stats).fifties_scored, 0) + CASE
-                                     WHEN NEW.runs_scored >= 50 AND NEW.runs_scored < 100 THEN 1
-                                     ELSE 0
-                                   END,
-    t20i_stats.centuries_scored  = COALESCE((t20i_stats).centuries_scored, 0) + CASE
-                                     WHEN NEW.runs_scored >= 100 THEN 1
-                                     ELSE 0
-                                   END,
-    t20i_stats.highest_score     = GREATEST(COALESCE((t20i_stats).highest_score, 0), NEW.runs_scored),
-    t20i_stats.is_highest_not_out = GREATEST(COALESCE((t20i_stats).highest_score, 0), NEW.runs_scored) = NEW.runs_scored
-      AND NEW.dismissal_type IN ('retired not out', 'retired hurt'),
-    t20_stats.innings_batted     = COALESCE((t20_stats).innings_batted, 0) + 1,
-    t20_stats.runs_scored        = COALESCE((t20_stats).runs_conceded, 0) + NEW.runs_scored,
-    t20_stats.balls_faced        = COALESCE((t20_stats).balls_faced, 0) + NEW.balls_faced,
-    t20_stats.fours_scored       = COALESCE((t20_stats).fours_scored, 0) + NEW.fours_scored,
-    t20_stats.sixes_scored       = COALESCE((t20_stats).sixes_scored, 0) + NEW.sixes_scored,
-    t20_stats.batting_dismissals = COALESCE((t20_stats).batting_dismissals, 0) + CASE
-                                     WHEN NEW.dismissal_type NOT IN ('retired not out', 'retired hurt') THEN 1
-                                     ELSE 0
-                                   END,
-    t20_stats.fifties_scored    = COALESCE((t20_stats).fifties_scored, 0) + CASE
-                                     WHEN NEW.runs_scored >= 50 AND NEW.runs_scored < 100 THEN 1
-                                     ELSE 0
-                                   END,
-    t20_stats.centuries_scored  = COALESCE((t20_stats).centuries_scored, 0) + CASE
-                                     WHEN NEW.runs_scored >= 100 THEN 1
-                                     ELSE 0
-                                   END,
-    t20_stats.highest_score     = GREATEST(COALESCE((t20_stats).highest_score, 0), NEW.runs_scored),
-    t20_stats.is_highest_not_out = GREATEST(COALESCE((t20_stats).highest_score, 0), NEW.runs_scored) = NEW.runs_scored
-      AND NEW.dismissal_type IN ('retired not out', 'retired hurt')
-    WHERE players.id = NEW.batter_id;
-WHEN 'first_class' THEN
-UPDATE players
-SET fc_stats.innings_batted     = COALESCE((fc_stats).innings_batted, 0) + 1,
-    fc_stats.runs_scored        = COALESCE((fc_stats).runs_conceded, 0) + NEW.runs_scored,
-    fc_stats.balls_faced        = COALESCE((fc_stats).balls_faced, 0) + NEW.balls_faced,
-    fc_stats.fours_scored       = COALESCE((fc_stats).fours_scored, 0) + NEW.fours_scored,
-    fc_stats.sixes_scored       = COALESCE((fc_stats).sixes_scored, 0) + NEW.sixes_scored,
-    fc_stats.batting_dismissals = COALESCE((fc_stats).batting_dismissals, 0) + CASE
-                                     WHEN NEW.dismissal_type NOT IN ('retired not out', 'retired hurt') THEN 1
-                                     ELSE 0
-                                   END,
-    fc_stats.fifties_scored    = COALESCE((fc_stats).fifties_scored, 0) + CASE
-                                     WHEN NEW.runs_scored >= 50 AND NEW.runs_scored < 100 THEN 1
-                                     ELSE 0
-                                   END,
-    fc_stats.centuries_scored  = COALESCE((fc_stats).centuries_scored, 0) + CASE
-                                     WHEN NEW.runs_scored >= 100 THEN 1
-                                     ELSE 0
-                                   END,
-    fc_stats.highest_score     = GREATEST(COALESCE((fc_stats).highest_score, 0), NEW.runs_scored),
-    fc_stats.is_highest_not_out = GREATEST(COALESCE((fc_stats).highest_score, 0), NEW.runs_scored) = NEW.runs_scored
-      AND NEW.dismissal_type IN ('retired not out', 'retired hurt')
-    WHERE players.id = NEW.batter_id;
-WHEN 'list_a' THEN
-UPDATE players
-SET lista_stats.innings_batted     = COALESCE((lista_stats).innings_batted, 0) + 1,
-    lista_stats.runs_scored        = COALESCE((lista_stats).runs_conceded, 0) + NEW.runs_scored,
-    lista_stats.balls_faced        = COALESCE((lista_stats).balls_faced, 0) + NEW.balls_faced,
-    lista_stats.fours_scored       = COALESCE((lista_stats).fours_scored, 0) + NEW.fours_scored,
-    lista_stats.sixes_scored       = COALESCE((lista_stats).sixes_scored, 0) + NEW.sixes_scored,
-    lista_stats.batting_dismissals = COALESCE((lista_stats).batting_dismissals, 0) + CASE
-                                     WHEN NEW.dismissal_type NOT IN ('retired not out', 'retired hurt') THEN 1
-                                     ELSE 0
-                                   END,
-    lista_stats.fifties_scored    = COALESCE((lista_stats).fifties_scored, 0) + CASE
-                                     WHEN NEW.runs_scored >= 50 AND NEW.runs_scored < 100 THEN 1
-                                     ELSE 0
-                                   END,
-    lista_stats.centuries_scored  = COALESCE((lista_stats).centuries_scored, 0) + CASE
-                                     WHEN NEW.runs_scored >= 100 THEN 1
-                                     ELSE 0
-                                   END,
-    lista_stats.highest_score     = GREATEST(COALESCE((lista_stats).highest_score, 0), NEW.runs_scored),
-    lista_stats.is_highest_not_out = GREATEST(COALESCE((lista_stats).highest_score, 0), NEW.runs_scored) = NEW.runs_scored
-      AND NEW.dismissal_type IN ('retired not out', 'retired hurt')
-    WHERE players.id = NEW.batter_id;
-WHEN 't20' THEN
-UPDATE players
-SET t20_stats.innings_batted     = COALESCE((t20_stats).innings_batted, 0) + 1,
-    t20_stats.runs_scored        = COALESCE((t20_stats).runs_conceded, 0) + NEW.runs_scored,
-    t20_stats.balls_faced        = COALESCE((t20_stats).balls_faced, 0) + NEW.balls_faced,
-    t20_stats.fours_scored       = COALESCE((t20_stats).fours_scored, 0) + NEW.fours_scored,
-    t20_stats.sixes_scored       = COALESCE((t20_stats).sixes_scored, 0) + NEW.sixes_scored,
-    t20_stats.batting_dismissals = COALESCE((t20_stats).batting_dismissals, 0) + CASE
-                                     WHEN NEW.dismissal_type NOT IN ('retired not out', 'retired hurt') THEN 1
-                                     ELSE 0
-                                   END,
-    t20_stats.fifties_scored    = COALESCE((t20_stats).fifties_scored, 0) + CASE
-                                     WHEN NEW.runs_scored >= 50 AND NEW.runs_scored < 100 THEN 1
-                                     ELSE 0
-                                   END,
-    t20_stats.centuries_scored  = COALESCE((t20_stats).centuries_scored, 0) + CASE
-                                     WHEN NEW.runs_scored >= 100 THEN 1
-                                     ELSE 0
-                                   END,
-    t20_stats.highest_score     = GREATEST(COALESCE((t20_stats).highest_score, 0), NEW.runs_scored),
-    t20_stats.is_highest_not_out = GREATEST(COALESCE((t20_stats).highest_score, 0), NEW.runs_scored) = NEW.runs_scored
-      AND NEW.dismissal_type IN ('retired not out', 'retired hurt')
-    WHERE players.id = NEW.batter_id;
-END CASE
-;
-RETURN NEW;
-END;
+    RETURN NEW;
 END;
 $$;
 
 
-ALTER FUNCTION public.handle_batting_scorecard_insertion() OWNER TO postgres;
-
---
--- Name: handle_bowling_scorecard_insertion(); Type: FUNCTION; Schema: public; Owner: postgres
---
-
-CREATE FUNCTION public.handle_bowling_scorecard_insertion() RETURNS trigger
-    LANGUAGE plpgsql
-    AS $$
-DECLARE 
-    v_is_super_over BOOLEAN;
-    v_format TEXT;
-	
-BEGIN
-
-SELECT innings.is_super_over INTO v_is_super_over
-FROM innings
-WHERE innings.id = NEW.innings_id;
-
-BEGIN IF v_is_super_over THEN RETURN NEW;
-END IF;
-
-SELECT matches.playing_format INTO v_format
-FROM matches
-WHERE matches.id = (SELECT innings.match_id FROM innings WHERE innings.id = NEW.innings_id);
-
-CASE
-    v_format
-    WHEN 'Test' THEN
-    UPDATE players
-    SET test_stats.innings_bowled     = COALESCE((test_stats).innings_bowled, 0) + 1,
-        test_stats.runs_conceded        = COALESCE((test_stats).runs_conceded, 0) + NEW.runs_conceded,
-        test_stats.balls_bowled        = COALESCE((test_stats).balls_bowled, 0) + NEW.balls_bowled,
-        test_stats.fours_conceded       = COALESCE((test_stats).fours_conceded, 0) + NEW.fours_conceded,
-        test_stats.sixes_conceded       = COALESCE((test_stats).sixes_conceded, 0) + NEW.sixes_conceded,
-        test_stats.wickets_taken = COALESCE((test_stats).wickets_taken, 0) + NEW.wickets_taken,
-        test_stats.four_wkt_hauls    = COALESCE((test_stats).four_wkt_hauls, 0) + CASE
-                                         WHEN NEW.wickets_taken = 4 THEN 1
-                                         ELSE 0
-                                       END,
-        test_stats.five_wkt_hauls   = COALESCE((test_stats).five_wkt_hauls, 0) + CASE
-                                        WHEN NEW.wickets_taken >= 5 THEN 1
-                                        ELSE 0
-                                         END,
-        fc_stats.innings_bowled     = COALESCE((fc_stats).innings_bowled, 0) + 1,
-        fc_stats.runs_conceded        = COALESCE((fc_stats).runs_conceded, 0) + NEW.runs_conceded,
-        fc_stats.balls_bowled        = COALESCE((fc_stats).balls_bowled, 0) + NEW.balls_bowled,
-        fc_stats.fours_conceded       = COALESCE((fc_stats).fours_conceded, 0) + NEW.fours_conceded,
-        fc_stats.sixes_conceded       = COALESCE((fc_stats).sixes_conceded, 0) + NEW.sixes_conceded,
-        fc_stats.wickets_taken = COALESCE((fc_stats).wickets_taken, 0) + NEW.wickets_taken,
-        fc_stats.four_wkt_hauls    = COALESCE((fc_stats).four_wkt_hauls, 0) + CASE
-                                         WHEN NEW.wickets_taken = 4 THEN 1
-                                         ELSE 0
-                                       END,
-        fc_stats.five_wkt_hauls   = COALESCE((fc_stats).five_wkt_hauls, 0) + CASE
-                                        WHEN NEW.wickets_taken >= 5 THEN 1
-                                        ELSE 0
-                                         END
-    WHERE players.id = NEW.bowler_id;
-WHEN 'ODI' THEN
-    UPDATE players
-    SET odi_stats.innings_bowled     = COALESCE((odi_stats).innings_bowled, 0) + 1,
-        odi_stats.runs_conceded        = COALESCE((odi_stats).runs_conceded, 0) + NEW.runs_conceded,
-        odi_stats.balls_bowled        = COALESCE((odi_stats).balls_bowled, 0) + NEW.balls_bowled,
-        odi_stats.fours_conceded       = COALESCE((odi_stats).fours_conceded, 0) + NEW.fours_conceded,
-        odi_stats.sixes_conceded       = COALESCE((odi_stats).sixes_conceded, 0) + NEW.sixes_conceded,
-        odi_stats.wickets_taken = COALESCE((odi_stats).wickets_taken, 0) + NEW.wickets_taken,
-        odi_stats.four_wkt_hauls    = COALESCE((odi_stats).four_wkt_hauls, 0) + CASE
-                                         WHEN NEW.wickets_taken = 4 THEN 1
-                                         ELSE 0
-                                       END,
-        odi_stats.five_wkt_hauls   = COALESCE((odi_stats).five_wkt_hauls, 0) + CASE
-                                        WHEN NEW.wickets_taken >= 5 THEN 1
-                                        ELSE 0
-                                         END,
-        lista_stats.innings_bowled     = COALESCE((lista_stats).innings_bowled, 0) + 1,
-        lista_stats.runs_conceded        = COALESCE((lista_stats).runs_conceded, 0) + NEW.runs_conceded,
-        lista_stats.balls_bowled        = COALESCE((lista_stats).balls_bowled, 0) + NEW.balls_bowled,
-        lista_stats.fours_conceded       = COALESCE((lista_stats).fours_conceded, 0) + NEW.fours_conceded,
-        lista_stats.sixes_conceded       = COALESCE((lista_stats).sixes_conceded, 0) + NEW.sixes_conceded,
-        lista_stats.wickets_taken = COALESCE((lista_stats).wickets_taken, 0) + NEW.wickets_taken,
-        lista_stats.four_wkt_hauls    = COALESCE((lista_stats).four_wkt_hauls, 0) + CASE
-                                         WHEN NEW.wickets_taken = 4 THEN 1
-                                         ELSE 0
-                                       END,
-        lista_stats.five_wkt_hauls   = COALESCE((lista_stats).five_wkt_hauls, 0) + CASE
-                                        WHEN NEW.wickets_taken >= 5 THEN 1
-                                        ELSE 0
-                                         END
-    WHERE players.id = NEW.bowler_id;
-WHEN 'T20I' THEN
-UPDATE players
-SET t20i_stats.innings_bowled     = COALESCE((t20i_stats).innings_bowled, 0) + 1,
-    t20i_stats.runs_conceded        = COALESCE((t20i_stats).runs_conceded, 0) + NEW.runs_conceded,
-    t20i_stats.balls_bowled        = COALESCE((t20i_stats).balls_bowled, 0) + NEW.balls_bowled,
-    t20i_stats.fours_conceded       = COALESCE((t20i_stats).fours_conceded, 0) + NEW.fours_conceded,
-    t20i_stats.sixes_conceded       = COALESCE((t20i_stats).sixes_conceded, 0) + NEW.sixes_conceded,
-    t20i_stats.wickets_taken = COALESCE((t20i_stats).wickets_taken, 0) + NEW.wickets_taken,
-    t20i_stats.four_wkt_hauls    = COALESCE((t20i_stats).four_wkt_hauls, 0) + CASE
-                                     WHEN NEW.wickets_taken = 4 THEN 1
-                                     ELSE 0
-                                   END,
-    t20i_stats.five_wkt_hauls   = COALESCE((t20i_stats).five_wkt_hauls, 0) + CASE
-                                    WHEN NEW.wickets_taken >= 5 THEN 1
-                                    ELSE 0
-                                     END,
-    t20_stats.innings_bowled     = COALESCE((t20_stats).innings_bowled, 0) + 1,
-    t20_stats.runs_conceded        = COALESCE((t20_stats).runs_conceded, 0) + NEW.runs_conceded,
-    t20_stats.balls_bowled        = COALESCE((t20_stats).balls_bowled, 0) + NEW.balls_bowled,
-    t20_stats.fours_conceded       = COALESCE((t20_stats).fours_conceded, 0) + NEW.fours_conceded,
-    t20_stats.sixes_conceded       = COALESCE((t20_stats).sixes_conceded, 0) + NEW.sixes_conceded,
-    t20_stats.wickets_taken = COALESCE((t20_stats).wickets_taken, 0) + NEW.wickets_taken,
-    t20_stats.four_wkt_hauls    = COALESCE((t20_stats).four_wkt_hauls, 0) + CASE
-                                     WHEN NEW.wickets_taken = 4 THEN 1
-                                     ELSE 0
-                                   END,
-    t20_stats.five_wkt_hauls   = COALESCE((t20_stats).five_wkt_hauls, 0) + CASE
-                                    WHEN NEW.wickets_taken >= 5 THEN 1
-                                    ELSE 0
-                                     END
-    WHERE players.id = NEW.bowler_id;
-WHEN 'first_class' THEN
-UPDATE players
-SET fc_stats.innings_bowled     = COALESCE((fc_stats).innings_bowled, 0) + 1,
-    fc_stats.runs_conceded        = COALESCE((fc_stats).runs_conceded, 0) + NEW.runs_conceded,
-    fc_stats.balls_bowled        = COALESCE((fc_stats).balls_bowled, 0) + NEW.balls_bowled,
-    fc_stats.fours_conceded       = COALESCE((fc_stats).fours_conceded, 0) + NEW.fours_conceded,
-    fc_stats.sixes_conceded       = COALESCE((fc_stats).sixes_conceded, 0) + NEW.sixes_conceded,
-    fc_stats.wickets_taken = COALESCE((fc_stats).wickets_taken, 0) + NEW.wickets_taken,
-    fc_stats.four_wkt_hauls    = COALESCE((fc_stats).four_wkt_hauls, 0) + CASE
-                                     WHEN NEW.wickets_taken = 4 THEN 1
-                                     ELSE 0
-                                   END,
-    fc_stats.five_wkt_hauls   = COALESCE((fc_stats).five_wkt_hauls, 0) + CASE
-                                    WHEN NEW.wickets_taken >= 5 THEN 1
-                                    ELSE 0
-                                     END
-    WHERE players.id = NEW.bowler_id;
-WHEN 'list_a' THEN
-UPDATE players
-SET lista_stats.innings_bowled     = COALESCE((lista_stats).innings_bowled, 0) + 1,
-    lista_stats.runs_conceded        = COALESCE((lista_stats).runs_conceded, 0) + NEW.runs_conceded,
-    lista_stats.balls_bowled        = COALESCE((lista_stats).balls_bowled, 0) + NEW.balls_bowled,
-    lista_stats.fours_conceded       = COALESCE((lista_stats).fours_conceded, 0) + NEW.fours_conceded,
-    lista_stats.sixes_conceded       = COALESCE((lista_stats).sixes_conceded, 0) + NEW.sixes_conceded,
-    lista_stats.wickets_taken = COALESCE((lista_stats).wickets_taken, 0) + NEW.wickets_taken,
-    lista_stats.four_wkt_hauls    = COALESCE((lista_stats).four_wkt_hauls, 0) + CASE
-                                     WHEN NEW.wickets_taken = 4 THEN 1
-                                     ELSE 0
-                                   END,
-    lista_stats.five_wkt_hauls   = COALESCE((lista_stats).five_wkt_hauls, 0) + CASE
-                                    WHEN NEW.wickets_taken >= 5 THEN 1
-                                    ELSE 0
-                                     END
-    WHERE players.id = NEW.bowler_id;
-WHEN 't20' THEN
-UPDATE players
-SET t20_stats.innings_bowled     = COALESCE((t20_stats).innings_bowled, 0) + 1,
-    t20_stats.runs_conceded        = COALESCE((t20_stats).runs_conceded, 0) + NEW.runs_conceded,
-    t20_stats.balls_bowled        = COALESCE((t20_stats).balls_bowled, 0) + NEW.balls_bowled,
-    t20_stats.fours_conceded       = COALESCE((t20_stats).fours_conceded, 0) + NEW.fours_conceded,
-    t20_stats.sixes_conceded       = COALESCE((t20_stats).sixes_conceded, 0) + NEW.sixes_conceded,
-    t20_stats.wickets_taken = COALESCE((t20_stats).wickets_taken, 0) + NEW.wickets_taken,
-    t20_stats.four_wkt_hauls    = COALESCE((t20_stats).four_wkt_hauls, 0) + CASE
-                                     WHEN NEW.wickets_taken = 4 THEN 1
-                                     ELSE 0
-                                   END,
-    t20_stats.five_wkt_hauls   = COALESCE((t20_stats).five_wkt_hauls, 0) + CASE
-                                    WHEN NEW.wickets_taken >= 5 THEN 1
-                                    ELSE 0
-                                     END
-    WHERE players.id = NEW.bowler_id;
-END CASE
-;
-RETURN NEW;
-END;
-END;
-$$;
-
-
-ALTER FUNCTION public.handle_bowling_scorecard_insertion() OWNER TO postgres;
-
---
--- Name: handle_match_squad_insertion(); Type: FUNCTION; Schema: public; Owner: postgres
---
-
-CREATE FUNCTION public.handle_match_squad_insertion() RETURNS trigger
-    LANGUAGE plpgsql
-    AS $$
-DECLARE v_format text;
-BEGIN IF NEW.playing_status != 'playing_xi' THEN RETURN NEW;
-END IF;
-SELECT playing_format INTO v_format
-FROM matches
-WHERE matches.id = NEW.match_id;
-CASE
-    v_format
-    WHEN 'Test' THEN
-    UPDATE players
-    SET test_stats.matches_played = COALESCE((test_stats).matches_played, 0) + 1,
-        fc_stats.matches_played = COALESCE((fc_stats).matches_played, 0) + 1
-    WHERE players.id = NEW.player_id;
-WHEN 'ODI' THEN
-UPDATE players
-SET odi_stats.matches_played = COALESCE((odi_stats).matches_played, 0) + 1,
-    lista_stats.matches_played = COALESCE((lista_stats).matches_played, 0) + 1
-WHERE players.id = NEW.player_id;
-WHEN 'T20I' THEN
-UPDATE players
-SET t20i_stats.matches_played = COALESCE((t20i_stats).matches_played, 0) + 1,
-    t20_stats.matches_played = COALESCE((t20_stats).matches_played, 0) + 1
-WHERE players.id = NEW.player_id;
-WHEN 'first_class' THEN
-UPDATE players
-SET fc_stats.matches_played = COALESCE((fc_stats).matches_played, 0) + 1
-WHERE players.id = NEW.player_id;
-WHEN 'list_a' THEN
-UPDATE players
-SET lista_stats.matches_played = COALESCE((lista_stats).matches_played, 0) + 1
-WHERE players.id = NEW.player_id;
-WHEN 't20' THEN
-UPDATE players
-SET t20_stats.matches_played = COALESCE((t20_stats).matches_played, 0) + 1
-WHERE players.id = NEW.player_id;
-END CASE
-;
-RETURN NEW;
-END;
-$$;
-
-
-ALTER FUNCTION public.handle_match_squad_insertion() OWNER TO postgres;
-
---
--- Name: handle_match_squad_update(); Type: FUNCTION; Schema: public; Owner: postgres
---
-
-CREATE FUNCTION public.handle_match_squad_update() RETURNS trigger
-    LANGUAGE plpgsql
-    AS $$
-DECLARE v_format text;
-BEGIN
-IF NEW.playing_status = OLD.playing_status THEN RETURN NEW;
-END IF;
-SELECT playing_format INTO v_format
-FROM matches
-WHERE matches.id = NEW.match_id;
-CASE
-    WHEN v_format = 'Test' THEN
-    UPDATE players
-    SET test_stats.matches_played = COALESCE((test_stats).matches_played, 0) + CASE
-            WHEN NEW.playing_status = 'playing_xi' THEN 1
-            WHEN OLD.playing_status = 'playing_xi' THEN -1
-            ELSE 0
-        END,
-        fc_stats.matches_played = COALESCE((fc_stats).matches_played, 0) + CASE
-            WHEN NEW.playing_status = 'playing_xi' THEN 1
-            WHEN OLD.playing_status = 'playing_xi' THEN -1
-            ELSE 0
-        END
-    WHERE players.id = NEW.player_id;
-WHEN v_format = 'ODI' THEN
-UPDATE players
-SET odi_stats.matches_played = COALESCE((odi_stats).matches_played, 0) + CASE
-        WHEN NEW.playing_status = 'playing_xi' THEN 1
-        WHEN OLD.playing_status = 'playing_xi' THEN -1
-        ELSE 0
-    END,
-    lista_stats.matches_played = COALESCE((lista_stats).matches_played, 0) + CASE
-        WHEN NEW.playing_status = 'playing_xi' THEN 1
-        WHEN OLD.playing_status = 'playing_xi' THEN -1
-        ELSE 0
-    END
-WHERE players.id = NEW.player_id;
-WHEN v_format = 'T20I' THEN
-UPDATE players
-SET t20i_stats.matches_played = COALESCE((t20i_stats).matches_played, 0) + CASE
-        WHEN NEW.playing_status = 'playing_xi' THEN 1
-        WHEN OLD.playing_status = 'playing_xi' THEN -1
-        ELSE 0
-    END,
-    t20_stats.matches_played = COALESCE((t20_stats).matches_played, 0) + CASE
-        WHEN NEW.playing_status = 'playing_xi' THEN 1
-        WHEN OLD.playing_status = 'playing_xi' THEN -1
-        ELSE 0
-    END
-WHERE players.id = NEW.player_id;
-WHEN v_format = 'first_class' THEN
-UPDATE players
-SET fc_stats.matches_played = COALESCE((fc_stats).matches_played, 0) + CASE
-        WHEN NEW.playing_status = 'playing_xi' THEN 1
-        WHEN OLD.playing_status = 'playing_xi' THEN -1
-        ELSE 0
-    END
-WHERE players.id = NEW.player_id;
-WHEN v_format = 'list_a' THEN
-UPDATE players
-SET lista_stats.matches_played = COALESCE((lista_stats).matches_played, 0) + CASE
-        WHEN NEW.playing_status = 'playing_xi' THEN 1
-        WHEN OLD.playing_status = 'playing_xi' THEN -1
-        ELSE 0
-    END
-WHERE players.id = NEW.player_id;
-WHEN v_format = 't20' THEN
-UPDATE players
-SET t20_stats.matches_played = COALESCE((t20_stats).matches_played, 0) + CASE
-        WHEN NEW.playing_status = 'playing_xi' THEN 1
-        WHEN OLD.playing_status = 'playing_xi' THEN -1
-        ELSE 0
-    END
-WHERE players.id = NEW.player_id;
-END CASE
-;
-RETURN NEW;
-END;
-$$;
-
-
-ALTER FUNCTION public.handle_match_squad_update() OWNER TO postgres;
+ALTER FUNCTION public.update_series_dates() OWNER TO postgres;
 
 SET default_tablespace = '';
 
@@ -1816,7 +1640,9 @@ CREATE TABLE public.innings (
     noballs integer DEFAULT 0,
     penalty integer DEFAULT 0,
     is_super_over boolean DEFAULT false,
-    innings_end public.innings_end
+    innings_end public.innings_end,
+    target_runs integer,
+    target_balls integer
 );
 
 
@@ -1845,10 +1671,10 @@ ALTER SEQUENCE public.innings_id_seq OWNED BY public.innings.id;
 
 
 --
--- Name: match_squads; Type: TABLE; Schema: public; Owner: postgres
+-- Name: match_squad_entries; Type: TABLE; Schema: public; Owner: postgres
 --
 
-CREATE TABLE public.match_squads (
+CREATE TABLE public.match_squad_entries (
     player_id integer,
     match_id integer,
     is_captain boolean,
@@ -1860,7 +1686,7 @@ CREATE TABLE public.match_squads (
 );
 
 
-ALTER TABLE public.match_squads OWNER TO postgres;
+ALTER TABLE public.match_squad_entries OWNER TO postgres;
 
 --
 -- Name: matches; Type: TABLE; Schema: public; Owner: postgres
@@ -1871,7 +1697,6 @@ CREATE TABLE public.matches (
     team1_id integer,
     team2_id integer,
     is_male boolean NOT NULL,
-    tournament_id integer,
     series_id integer,
     ground_id integer,
     current_status text,
@@ -1886,16 +1711,12 @@ CREATE TABLE public.matches (
     is_won_by_runs boolean,
     win_margin integer,
     balls_remaining_after_win integer,
-    scorers_id integer[],
-    commentators_id integer[],
     is_toss_decision_bat boolean,
     match_type public.match_type,
     playing_level public.playing_level NOT NULL,
     playing_format public.playing_format NOT NULL,
-    tour_id integer,
     final_result public.match_final_result,
     balls_per_over integer DEFAULT 6,
-    players_of_the_match_id integer[],
     event_match_number integer,
     start_date date,
     start_time time with time zone,
@@ -1905,7 +1726,8 @@ CREATE TABLE public.matches (
     outcome_special_method public.outcome_special_method,
     cricsheet_id text,
     is_neutral_venue boolean,
-    is_bbb_done boolean DEFAULT false
+    is_bbb_done boolean DEFAULT false,
+    end_date date
 );
 
 
@@ -1934,6 +1756,32 @@ ALTER SEQUENCE public.matches_id_seq OWNED BY public.matches.id;
 
 
 --
+-- Name: player_awards; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public.player_awards (
+    player_id integer NOT NULL,
+    match_id integer,
+    series_id integer,
+    award_type public.player_award
+);
+
+
+ALTER TABLE public.player_awards OWNER TO postgres;
+
+--
+-- Name: player_team_entries; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public.player_team_entries (
+    player_id integer NOT NULL,
+    team_id integer NOT NULL
+);
+
+
+ALTER TABLE public.player_team_entries OWNER TO postgres;
+
+--
 -- Name: players; Type: TABLE; Schema: public; Owner: postgres
 --
 
@@ -1946,13 +1794,12 @@ CREATE TABLE public.players (
     date_of_birth date,
     image_url text,
     biography text,
-    teams_represented_id integer[],
-    test_stats public.career_stats,
-    odi_stats public.career_stats,
-    t20i_stats public.career_stats,
-    fc_stats public.career_stats,
-    lista_stats public.career_stats,
-    t20_stats public.career_stats,
+    db_test_stats public.career_stats,
+    db_odi_stats public.career_stats,
+    db_t20i_stats public.career_stats,
+    db_fc_stats public.career_stats,
+    db_lista_stats public.career_stats,
+    db_t20_stats public.career_stats,
     cricsheet_id text,
     cricinfo_id text,
     cricbuzz_id text,
@@ -1960,6 +1807,12 @@ CREATE TABLE public.players (
     is_rhb boolean,
     bowling_styles public.bowling_style[],
     primary_bowling_style public.bowling_style,
+    unavailable_test_stats public.career_stats,
+    unavailable_odi_stats public.career_stats,
+    unavailable_t20i_stats public.career_stats,
+    unavailable_fc_stats public.career_stats,
+    unavailable_lista_stats public.career_stats,
+    unavailable_t20_stats public.career_stats,
     CONSTRAINT valid_birth_date CHECK ((date_of_birth < CURRENT_DATE)),
     CONSTRAINT valid_image_url CHECK (((image_url IS NULL) OR (image_url ~ '^https?://[^\s/$.?#].[^\s]*$'::text))),
     CONSTRAINT valid_name CHECK ((length(TRIM(BOTH FROM name)) > 0))
@@ -2012,12 +1865,12 @@ CREATE TABLE public.series (
     playing_level public.playing_level NOT NULL,
     playing_format public.playing_format NOT NULL,
     season text,
-    teams_id integer[] NOT NULL,
-    host_nations_id integer[],
     tournament_id integer,
     parent_series_id integer,
-    tour_id integer,
-    players_of_the_series_id integer[]
+    start_date date,
+    end_date date,
+    winner_team_id integer,
+    final_status text
 );
 
 
@@ -2098,6 +1951,18 @@ ALTER SEQUENCE public.series_squads_id_seq OWNED BY public.series_squads.id;
 
 
 --
+-- Name: series_team_entries; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public.series_team_entries (
+    series_id integer NOT NULL,
+    team_id integer NOT NULL
+);
+
+
+ALTER TABLE public.series_team_entries OWNER TO postgres;
+
+--
 -- Name: teams; Type: TABLE; Schema: public; Owner: postgres
 --
 
@@ -2170,42 +2035,6 @@ ALTER SEQUENCE public.tournaments_id_seq OWNER TO postgres;
 --
 
 ALTER SEQUENCE public.tournaments_id_seq OWNED BY public.tournaments.id;
-
-
---
--- Name: tours; Type: TABLE; Schema: public; Owner: postgres
---
-
-CREATE TABLE public.tours (
-    id integer NOT NULL,
-    touring_team_id integer NOT NULL,
-    host_nations_id integer[] NOT NULL,
-    season text NOT NULL
-);
-
-
-ALTER TABLE public.tours OWNER TO postgres;
-
---
--- Name: tours_id_seq; Type: SEQUENCE; Schema: public; Owner: postgres
---
-
-CREATE SEQUENCE public.tours_id_seq
-    AS integer
-    START WITH 1
-    INCREMENT BY 1
-    NO MINVALUE
-    NO MAXVALUE
-    CACHE 1;
-
-
-ALTER SEQUENCE public.tours_id_seq OWNER TO postgres;
-
---
--- Name: tours_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: postgres
---
-
-ALTER SEQUENCE public.tours_id_seq OWNED BY public.tours.id;
 
 
 --
@@ -2351,13 +2180,6 @@ ALTER TABLE ONLY public.tournaments ALTER COLUMN id SET DEFAULT nextval('public.
 
 
 --
--- Name: tours id; Type: DEFAULT; Schema: public; Owner: postgres
---
-
-ALTER TABLE ONLY public.tours ALTER COLUMN id SET DEFAULT nextval('public.tours_id_seq'::regclass);
-
-
---
 -- Name: users id; Type: DEFAULT; Schema: public; Owner: postgres
 --
 
@@ -2445,10 +2267,10 @@ ALTER TABLE ONLY public.innings
 
 
 --
--- Name: match_squads match_squads_player_id_match_id_key; Type: CONSTRAINT; Schema: public; Owner: postgres
+-- Name: match_squad_entries match_squads_player_id_match_id_key; Type: CONSTRAINT; Schema: public; Owner: postgres
 --
 
-ALTER TABLE ONLY public.match_squads
+ALTER TABLE ONLY public.match_squad_entries
     ADD CONSTRAINT match_squads_player_id_match_id_key UNIQUE (player_id, match_id);
 
 
@@ -2466,6 +2288,14 @@ ALTER TABLE ONLY public.matches
 
 ALTER TABLE ONLY public.matches
     ADD CONSTRAINT matches_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: player_team_entries player_teams_player_id_team_id_key; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.player_team_entries
+    ADD CONSTRAINT player_teams_player_id_team_id_key UNIQUE (player_id, team_id);
 
 
 --
@@ -2509,6 +2339,14 @@ ALTER TABLE ONLY public.series_squads
 
 
 --
+-- Name: series_team_entries series_team_entries_series_id_team_id_key; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.series_team_entries
+    ADD CONSTRAINT series_team_entries_series_id_team_id_key UNIQUE (series_id, team_id);
+
+
+--
 -- Name: teams teams_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -2525,14 +2363,6 @@ ALTER TABLE ONLY public.tournaments
 
 
 --
--- Name: tours tours_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
---
-
-ALTER TABLE ONLY public.tours
-    ADD CONSTRAINT tours_pkey PRIMARY KEY (id);
-
-
---
 -- Name: continents unique_continent_name; Type: CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -2546,34 +2376,6 @@ ALTER TABLE ONLY public.continents
 
 ALTER TABLE ONLY public.users
     ADD CONSTRAINT users_pkey PRIMARY KEY (id);
-
-
---
--- Name: batting_scorecards batting_scorecard_insertion_trigger; Type: TRIGGER; Schema: public; Owner: postgres
---
-
-CREATE TRIGGER batting_scorecard_insertion_trigger AFTER INSERT ON public.batting_scorecards FOR EACH ROW EXECUTE FUNCTION public.handle_batting_scorecard_insertion();
-
-
---
--- Name: bowling_scorecards bowling_scorecard_insertion_trigger; Type: TRIGGER; Schema: public; Owner: postgres
---
-
-CREATE TRIGGER bowling_scorecard_insertion_trigger AFTER INSERT ON public.bowling_scorecards FOR EACH ROW EXECUTE FUNCTION public.handle_bowling_scorecard_insertion();
-
-
---
--- Name: match_squads match_squad_insertion_trigger; Type: TRIGGER; Schema: public; Owner: postgres
---
-
-CREATE TRIGGER match_squad_insertion_trigger AFTER INSERT ON public.match_squads FOR EACH ROW EXECUTE FUNCTION public.handle_match_squad_insertion();
-
-
---
--- Name: match_squads match_squad_update_trigger; Type: TRIGGER; Schema: public; Owner: postgres
---
-
-CREATE TRIGGER match_squad_update_trigger AFTER UPDATE ON public.match_squads FOR EACH ROW EXECUTE FUNCTION public.handle_match_squad_update();
 
 
 --
@@ -2745,10 +2547,10 @@ ALTER TABLE ONLY public.innings
 
 
 --
--- Name: match_squads match_squads_team_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+-- Name: match_squad_entries match_squads_team_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
 --
 
-ALTER TABLE ONLY public.match_squads
+ALTER TABLE ONLY public.match_squad_entries
     ADD CONSTRAINT match_squads_team_id_fkey FOREIGN KEY (team_id) REFERENCES public.teams(id) ON UPDATE CASCADE ON DELETE CASCADE NOT VALID;
 
 
@@ -2857,19 +2659,43 @@ ALTER TABLE ONLY public.matches
 
 
 --
--- Name: matches matches_tour_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+-- Name: player_awards player_awards_match_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
 --
 
-ALTER TABLE ONLY public.matches
-    ADD CONSTRAINT matches_tour_id_fkey FOREIGN KEY (tour_id) REFERENCES public.tours(id) ON UPDATE CASCADE ON DELETE CASCADE NOT VALID;
+ALTER TABLE ONLY public.player_awards
+    ADD CONSTRAINT player_awards_match_id_fkey FOREIGN KEY (match_id) REFERENCES public.matches(id) ON UPDATE CASCADE ON DELETE CASCADE;
 
 
 --
--- Name: matches matches_tournament_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+-- Name: player_awards player_awards_player_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
 --
 
-ALTER TABLE ONLY public.matches
-    ADD CONSTRAINT matches_tournament_id_fkey FOREIGN KEY (tournament_id) REFERENCES public.tournaments(id) ON UPDATE CASCADE ON DELETE CASCADE NOT VALID;
+ALTER TABLE ONLY public.player_awards
+    ADD CONSTRAINT player_awards_player_id_fkey FOREIGN KEY (player_id) REFERENCES public.players(id) ON UPDATE CASCADE ON DELETE CASCADE;
+
+
+--
+-- Name: player_awards player_awards_series_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.player_awards
+    ADD CONSTRAINT player_awards_series_id_fkey FOREIGN KEY (series_id) REFERENCES public.series(id) ON UPDATE CASCADE ON DELETE CASCADE;
+
+
+--
+-- Name: player_team_entries player_teams_player_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.player_team_entries
+    ADD CONSTRAINT player_teams_player_id_fkey FOREIGN KEY (player_id) REFERENCES public.players(id) ON UPDATE CASCADE ON DELETE CASCADE;
+
+
+--
+-- Name: player_team_entries player_teams_team_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.player_team_entries
+    ADD CONSTRAINT player_teams_team_id_fkey FOREIGN KEY (team_id) REFERENCES public.teams(id) ON UPDATE CASCADE ON DELETE CASCADE;
 
 
 --
@@ -2921,11 +2747,19 @@ ALTER TABLE ONLY public.series_squads
 
 
 --
--- Name: series series_tour_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+-- Name: series_team_entries series_team_entries_series_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
 --
 
-ALTER TABLE ONLY public.series
-    ADD CONSTRAINT series_tour_id_fkey FOREIGN KEY (tour_id) REFERENCES public.tours(id) ON UPDATE CASCADE ON DELETE CASCADE NOT VALID;
+ALTER TABLE ONLY public.series_team_entries
+    ADD CONSTRAINT series_team_entries_series_id_fkey FOREIGN KEY (series_id) REFERENCES public.series(id) ON UPDATE CASCADE ON DELETE CASCADE NOT VALID;
+
+
+--
+-- Name: series_team_entries series_team_entries_team_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.series_team_entries
+    ADD CONSTRAINT series_team_entries_team_id_fkey FOREIGN KEY (team_id) REFERENCES public.teams(id) ON UPDATE CASCADE ON DELETE CASCADE NOT VALID;
 
 
 --
@@ -2937,35 +2771,27 @@ ALTER TABLE ONLY public.series
 
 
 --
--- Name: match_squads squads_match_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+-- Name: series series_winner_team_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
 --
 
-ALTER TABLE ONLY public.match_squads
+ALTER TABLE ONLY public.series
+    ADD CONSTRAINT series_winner_team_id_fkey FOREIGN KEY (winner_team_id) REFERENCES public.teams(id);
+
+
+--
+-- Name: match_squad_entries squads_match_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.match_squad_entries
     ADD CONSTRAINT squads_match_id_fkey FOREIGN KEY (match_id) REFERENCES public.matches(id) ON UPDATE CASCADE ON DELETE CASCADE NOT VALID;
 
 
 --
--- Name: match_squads squads_player_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+-- Name: match_squad_entries squads_player_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
 --
 
-ALTER TABLE ONLY public.match_squads
+ALTER TABLE ONLY public.match_squad_entries
     ADD CONSTRAINT squads_player_id_fkey FOREIGN KEY (player_id) REFERENCES public.players(id) ON UPDATE CASCADE ON DELETE CASCADE NOT VALID;
-
-
---
--- Name: tours tours_season_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
---
-
-ALTER TABLE ONLY public.tours
-    ADD CONSTRAINT tours_season_fkey FOREIGN KEY (season) REFERENCES public.seasons(season) ON UPDATE CASCADE ON DELETE CASCADE NOT VALID;
-
-
---
--- Name: tours tours_touring_team_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
---
-
-ALTER TABLE ONLY public.tours
-    ADD CONSTRAINT tours_touring_team_id_fkey FOREIGN KEY (touring_team_id) REFERENCES public.teams(id) ON UPDATE CASCADE ON DELETE CASCADE NOT VALID;
 
 
 --

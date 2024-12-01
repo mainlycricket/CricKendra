@@ -35,7 +35,7 @@ type TeamKey struct {
 	PlayingLevel string
 }
 
-var TeamsCache CacheMap[TeamKey, responses.AllTeams]
+var TeamsCache CacheMap[TeamKey, int64]
 
 // Players
 
@@ -53,7 +53,7 @@ type TourKey struct {
 	HostNationsId string // ids joined by a "_"
 }
 
-var ToursCache CacheMap[TourKey, responses.AllTours]
+var ToursCache CacheMap[TourKey, int64]
 
 // Tournament
 
@@ -64,7 +64,7 @@ type TournamentKey struct {
 	PlayingFormat string
 }
 
-var TournamentsCache CacheMap[TournamentKey, responses.AllTournaments]
+var TournamentsCache CacheMap[TournamentKey, int64]
 
 // Series
 
@@ -76,7 +76,7 @@ type SeriesKey struct {
 	PlayingFormat string
 }
 
-var SeriesCache CacheMap[SeriesKey, responses.AllSeries]
+var SeriesCache CacheMap[SeriesKey, int64]
 
 // Series Squad
 
@@ -85,7 +85,7 @@ type SeriesSquadKey struct {
 	TeamId   int64
 }
 
-var SeriesSquadCache CacheMap[SeriesSquadKey, responses.AllSeriesSquads]
+var SeriesSquadCache CacheMap[SeriesSquadKey, int64]
 
 // Seasons
 
@@ -93,7 +93,7 @@ var SeasonsCache CacheMap[string, bool]
 
 // HostNations
 
-var HostNationCache CacheMap[string, responses.AllHostNations]
+var HostNationCache CacheMap[string, int64]
 
 // Grounds
 
@@ -106,4 +106,4 @@ var GroundsCache CacheMap[GroundKey, responses.AllGrounds]
 
 // Cities
 
-var CitiesCache CacheMap[string, responses.AllCities]
+var CitiesCache CacheMap[string, int64]

@@ -2,7 +2,6 @@ package dbutils
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"net/url"
 
@@ -12,20 +11,14 @@ import (
 	"github.com/mainlycricket/CricKendra/pkg/pgxutils"
 )
 
-func InsertTeam(ctx context.Context, db DB_Exec, team *models.Team) error {
-	query := `INSERT INTO teams (name, is_male, image_url, playing_level, short_name) VALUES($1, $2, $3, $4, $5)`
+func InsertTeam(ctx context.Context, db DB_Exec, team *models.Team) (int64, error) {
+	var id int64
 
-	cmd, err := db.Exec(ctx, query, team.Name, team.IsMale, team.ImageURL, team.PlayingLevel, team.ShortName)
+	query := `INSERT INTO teams (name, is_male, image_url, playing_level, short_name) VALUES($1, $2, $3, $4, $5) RETURNING id`
 
-	if err != nil {
-		return err
-	}
+	err := db.QueryRow(ctx, query, team.Name, team.IsMale, team.ImageURL, team.PlayingLevel, team.ShortName).Scan(&id)
 
-	if cmd.RowsAffected() < 1 {
-		return errors.New("failed to insert team")
-	}
-
-	return nil
+	return id, err
 }
 
 func ReadTeams(ctx context.Context, db DB_Exec, queryMap url.Values) (responses.AllTeamsResponse, error) {

@@ -16,6 +16,7 @@ import (
 	"github.com/jackc/pgx/v5/pgtype"
 	"github.com/mainlycricket/CricKendra/internal/dbutils"
 	"github.com/mainlycricket/CricKendra/internal/models"
+	"github.com/mainlycricket/CricKendra/internal/responses"
 )
 
 /*
@@ -130,6 +131,11 @@ func extractMatchInfo(filePath, playingLevel, playingFormat string, isMale bool,
 			continue
 		}
 
+		if row[1] == "method" {
+			match.OutcomeSpecialMethod = pgtype.Text{String: row[2], Valid: true}
+			continue
+		}
+
 		if row[1] == "outcome" {
 			match.FinalResult = handleMatchOutcome(row[2])
 			continue
@@ -187,6 +193,13 @@ func extractMatchInfo(filePath, playingLevel, playingFormat string, isMale bool,
 			}
 
 			match.StartDate = pgtype.Date{Time: date, Valid: true}
+			match.EndDate = pgtype.Date{Time: date, Valid: true}
+
+			if playingFormat == "Test" || playingFormat == "first_class" {
+				end_date := date.AddDate(0, 0, 5)
+				match.EndDate = pgtype.Date{Time: end_date, Valid: true}
+			}
+
 			continue
 		}
 
@@ -297,13 +310,13 @@ func extractMatchInfo(filePath, playingLevel, playingFormat string, isMale bool,
 			playerName, cricsheetId := row[3], row[4]
 
 			if _, ok := team1.Players[playerName]; ok {
-				if err := handlePlayer(cricsheetId, match.IsMale.Bool, int64(team1.Id)); err != nil {
+				if err := handlePlayer(cricsheetId, match.IsMale.Bool); err != nil {
 					mainError = err
 					return
 				}
 				team1.Players[playerName] = cricsheetId
 			} else if _, ok := team2.Players[playerName]; ok {
-				if err := handlePlayer(cricsheetId, match.IsMale.Bool, int64(team2.Id)); err != nil {
+				if err := handlePlayer(cricsheetId, match.IsMale.Bool); err != nil {
 					mainError = err
 					return
 				}
@@ -333,53 +346,54 @@ func extractMatchInfo(filePath, playingLevel, playingFormat string, isMale bool,
 		}
 	}
 
-	for _, potmName := range potmNames {
-		var cacheKey PlayerKey
-
-		if cricsheetId, ok := team1.Players[potmName]; ok {
-			cacheKey.CricsheetId = cricsheetId
-		} else if cricsheetId, ok := team2.Players[potmName]; ok {
-			cacheKey.CricsheetId = cricsheetId
-		}
-
-		player, _ := PlayersCache.Get(cacheKey)
-		match.PoTMsId = append(match.PoTMsId, player.Id)
+	ground, err := handleVenue(venue, city)
+	if err != nil {
+		mainError = fmt.Errorf(`error while handling venue: %v`, err)
+		return
 	}
 
-	match.GroundId, err = handleVenue(venue, city)
-	if err != nil {
-		mainError = err
-		return
+	match.GroundId = ground.Id
+	if !match.IsNeutralVenue.Bool {
+		if ground.HostNationName.String == team1.Name {
+			match.HomeTeamId = pgtype.Int8{Int64: team1.Id, Valid: true}
+			match.AwayTeamId = pgtype.Int8{Int64: team2.Id, Valid: true}
+		} else if ground.HostNationName.String == team2.Name {
+			match.HomeTeamId = pgtype.Int8{Int64: team2.Id, Valid: true}
+			match.AwayTeamId = pgtype.Int8{Int64: team1.Id, Valid: true}
+		}
 	}
 
 	match.SeriesId, err = handleEvent(eventName, &match)
 	if err != nil {
+		mainError = fmt.Errorf(`error while handling event: %v`, err)
+		return
+	}
+
+	matchId, err := dbutils.UpsertCricsheetMatch(context.Background(), DB_POOL, &match)
+	if err != nil {
 		mainError = err
 		return
 	}
 
-	if err = dbutils.UpsertMatch(context.Background(), DB_POOL, &match); err != nil {
-		mainError = err
-		return
-	}
-
-	if match, err = dbutils.ReadMatchByCricsheetId(context.Background(), DB_POOL, matchCricsheetId); err != nil {
-		mainError = err
-		return
-	}
+	match.Id = pgtype.Int8{Int64: matchId, Valid: true}
 
 	if err = insertSquadEntries(team1, match.Id.Int64, match.SeriesId.Int64); err != nil {
-		mainError = err
+		mainError = fmt.Errorf(`error while handling squad entries of team1: %v`, err)
 		return
 	}
 
 	if err = insertSquadEntries(team2, match.Id.Int64, match.SeriesId.Int64); err != nil {
-		mainError = err
+		mainError = fmt.Errorf(`error while handling squad entries of team2: %v`, err)
+		return
+	}
+
+	if err = insertPotmEntries(potmNames, team1, team2, match.Id.Int64); err != nil {
+		mainError = fmt.Errorf(`error while inserting POTM entries: %v`, err)
 		return
 	}
 }
 
-func handlePlayer(cricsheetId string, isMale bool, teamId int64) error {
+func handlePlayer(cricsheetId string, isMale bool) error {
 	cacheKey := PlayerKey{CricsheetId: cricsheetId}
 	_, exists := PlayersCache.Get(cacheKey)
 	if exists {
@@ -396,8 +410,10 @@ func handlePlayer(cricsheetId string, isMale bool, teamId int64) error {
 
 	dbResponse, err := dbutils.ReadPlayers(context.Background(), DB_POOL, filters)
 	if err != nil {
-		return err
+		return fmt.Errorf(`error while reading reading players: %v`, err)
 	}
+
+	var player responses.AllPlayers
 
 	if len(dbResponse.Players) == 0 {
 		cricsheetPeople, err := dbutils.ReadCricsheetPeopleById(context.Background(), DB_POOL, cricsheetId)
@@ -407,47 +423,36 @@ func handlePlayer(cricsheetId string, isMale bool, teamId int64) error {
 		}
 
 		newPlayer := models.Player{
-			Name:               cricsheetPeople.Name,
-			FullName:           cricsheetPeople.UniqueName,
-			CricsheetId:        cricsheetPeople.Identifier,
-			CricbuzzId:         cricsheetPeople.CricbuzzId,
-			CricinfoId:         cricsheetPeople.CricinfoId,
-			IsMale:             pgtype.Bool{Bool: isMale, Valid: true},
-			TeamsRepresentedId: []pgtype.Int8{{Int64: teamId, Valid: true}},
+			Name:        cricsheetPeople.Name,
+			FullName:    cricsheetPeople.UniqueName,
+			CricsheetId: cricsheetPeople.Identifier,
+			CricbuzzId:  cricsheetPeople.CricbuzzId,
+			CricinfoId:  cricsheetPeople.CricinfoId,
+			IsMale:      pgtype.Bool{Bool: isMale, Valid: true},
 		}
 
-		err = dbutils.InsertPlayer(context.Background(), DB_POOL, &newPlayer)
+		playerId, err := dbutils.InsertPlayer(context.Background(), DB_POOL, &newPlayer)
 		if err != nil {
-			return err
+			return fmt.Errorf(`error while inserting player: %v`, err)
 		}
 
-		dbResponse, err = dbutils.ReadPlayers(context.Background(), DB_POOL, filters)
-		if err != nil {
-			return err
+		player = responses.AllPlayers{
+			Id:     pgtype.Int8{Int64: playerId, Valid: true},
+			Name:   newPlayer.Name,
+			IsMale: pgtype.Bool{Bool: isMale, Valid: true},
 		}
+	} else {
+		player = dbResponse.Players[0]
 	}
 
-	player := dbResponse.Players[0]
 	PlayersCache.Set(cacheKey, player)
 	return nil
 }
 
 func handleEvent(eventName string, match *models.Match) (pgtype.Int8, error) {
-	season, isMale := match.Season.String, match.IsMale.Bool
-	playingLevel, playingFormat := match.PlayingLevel.String, match.PlayingFormat.String
-	var err error
-
-	touringTeam, hostNations, isTour := detectTour(eventName)
-
-	if isTour {
-		tourId, err := handleTour(touringTeam, season, playingLevel, hostNations, isMale)
-		if err != nil {
-			return pgtype.Int8{}, err
-		}
-		match.TourId = tourId
-		eventName += fmt.Sprintf(" %s Series", match.PlayingFormat.String)
-	} else {
-		match.TournamentId, err = handleTournament(eventName, playingLevel, playingFormat, isMale)
+	hostNations := getTourHostNations(eventName)
+	for _, hostNation := range hostNations {
+		_, err := handleHostNation(hostNation)
 		if err != nil {
 			return pgtype.Int8{}, err
 		}
@@ -472,9 +477,17 @@ func handleSeries(name string, match *models.Match) (pgtype.Int8, error) {
 		IsMale:        isMale,
 	}
 
-	series, ok := SeriesCache.Get(cacheKey)
+	seriesId, ok := SeriesCache.Get(cacheKey)
+	defer func() (pgtype.Int8, error) {
+		if err := dbutils.UpsertSeriesTeamEntries(context.Background(), DB_POOL, seriesId, []pgtype.Int8{match.Team1Id, match.Team2Id}); err != nil {
+			err = fmt.Errorf(`failed to upsert series team entries: %v`, err)
+			return pgtype.Int8{}, err
+		}
+		return pgtype.Int8{Int64: seriesId, Valid: true}, nil
+	}()
+
 	if ok {
-		return series.Id, nil
+		return pgtype.Int8{Int64: seriesId, Valid: true}, nil
 	}
 
 	filters := url.Values{
@@ -502,27 +515,31 @@ func handleSeries(name string, match *models.Match) (pgtype.Int8, error) {
 		newSeries := models.Series{
 			Name:          pgtype.Text{String: name, Valid: true},
 			TeamsId:       []pgtype.Int8{match.Team1Id, match.Team2Id},
-			TourId:        match.TourId,
 			Season:        match.Season,
 			IsMale:        match.IsMale,
 			PlayingLevel:  match.PlayingLevel,
 			PlayingFormat: match.PlayingFormat,
 		}
 
-		err = dbutils.InsertSeries(context.Background(), DB_POOL, &newSeries)
+		newSeries.TournamentId, err = handleTournament(name, playingLevel, playingFormat, isMale)
 		if err != nil {
 			return pgtype.Int8{}, err
 		}
 
-		dbResponse, err = dbutils.ReadSeries(context.Background(), DB_POOL, filters)
+		seriesId, err = dbutils.InsertSeries(context.Background(), DB_POOL, &newSeries)
 		if err != nil {
+			return pgtype.Int8{}, err
+		}
+	} else {
+		seriesId = dbResponse.Series[0].Id.Int64
+		if err := dbutils.UpsertSeriesTeamEntries(context.Background(), DB_POOL, seriesId, []pgtype.Int8{match.Team1Id, match.Team2Id}); err != nil {
+			err = fmt.Errorf(`failed to upsert series team entries: %v`, err)
 			return pgtype.Int8{}, err
 		}
 	}
 
-	series = dbResponse.Series[0]
-	SeriesCache.Set(cacheKey, series)
-	return series.Id, nil
+	SeriesCache.Set(cacheKey, seriesId)
+	return pgtype.Int8{Int64: seriesId, Valid: true}, nil
 }
 
 func handleTournament(tournamentName, playingLevel, playingFormat string, isMale bool) (pgtype.Int8, error) {
@@ -533,9 +550,9 @@ func handleTournament(tournamentName, playingLevel, playingFormat string, isMale
 		PlayingFormat: playingFormat,
 	}
 
-	tournament, exists := TournamentsCache.Get(cacheKey)
+	tournamentId, exists := TournamentsCache.Get(cacheKey)
 	if exists {
-		return tournament.Id, nil
+		return pgtype.Int8{Int64: tournamentId, Valid: true}, nil
 	}
 
 	filters := url.Values{
@@ -562,87 +579,16 @@ func handleTournament(tournamentName, playingLevel, playingFormat string, isMale
 		return pgtype.Int8{}, nil
 	}
 
-	tournament = dbResponse.Tournaments[0]
-	TournamentsCache.Set(cacheKey, tournament)
-	return tournament.Id, nil
-}
-
-func handleTour(
-	touringTeam, season, playingLevel string, hostNations []string, isMale bool) (pgtype.Int8, error) {
-	touringTeamId, err := handleTeam(touringTeam, playingLevel, isMale)
-	if err != nil {
-		return pgtype.Int8{}, err
-	}
-
-	var hostNationsId []pgtype.Int8
-	for _, hostNationName := range hostNations {
-		hostNationId, err := handleHostNation(hostNationName)
-		if err != nil {
-			return pgtype.Int8{}, err
-		}
-		hostNationsId = append(hostNationsId, hostNationId)
-	}
-
-	var hostNationsStr []string
-	for _, id := range hostNationsId {
-		hostNationsStr = append(hostNationsStr, strconv.FormatInt(id.Int64, 10))
-	}
-
-	cacheKey := TourKey{
-		TouringTeamId: touringTeamId.Int64,
-		HostNationsId: strings.Join(hostNationsStr, "_"),
-		Season:        season,
-	}
-
-	tour, exists := ToursCache.Get(cacheKey)
-	if exists {
-		return tour.Id, nil
-	}
-
-	filters := url.Values{
-		"touring_team_id":        []string{strconv.FormatInt(touringTeamId.Int64, 10)},
-		"host_nations_id__exact": hostNationsStr,
-		"season":                 []string{season},
-		"__limit":                []string{"1"},
-	}
-
-	TourLock.Lock()
-	defer TourLock.Unlock()
-
-	dbResponse, err := dbutils.ReadTours(context.Background(), DB_POOL, filters)
-	if err != nil {
-		return pgtype.Int8{}, err
-	}
-
-	if len(dbResponse.Tours) == 0 {
-		newTour := models.Tour{
-			TouringTeamId: touringTeamId,
-			HostNationsId: hostNationsId,
-			Season:        pgtype.Text{String: season, Valid: true},
-		}
-
-		err := dbutils.InsertTour(context.Background(), DB_POOL, &newTour)
-		if err != nil {
-			return pgtype.Int8{}, err
-		}
-
-		dbResponse, err = dbutils.ReadTours(context.Background(), DB_POOL, filters)
-		if err != nil {
-			return pgtype.Int8{}, err
-		}
-	}
-
-	tour = dbResponse.Tours[0]
-	ToursCache.Set(cacheKey, tour)
-
-	return tour.Id, nil
+	tournamentId = dbResponse.Tournaments[0].Id.Int64
+	TournamentsCache.Set(cacheKey, tournamentId)
+	return pgtype.Int8{Int64: tournamentId, Valid: true}, nil
 }
 
 func handleTeam(teamName, playingLevel string, isMale bool) (pgtype.Int8, error) {
 	cacheKey := TeamKey{TeamName: teamName, IsMale: isMale, PlayingLevel: playingLevel}
-	team, exists := TeamsCache.Get(cacheKey)
+	teamId, exists := TeamsCache.Get(cacheKey)
 	if exists {
-		return pgtype.Int8{Int64: team.Id.Int64, Valid: true}, nil
+		return pgtype.Int8{Int64: teamId, Valid: true}, nil
 	}
 
 	filters := url.Values{
@@ -672,20 +618,16 @@ func handleTeam(teamName, playingLevel string, isMale bool) (pgtype.Int8, error)
 			ShortName:    pgtype.Text{String: defaultTeamShortName(teamName), Valid: true},
 		}
 
-		err := dbutils.InsertTeam(context.Background(), DB_POOL, &newTeam)
+		teamId, err = dbutils.InsertTeam(context.Background(), DB_POOL, &newTeam)
 		if err != nil {
 			return pgtype.Int8{}, err
 		}
-
-		dbResponse, err = dbutils.ReadTeams(context.Background(), DB_POOL, filters)
-		if err != nil {
-			return pgtype.Int8{}, err
-		}
+	} else {
+		teamId = dbResponse.Teams[0].Id.Int64
 	}
 
-	team = dbResponse.Teams[0]
-	TeamsCache.Set(cacheKey, team)
-	teamField := pgtype.Int8{Int64: team.Id.Int64, Valid: true}
+	TeamsCache.Set(cacheKey, teamId)
+	teamField := pgtype.Int8{Int64: teamId, Valid: true}
 
 	return teamField, nil
 }
@@ -718,16 +660,16 @@ func handleSeason(season string) (pgtype.Text, error) {
 	return pgtype.Text{String: season, Valid: true}, nil
 }
 
-func handleVenue(venue, city string) (pgtype.Int8, error) {
+func handleVenue(venue, city string) (responses.AllGrounds, error) {
 	cacheKey := GroundKey{Venue: venue, City: city}
 	ground, exists := GroundsCache.Get(cacheKey)
 	if exists {
-		return ground.Id, nil
+		return ground, nil
 	}
 
 	cityId, err := handleCity(city)
 	if err != nil {
-		return pgtype.Int8{}, err
+		return responses.AllGrounds{}, fmt.Errorf(`error while handling city: %v`, err)
 	}
 
 	filters := url.Values{
@@ -744,7 +686,7 @@ func handleVenue(venue, city string) (pgtype.Int8, error) {
 
 	dbResponse, err := dbutils.ReadGrounds(context.Background(), DB_POOL, filters)
 	if err != nil {
-		return pgtype.Int8{}, err
+		return responses.AllGrounds{}, fmt.Errorf(`error while reading grounds: %v`, err)
 	}
 
 	if len(dbResponse.Grounds) == 0 {
@@ -753,21 +695,23 @@ func handleVenue(venue, city string) (pgtype.Int8, error) {
 			CityId: cityId,
 		}
 
-		err := dbutils.InsertGround(context.Background(), DB_POOL, &newGround)
+		groundId, err := dbutils.InsertGround(context.Background(), DB_POOL, &newGround)
 		if err != nil {
-			return pgtype.Int8{}, err
+			return responses.AllGrounds{}, fmt.Errorf(`error while inserting ground: %v`, err)
 		}
 
-		dbResponse, err = dbutils.ReadGrounds(context.Background(), DB_POOL, filters)
-		if err != nil {
-			return pgtype.Int8{}, err
+		ground = responses.AllGrounds{
+			Id:     pgtype.Int8{Int64: groundId, Valid: true},
+			Name:   newGround.Name,
+			CityId: newGround.CityId,
 		}
+	} else {
+		ground = dbResponse.Grounds[0]
 	}
 
-	ground = dbResponse.Grounds[0]
 	GroundsCache.Set(cacheKey, ground)
 
-	return ground.Id, nil
+	return ground, nil
 }
 
 func handleCity(cityName string) (pgtype.Int8, error) {
@@ -775,9 +719,9 @@ func handleCity(cityName string) (pgtype.Int8, error) {
 		return pgtype.Int8{}, nil
 	}
 
-	city, exists := CitiesCache.Get(cityName)
+	cityId, exists := CitiesCache.Get(cityName)
 	if exists {
-		return city.Id, nil
+		return pgtype.Int8{Int64: cityId, Valid: true}, nil
 	}
 
 	filters := url.Values{
@@ -790,7 +734,7 @@ func handleCity(cityName string) (pgtype.Int8, error) {
 
 	dbResponse, err := dbutils.ReadCities(context.Background(), DB_POOL, filters)
 	if err != nil {
-		return pgtype.Int8{}, err
+		return pgtype.Int8{}, fmt.Errorf(`error while reading cities: %v`, err)
 	}
 
 	if len(dbResponse.Cities) == 0 {
@@ -798,26 +742,22 @@ func handleCity(cityName string) (pgtype.Int8, error) {
 			Name: pgtype.Text{String: cityName, Valid: true},
 		}
 
-		err := dbutils.InsertCity(context.Background(), DB_POOL, &newCity)
+		cityId, err = dbutils.InsertCity(context.Background(), DB_POOL, &newCity)
 		if err != nil {
-			return pgtype.Int8{}, err
+			return pgtype.Int8{}, fmt.Errorf(`error while inserting city: %v`, err)
 		}
-
-		dbResponse, err = dbutils.ReadCities(context.Background(), DB_POOL, filters)
-		if err != nil {
-			return pgtype.Int8{}, err
-		}
+	} else {
+		cityId = dbResponse.Cities[0].Id.Int64
 	}
 
-	city = dbResponse.Cities[0]
-	CitiesCache.Set(cityName, city)
-	return city.Id, nil
+	CitiesCache.Set(cityName, cityId)
+	return pgtype.Int8{Int64: cityId, Valid: true}, nil
 }
 
 func handleHostNation(hostNationName string) (pgtype.Int8, error) {
-	hostNation, exists := HostNationCache.Get(hostNationName)
+	hostNationId, exists := HostNationCache.Get(hostNationName)
 	if exists {
-		return pgtype.Int8{Int64: hostNation.Id.Int64, Valid: true}, nil
+		return pgtype.Int8{Int64: hostNationId, Valid: true}, nil
 	}
 
 	filters := url.Values{
@@ -838,20 +778,16 @@ func handleHostNation(hostNationName string) (pgtype.Int8, error) {
 			Name: pgtype.Text{String: hostNationName, Valid: true},
 		}
 
-		err := dbutils.InsertHostNation(context.Background(), DB_POOL, &newHostNation)
+		hostNationId, err = dbutils.InsertHostNation(context.Background(), DB_POOL, &newHostNation)
 		if err != nil {
 			return pgtype.Int8{}, err
 		}
-
-		dbResponse, err = dbutils.ReadHostNations(context.Background(), DB_POOL, filters)
-		if err != nil {
-			return pgtype.Int8{}, err
-		}
+	} else {
+		hostNationId = dbResponse.HostNations[0].Id.Int64
 	}
 
-	hostNation = dbResponse.HostNations[0]
-	HostNationCache.Set(hostNationName, hostNation)
-	hostNationField := pgtype.Int8{Int64: hostNation.Id.Int64, Valid: true}
+	HostNationCache.Set(hostNationName, hostNationId)
+	hostNationField := pgtype.Int8{Int64: hostNationId, Valid: true}
 
 	return hostNationField, nil
 }
@@ -869,17 +805,16 @@ func handleMatchOutcome(outcome string) pgtype.Text {
 	}
 }
 
-func detectTour(eventName string) (string, []string, bool) {
+func getTourHostNations(eventName string) []string {
 	pattern := `^([A-Za-z\s]+) tour of ([A-Za-z\s]+(?: and [A-Za-z\s]+)*)$`
 	re := regexp.MustCompile(pattern)
 	matches := re.FindStringSubmatch(eventName)
 	if len(matches) == 3 {
-		teamName := matches[1]
 		hostNations := matches[2]
 		hostNationList := regexp.MustCompile(`\s+and\s+`).Split(hostNations, -1)
-		return teamName, hostNationList, true
+		return hostNationList
 	}
-	return "", nil, false
+	return nil
 }
 
 func defaultTeamShortName(teamName string) string {
@@ -900,9 +835,9 @@ func defaultTeamShortName(teamName string) string {
 func handleSeriesSquadId(teamInfo TeamInfo, seriesId int64) (pgtype.Int8, error) {
 	cacheKey := SeriesSquadKey{TeamId: teamInfo.Id, SeriesId: seriesId}
 
-	squad, exists := SeriesSquadCache.Get(cacheKey)
+	squadId, exists := SeriesSquadCache.Get(cacheKey)
 	if exists {
-		return pgtype.Int8{Int64: squad.Id.Int64, Valid: true}, nil
+		return pgtype.Int8{Int64: squadId, Valid: true}, nil
 	}
 
 	filters := url.Values{
@@ -928,20 +863,16 @@ func handleSeriesSquadId(teamInfo TeamInfo, seriesId int64) (pgtype.Int8, error)
 			SquadLabel: pgtype.Text{String: squadLabel, Valid: true},
 		}
 
-		err := dbutils.InsertSeriesSquad(context.Background(), DB_POOL, &newSeriesSquad)
+		squadId, err = dbutils.InsertSeriesSquad(context.Background(), DB_POOL, &newSeriesSquad)
 		if err != nil {
 			return pgtype.Int8{}, err
 		}
-
-		dbResponse, err = dbutils.ReadSeriesSquads(context.Background(), DB_POOL, filters)
-		if err != nil {
-			return pgtype.Int8{}, err
-		}
+	} else {
+		squadId = dbResponse.Squads[0].Id.Int64
 	}
 
-	squad = dbResponse.Squads[0]
-	SeriesSquadCache.Set(cacheKey, squad)
-	return squad.Id, nil
+	SeriesSquadCache.Set(cacheKey, squadId)
+	return pgtype.Int8{Int64: squadId, Valid: true}, nil
 }
 
 func insertSquadEntries(teamInfo TeamInfo, matchId, seriesId int64) error {
@@ -956,6 +887,15 @@ func insertSquadEntries(teamInfo TeamInfo, matchId, seriesId int64) error {
 			return fmt.Errorf(`player %s not found in cache`, playerName)
 		}
 
+		playerTeamEntry := models.PlayerTeamEntry{
+			PlayerId: player.Id,
+			TeamId:   pgtype.Int8{Int64: teamInfo.Id, Valid: true},
+		}
+
+		if err := dbutils.UpsertPlayerTeamEntry(context.Background(), DB_POOL, &playerTeamEntry); err != nil {
+			return fmt.Errorf(`failed to upsert team entry of player %s: %v`, playerName, err)
+		}
+
 		matchSquadEntry := models.MatchSquad{
 			PlayerId:      player.Id,
 			TeamId:        pgtype.Int8{Int64: teamInfo.Id, Valid: true},
@@ -968,13 +908,43 @@ func insertSquadEntries(teamInfo TeamInfo, matchId, seriesId int64) error {
 		}
 
 		seriesSquadEntry := models.SeriesSquadEntry{
-			PlayerId:      player.Id,
-			SquadId:       squadId,
-			PlayingStatus: pgtype.Text{String: "playing_xi", Valid: true},
+			PlayerId: player.Id,
+			SquadId:  squadId,
 		}
 
 		if err := dbutils.UpsertSeriesSquadEntry(context.Background(), DB_POOL, &seriesSquadEntry); err != nil {
 			return fmt.Errorf(`error while series squad upsertion of %s: %v`, playerName, err)
+		}
+	}
+
+	return nil
+}
+
+func insertPotmEntries(potmNames []string, team1, team2 TeamInfo, matchId int64) error {
+	for _, potmName := range potmNames {
+		var cacheKey PlayerKey
+
+		if cricsheetId, ok := team1.Players[potmName]; ok {
+			cacheKey.CricsheetId = cricsheetId
+		} else if cricsheetId, ok := team2.Players[potmName]; ok {
+			cacheKey.CricsheetId = cricsheetId
+		} else {
+			return fmt.Errorf(`player %s not found in either team`, potmName)
+		}
+
+		player, ok := PlayersCache.Get(cacheKey)
+		if !ok {
+			return fmt.Errorf(`player %s not found in PlayersCache`, potmName)
+		}
+
+		awardEntry := models.PlayerAwardEntry{
+			PlayerId:  player.Id,
+			MatchId:   pgtype.Int8{Int64: matchId, Valid: true},
+			AwardType: pgtype.Text{String: "player_of_the_match", Valid: true},
+		}
+
+		if err := dbutils.InsertPlayerAwardEntry(context.Background(), DB_POOL, &awardEntry); err != nil {
+			return fmt.Errorf(`db error %v`, err)
 		}
 	}
 

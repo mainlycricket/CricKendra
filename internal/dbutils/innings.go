@@ -13,20 +13,14 @@ import (
 	"github.com/mainlycricket/CricKendra/pkg/pgxutils"
 )
 
-func InsertInnings(ctx context.Context, db DB_Exec, innings *models.Innings) error {
-	query := `INSERT INTO innings (match_id, innings_number, batting_team_id, bowling_team_id, total_runs, total_wickets, byes, leg_byes, wides, noballs, penalty, is_super_over, innings_end) VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)`
+func InsertInnings(ctx context.Context, db DB_Exec, innings *models.Innings) (int64, error) {
+	var id int64
 
-	cmd, err := db.Exec(ctx, query, innings.MatchId, innings.InningsNumber, innings.BattingTeamId, innings.BowlingTeamId, innings.TotalRuns, innings.TotalWkts, innings.Byes, innings.Legbyes, innings.Wides, innings.Noballs, innings.Penalty, innings.IsSuperOver, innings.InningsEnd)
+	query := `INSERT INTO innings (match_id, innings_number, batting_team_id, bowling_team_id, total_runs, total_balls, total_wickets, byes, leg_byes, wides, noballs, penalty, is_super_over, innings_end) VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14) RETURNING id`
 
-	if err != nil {
-		return err
-	}
+	err := db.QueryRow(ctx, query, innings.MatchId, innings.InningsNumber, innings.BattingTeamId, innings.BowlingTeamId, innings.TotalRuns, innings.TotalBalls, innings.TotalWkts, innings.Byes, innings.Legbyes, innings.Wides, innings.Noballs, innings.Penalty, innings.IsSuperOver, innings.InningsEnd).Scan(&id)
 
-	if cmd.RowsAffected() < 1 {
-		return errors.New("failed to insert innings")
-	}
-
-	return nil
+	return id, err
 }
 
 func ReadInnings(ctx context.Context, db DB_Exec, queryMap url.Values) (responses.AllInningsResponse, error) {
@@ -71,9 +65,9 @@ func ReadInnings(ctx context.Context, db DB_Exec, queryMap url.Values) (response
 }
 
 func UpdateInnings(ctx context.Context, db DB_Exec, innings *models.Innings) error {
-	query := `UPDATE innings SET match_id = $1, innings_number = $2, batting_team_id = $3, bowling_team_id = $4, total_runs = $5, total_wickets = $6, byes = $7, leg_byes = $8, wides = $9, noballs = $10, penalty = $11, is_super_over = $12, innings_end = $13 WHERE id = $14`
+	query := `UPDATE innings SET match_id = $1, innings_number = $2, batting_team_id = $3, bowling_team_id = $4, total_runs = $5, total_balls = $6, total_wickets = $7, byes = $8, leg_byes = $9, wides = $10, noballs = $11, penalty = $12, is_super_over = $13, innings_end = $14 WHERE id = $15`
 
-	cmd, err := db.Exec(ctx, query, innings.MatchId, innings.InningsNumber, innings.BattingTeamId, innings.BowlingTeamId, innings.TotalRuns, innings.TotalWkts, innings.Byes, innings.Legbyes, innings.Wides, innings.Noballs, innings.Penalty, innings.IsSuperOver, innings.InningsEnd, innings.Id)
+	cmd, err := db.Exec(ctx, query, innings.MatchId, innings.InningsNumber, innings.BattingTeamId, innings.BowlingTeamId, innings.TotalRuns, innings.TotalBalls, innings.TotalWkts, innings.Byes, innings.Legbyes, innings.Wides, innings.Noballs, innings.Penalty, innings.IsSuperOver, innings.InningsEnd, innings.Id)
 
 	if err != nil {
 		return err

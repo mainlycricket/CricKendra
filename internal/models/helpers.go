@@ -8,6 +8,7 @@ import (
 
 func (innings *Innings) SetDefaultScore() {
 	innings.TotalRuns = pgtype.Int8{Int64: 0, Valid: true}
+	innings.TotalBalls = pgtype.Int8{Int64: 0, Valid: true}
 	innings.TotalWkts = pgtype.Int8{Int64: 0, Valid: true}
 	innings.Byes = pgtype.Int8{Int64: 0, Valid: true}
 	innings.Legbyes = pgtype.Int8{Int64: 0, Valid: true}

@@ -3,6 +3,7 @@ package main
 import (
 	"encoding/json"
 	"net/http"
+	"strconv"
 
 	"github.com/go-chi/chi/v5"
 	"github.com/mainlycricket/CricKendra/internal/dbutils"
@@ -22,6 +23,8 @@ func matchesRouter() *chi.Mux {
 	r.Get("/match-level-options", getMatchLevels)
 
 	r.Post("/", createMatch)
+	r.Get("/", getMatches)
+	r.Get("/{matchId}", getMatchById)
 
 	return r
 }
@@ -35,13 +38,41 @@ func createMatch(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err = dbutils.InsertMatch(r.Context(), DB_POOL, &match)
+	matchId, err := dbutils.InsertMatch(r.Context(), DB_POOL, &match)
 	if err != nil {
 		responses.WriteJsonResponse(w, responses.ApiResponse{Success: false, Message: "error while inserting match", Data: err}, http.StatusBadRequest)
 		return
 	}
 
-	responses.WriteJsonResponse(w, responses.ApiResponse{Success: true, Message: "match created successfully", Data: nil}, http.StatusCreated)
+	responses.WriteJsonResponse(w, responses.ApiResponse{Success: true, Message: "match created successfully", Data: matchId}, http.StatusCreated)
+}
+
+func getMatches(w http.ResponseWriter, r *http.Request) {
+	response, err := dbutils.ReadMatches(r.Context(), DB_POOL, r.URL.Query())
+
+	if err != nil {
+		responses.WriteJsonResponse(w, responses.ApiResponse{Success: false, Message: "error while reading matches", Data: err}, http.StatusBadRequest)
+		return
+	}
+
+	responses.WriteJsonResponse(w, responses.ApiResponse{Success: true, Message: "matches read successfully", Data: response}, http.StatusOK)
+}
+
+func getMatchById(w http.ResponseWriter, r *http.Request) {
+	id := r.PathValue("matchId")
+	int_id, err := strconv.Atoi(id)
+	if err != nil {
+		responses.WriteJsonResponse(w, responses.ApiResponse{Success: false, Message: "invalid match id", Data: err}, http.StatusBadRequest)
+		return
+	}
+
+	match, err := dbutils.ReadMatchById(r.Context(), DB_POOL, int_id)
+	if err != nil {
+		responses.WriteJsonResponse(w, responses.ApiResponse{Success: false, Message: "error while reading match", Data: err}, http.StatusBadRequest)
+		return
+	}
+
+	responses.WriteJsonResponse(w, responses.ApiResponse{Success: true, Message: "fetched match successfully", Data: match}, http.StatusOK)
 }
 
 func getMatchResultOptions(w http.ResponseWriter, r *http.Request) {

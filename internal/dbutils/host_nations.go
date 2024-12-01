@@ -2,7 +2,6 @@ package dbutils
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"net/url"
 
@@ -12,20 +11,14 @@ import (
 	"github.com/mainlycricket/CricKendra/pkg/pgxutils"
 )
 
-func InsertHostNation(ctx context.Context, db DB_Exec, host_nation *models.HostNation) error {
-	query := `INSERT INTO host_nations (name, continent_id) VALUES($1, $2)`
+func InsertHostNation(ctx context.Context, db DB_Exec, host_nation *models.HostNation) (int64, error) {
+	var id int64
 
-	cmd, err := db.Exec(ctx, query, host_nation.Name, host_nation.ContinentId)
+	query := `INSERT INTO host_nations (name, continent_id) VALUES($1, $2) RETURNING id`
 
-	if err != nil {
-		return err
-	}
+	err := db.QueryRow(ctx, query, host_nation.Name, host_nation.ContinentId).Scan(&id)
 
-	if cmd.RowsAffected() < 1 {
-		return errors.New("failed to insert host nation")
-	}
-
-	return nil
+	return id, err
 }
 
 func ReadHostNations(ctx context.Context, db DB_Exec, queryMap url.Values) (responses.AllHostNationsResponse, error) {

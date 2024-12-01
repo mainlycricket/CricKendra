@@ -48,10 +48,11 @@ func (entires *BattingScorecardEntries) UpdateStrikerEntry(batterId, batterRuns,
 	(*entires)[batterId] = updatedEntry
 }
 
-func (entires *BattingScorecardEntries) AddDismissalEntry(batterId, bowlerId int64, dismissalType string) {
+func (entires *BattingScorecardEntries) AddDismissalEntry(batterId, bowlerId, deliveryId int64, dismissalType string) {
 	updatedEntry := (*entires)[batterId]
 
 	updatedEntry.DismissalType = pgtype.Text{String: dismissalType, Valid: true}
+	updatedEntry.DismissalBallId = pgtype.Int8{Int64: deliveryId, Valid: true}
 
 	if models.IsBowlerDismissal(dismissalType) {
 		updatedEntry.DismissedById = pgtype.Int8{Int64: bowlerId, Valid: true}

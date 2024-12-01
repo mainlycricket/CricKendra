@@ -14,7 +14,7 @@ import (
 
 func UpsertMatchSquadEntry(ctx context.Context, db DB_Exec, entry *models.MatchSquad) error {
 	query := `
-	INSERT INTO match_squads (player_id, match_id, team_id, is_captain, is_vice_captain, is_wk, is_debut, playing_status) VALUES($1, $2, $3, $4, $5, $6, $7, $8)
+	INSERT INTO match_squad_entries (player_id, match_id, team_id, is_captain, is_vice_captain, is_wk, is_debut, playing_status) VALUES($1, $2, $3, $4, $5, $6, $7, $8)
 	ON CONFLICT(player_id, match_id)
 	DO UPDATE SET team_id = $3, is_captain = $4, is_vice_captain = $5, is_wk = $6, is_debut = $7, playing_status = $8
 	`
@@ -32,20 +32,14 @@ func UpsertMatchSquadEntry(ctx context.Context, db DB_Exec, entry *models.MatchS
 	return nil
 }
 
-func InsertSeriesSquad(ctx context.Context, db DB_Exec, entry *models.SeriesSquad) error {
-	query := `INSERT INTO series_squads (series_id, team_id, squad_label) VALUES($1, $2, $3)`
+func InsertSeriesSquad(ctx context.Context, db DB_Exec, entry *models.SeriesSquad) (int64, error) {
+	var id int64
 
-	cmd, err := db.Exec(ctx, query, entry.SeriesId, entry.TeamId, entry.SquadLabel)
+	query := `INSERT INTO series_squads (series_id, team_id, squad_label) VALUES($1, $2, $3) RETURNING id`
 
-	if err != nil {
-		return err
-	}
+	err := db.QueryRow(ctx, query, entry.SeriesId, entry.TeamId, entry.SquadLabel).Scan(&id)
 
-	if cmd.RowsAffected() < 1 {
-		return errors.New("failed to insert series squad")
-	}
-
-	return nil
+	return id, err
 }
 
 func ReadSeriesSquads(ctx context.Context, db DB_Exec, queryMap url.Values) (responses.AllSeriesSquadResponse, error) {

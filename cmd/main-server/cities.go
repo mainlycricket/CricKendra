@@ -26,13 +26,13 @@ func createCity(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err = dbutils.InsertCity(r.Context(), DB_POOL, &city)
+	cityId, err := dbutils.InsertCity(r.Context(), DB_POOL, &city)
 	if err != nil {
 		responses.WriteJsonResponse(w, responses.ApiResponse{Success: false, Message: "error while inserting city", Data: err}, http.StatusBadRequest)
 		return
 	}
 
-	responses.WriteJsonResponse(w, responses.ApiResponse{Success: true, Message: "city created successfully", Data: nil}, http.StatusCreated)
+	responses.WriteJsonResponse(w, responses.ApiResponse{Success: true, Message: "city created successfully", Data: cityId}, http.StatusCreated)
 }
 
 func getCities(w http.ResponseWriter, r *http.Request) {

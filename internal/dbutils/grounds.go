@@ -2,7 +2,6 @@ package dbutils
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"net/url"
 
@@ -12,20 +11,14 @@ import (
 	"github.com/mainlycricket/CricKendra/pkg/pgxutils"
 )
 
-func InsertGround(ctx context.Context, db DB_Exec, ground *models.Ground) error {
-	query := `INSERT INTO grounds (name, city_id) VALUES($1, $2)`
+func InsertGround(ctx context.Context, db DB_Exec, ground *models.Ground) (int64, error) {
+	var id int64
 
-	cmd, err := db.Exec(ctx, query, ground.Name, ground.CityId)
+	query := `INSERT INTO grounds (name, city_id) VALUES($1, $2) RETURNING id`
 
-	if err != nil {
-		return err
-	}
+	err := db.QueryRow(ctx, query, ground.Name, ground.CityId).Scan(&id)
 
-	if cmd.RowsAffected() < 1 {
-		return errors.New("failed to insert ground")
-	}
-
-	return nil
+	return id, err
 }
 
 func ReadGrounds(ctx context.Context, db DB_Exec, queryMap url.Values) (responses.AllGroundsResponse, error) {

@@ -13,6 +13,7 @@ import (
 func seasonsRouter() *chi.Mux {
 	r := chi.NewRouter()
 	r.Post("/", createSeason)
+	r.Get("/", getSeasons)
 	return r
 }
 
@@ -32,4 +33,15 @@ func createSeason(w http.ResponseWriter, r *http.Request) {
 	}
 
 	responses.WriteJsonResponse(w, responses.ApiResponse{Success: true, Message: "season created successfully", Data: nil}, http.StatusCreated)
+}
+
+func getSeasons(w http.ResponseWriter, r *http.Request) {
+	response, err := dbutils.ReadSeasons(r.Context(), DB_POOL, r.URL.Query())
+
+	if err != nil {
+		responses.WriteJsonResponse(w, responses.ApiResponse{Success: false, Message: "error while reading seasons", Data: err}, http.StatusBadRequest)
+		return
+	}
+
+	responses.WriteJsonResponse(w, responses.ApiResponse{Success: true, Message: "seasons read successfully", Data: response}, http.StatusOK)
 }

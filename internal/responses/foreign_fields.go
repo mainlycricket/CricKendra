@@ -19,3 +19,8 @@ type HostNationAsForeignField struct {
 	Id   pgtype.Int8 `json:"id"`
 	Name pgtype.Text `json:"name"`
 }
+
+type PlayerAsForeignField struct {
+	Id   pgtype.Int8 `json:"id"`
+	Name pgtype.Text `json:"name"`
+}

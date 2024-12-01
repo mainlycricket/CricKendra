@@ -13,6 +13,7 @@ type DB_Exec interface {
 	Exec(context.Context, string, ...any) (pgconn.CommandTag, error)
 	Query(context.Context, string, ...any) (pgx.Rows, error)
 	QueryRow(context.Context, string, ...any) pgx.Row
+	SendBatch(ctx context.Context, b *pgx.Batch) pgx.BatchResults
 }
 
 func Connect(ctx context.Context, connectionUrl string) (*pgxpool.Pool, error) {
@@ -41,12 +42,24 @@ func Connect(ctx context.Context, connectionUrl string) (*pgxpool.Pool, error) {
 func RegisterDataTypes(ctx context.Context, conn *pgx.Conn) error {
 	dataTypeNames := []string{
 		"career_stats",
+		"dismissal_type",
+		"innings_end",
+		"batting_scorecard_record",
+		"batting_scorecard_record[]",
+		"bowling_scorecard_record",
+		"bowling_scorecard_record[]",
+		"innings_scorecard_record",
+		"innings_scorecard_record[]",
+		"team_innings_short_info",
+		"team_innings_short_info[]",
+		"match_short_info",
+		"match_short_info[]",
 	}
 
 	for _, typeName := range dataTypeNames {
 		dataType, err := conn.LoadType(ctx, typeName)
 		if err != nil {
-			return err
+			return fmt.Errorf("failed to register custom type: %s", typeName)
 		}
 		conn.TypeMap().RegisterType(dataType)
 	}

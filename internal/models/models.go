@@ -6,8 +6,6 @@ import (
 
 type CareerStats struct {
 	MatchesPlayed pgtype.Int8 `json:"matches_played"`
-	DebutMatchId  pgtype.Int8 `json:"debut_match_id"`
-	LastMatchId   pgtype.Int8 `json:"last_match_id"`
 
 	InningsBatted     pgtype.Int8 `json:"innings_batted"`
 	RunsScored        pgtype.Int8 `json:"runs_scored"`
@@ -60,6 +58,8 @@ type Player struct {
 	PrimaryBowlingStyle pgtype.Text   `json:"primary_bowling_style"`
 	TeamsRepresentedId  []pgtype.Int8 `json:"teams_represented_id"`
 
+	// Add Unavailable Stats while insertion
+
 	TestStats  CareerStats `json:"test_stats"`
 	OdiStats   CareerStats `json:"odi_stats"`
 	T20iStats  CareerStats `json:"t20i_stats"`
@@ -107,13 +107,6 @@ type Season struct {
 	Season pgtype.Text `json:"season"`
 }
 
-type Tour struct {
-	Id            pgtype.Int8   `json:"id"`
-	TouringTeamId pgtype.Int8   `json:"touring_team_id"`
-	HostNationsId []pgtype.Int8 `json:"host_nations_id"`
-	Season        pgtype.Text   `json:"season"`
-}
-
 type Series struct {
 	Id             pgtype.Int8   `json:"id"`
 	Name           pgtype.Text   `json:"name"`
@@ -122,11 +115,22 @@ type Series struct {
 	PlayingFormat  pgtype.Text   `json:"playing_format"`
 	Season         pgtype.Text   `json:"season"`
 	TeamsId        []pgtype.Int8 `json:"teams_id"`
-	HostNationsId  []pgtype.Int8 `json:"host_nations_id"`
 	TournamentId   pgtype.Int8   `json:"tournament_id"`
 	ParentSeriesId pgtype.Int8   `json:"parent_series_id"`
-	TourId         pgtype.Int8   `json:"tour_id"`
-	PoTSsId        []pgtype.Int8 `json:"players_of_the_series_id"`
+	StartDate      pgtype.Date   `json:"start_date"`
+	EndDate        pgtype.Date   `json:"end_date"`
+	WinnerTeamId   pgtype.Int8   `json:"winner_team_id"`
+	FinalStatus    pgtype.Text   `json:"final_status"`
+}
+
+type SeriesTeamEntries struct {
+	SeriesId pgtype.Int8 `json:"series_id"`
+	TeamId   pgtype.Int8 `json:"team_id"`
+}
+
+type SeriesHostNationEntries struct {
+	SeriesId     pgtype.Int8 `json:"series_id"`
+	HostNationId pgtype.Int8 `json:"host_nation_id"`
 }
 
 type MatchSquad struct {
@@ -162,12 +166,11 @@ type Match struct {
 	EventMatchNumber     pgtype.Int8        `json:"event_match_number"`
 	StartDate            pgtype.Date        `json:"start_date"`
 	StartTime            pgtype.Timestamptz `json:"start_time"`
+	EndDate              pgtype.Date        `json:"end_date"`
 	Team1Id              pgtype.Int8        `json:"team1_id"`
 	Team2Id              pgtype.Int8        `json:"team2_id"`
 	IsMale               pgtype.Bool        `json:"is_male"`
-	TournamentId         pgtype.Int8        `json:"tournament_id"`
 	SeriesId             pgtype.Int8        `json:"series_id"`
-	TourId               pgtype.Int8        `json:"tour_id"`
 	GroundId             pgtype.Int8        `json:"ground_id"`
 	IsNeutralVenue       pgtype.Bool        `json:"is_neutral_venue"`
 	CurrentStatus        pgtype.Text        `json:"current_status"`
@@ -191,12 +194,20 @@ type Match struct {
 	IsWonByRuns          pgtype.Bool        `json:"is_won_by_runs"`
 	WinMargin            pgtype.Int8        `json:"win_margin"`                // runs or wickets
 	BallsMargin          pgtype.Int8        `json:"balls_remaining_after_win"` // successful chases
-	PoTMsId              []pgtype.Int8      `json:"players_of_the_match_id"`
 	BallsPerOver         pgtype.Int8        `json:"balls_per_over"`
 	IsBBBDone            pgtype.Bool        `json:"is_bbb_done"`
+}
 
-	ScorersId      []pgtype.Int8 `json:"scorers_id"`
-	CommentatorsId []pgtype.Int8 `json:"commentators_id"`
+type PlayerTeamEntry struct {
+	PlayerId pgtype.Int8 `json:"player_id"`
+	TeamId   pgtype.Int8 `json:"team_id"`
+}
+
+type PlayerAwardEntry struct {
+	PlayerId  pgtype.Int8 `json:"player_id"`
+	MatchId   pgtype.Int8 `json:"match_id"`
+	SeriesId  pgtype.Int8 `json:"series_id"`
+	AwardType pgtype.Text `json:"award_type"` // player_of_the_match, player_of_the_series
 }
 
 type Innings struct {
@@ -207,6 +218,7 @@ type Innings struct {
 	BowlingTeamId pgtype.Int8 `json:"bowling_team_id"`
 	TotalRuns     pgtype.Int8 `json:"total_runs"`
 	TotalWkts     pgtype.Int8 `json:"total_wickets"`
+	TotalBalls    pgtype.Int8 `json:"total_balls"`
 	Byes          pgtype.Int8 `json:"byes"`
 	Legbyes       pgtype.Int8 `json:"leg_byes"`
 	Wides         pgtype.Int8 `json:"wides"`
@@ -214,6 +226,8 @@ type Innings struct {
 	Penalty       pgtype.Int8 `json:"penalty"`
 	IsSuperOver   pgtype.Bool `json:"is_super_over"`
 	InningsEnd    pgtype.Text `json:"innings_end"` // completed, declared, fortfeited, all out
+	TargetRuns    pgtype.Int8 `json:"target_runs"`
+	TargetBalls   pgtype.Int8 `json:"target_balls"`
 }
 
 type BattingScorecard struct {

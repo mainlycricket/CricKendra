@@ -36,13 +36,13 @@ func createPlayer(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err = dbutils.InsertPlayer(r.Context(), DB_POOL, &player)
+	playerId, err := dbutils.InsertPlayer(r.Context(), DB_POOL, &player)
 	if err != nil {
 		responses.WriteJsonResponse(w, responses.ApiResponse{Success: false, Message: "error while inserting player", Data: err}, http.StatusBadRequest)
 		return
 	}
 
-	responses.WriteJsonResponse(w, responses.ApiResponse{Success: true, Message: "player created successfully", Data: nil}, http.StatusCreated)
+	responses.WriteJsonResponse(w, responses.ApiResponse{Success: true, Message: "player created successfully", Data: playerId}, http.StatusCreated)
 }
 
 func getPlayers(w http.ResponseWriter, r *http.Request) {
