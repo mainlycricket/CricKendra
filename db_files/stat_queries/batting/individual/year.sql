@@ -1,23 +1,16 @@
 WITH match_stats AS (
-    SELECT mse.team_id,
-        COUNT(DISTINCT matches.id) AS matches_count,
-        COUNT(DISTINCT player_id) AS players_count,
-        MIN(matches.start_date) AS min_date,
-        MAX(matches.start_date) AS max_date
+    SELECT mse.player_id,
+        date_part('year', matches.start_date) AS match_year,
+        ARRAY_AGG(DISTINCT teams.name) AS teams_represented,
+        COUNT(DISTINCT matches.id) AS match_count
     FROM match_squad_entries mse
         LEFT JOIN matches ON mse.match_id = matches.id
+        LEFT JOIN innings ON innings.match_id = matches.id
+        LEFT JOIN teams ON mse.team_id = teams.id
     WHERE matches.playing_format = 'ODI'
-        AND mse.playing_status IN ('playing_xi')
-        AND mse.team_id IN (1, 8, 10)
-        AND (
-            CASE
-                WHEN mse.team_id = matches.team1_id THEN matches.team2_id
-                ELSE matches.team1_id
-            END
-        ) IN (1, 8, 10)
+        AND matches.ground_id IN (63, 70, 79, 90, 124)
         AND matches.start_date >= '2008-08-18'
         AND matches.start_date <= '2024-09-27'
-        AND matches.ground_id IN (63, 70, 79, 90, 124)
         AND matches.season IN (
             '2022/23',
             '2019/20',
@@ -25,10 +18,16 @@ WITH match_stats AS (
             '2013/14',
             '2011/12'
         )
-    GROUP BY mse.team_id
+        AND innings.is_super_over = FALSE
+        AND innings.batting_team_id IN (1, 8, 10)
+        AND innings.bowling_team_id IN (1, 8, 10)
+        AND mse.playing_status IN ('playing_xi')
+    GROUP BY mse.player_id,
+        date_part('year', matches.start_date)
 ),
 batting_performance AS (
-    SELECT batting_team_id,
+    SELECT bs.batter_id,
+        date_part('year', matches.start_date) AS match_year,
         COUNT(
             CASE
                 WHEN dismissal_type IS NULL
@@ -75,14 +74,14 @@ batting_performance AS (
             '2013/14',
             '2011/12'
         )
-    GROUP BY batting_team_id
+    GROUP BY bs.batter_id,
+        date_part('year', matches.start_date)
 )
-SELECT innings.batting_team_id,
-    teams.name AS batting_team_name,
-    ms.players_count,
-    ms.matches_count,
-    ms.min_date,
-    ms.max_date,
+SELECT ms.match_count,
+    bs.batter_id,
+    players.name AS player_name,
+    ms.teams_represented,
+    date_part('year', matches.start_date)::integer,
     COUNT(innings.id) AS innings_count,
     SUM(bs.runs_scored) AS runs_scored,
     SUM(bs.balls_faced) AS balls_faced,
@@ -113,11 +112,13 @@ SELECT innings.batting_team_id,
     SUM(bs.fours_scored) AS fours_scored,
     SUM(bs.sixes_scored) AS sixes_scored
 FROM batting_scorecards bs
-    LEFT JOIN innings ON bs.innings_id = innings.id
-    LEFT JOIN teams ON innings.batting_team_id = teams.id
+    LEFT JOIN innings ON innings.id = bs.innings_id
     LEFT JOIN matches ON innings.match_id = matches.id
-    LEFT JOIN match_stats ms ON ms.team_id = innings.batting_team_id
-    LEFT JOIN batting_performance bp ON innings.batting_team_id = bp.batting_team_id
+    LEFT JOIN batting_performance bp ON bp.batter_id = bs.batter_id
+    AND bp.match_year = date_part('year', matches.start_date)
+    LEFT JOIN match_stats ms ON ms.player_id = bs.batter_id
+    AND ms.match_year = date_part('year', matches.start_date)
+    LEFT JOIN players ON bs.batter_id = players.id
 WHERE innings.is_super_over = FALSE
     AND matches.playing_format = 'ODI'
     AND innings.batting_team_id IN (1, 8, 10)
@@ -132,16 +133,16 @@ WHERE innings.is_super_over = FALSE
         '2013/14',
         '2011/12'
     )
-GROUP BY innings.batting_team_id,
-    teams.name,
-    ms.players_count,
-    ms.matches_count,
-    ms.min_date,
-    ms.max_date,
-    bp.highest_score,
-    bp.highest_not_out_score,
+GROUP BY date_part('year', matches.start_date),
+    bs.batter_id,
+    players.name,
+    ms.teams_represented,
     bp.not_outs,
     bp.centuries,
     bp.half_centuries,
-    bp.ducks
-ORDER BY runs_scored DESC;
+    bp.ducks,
+    bp.highest_score,
+    bp.highest_not_out_score,
+    ms.match_count
+ORDER BY SUM(bs.runs_scored) DESC,
+    COUNT(innings.id) ASC;

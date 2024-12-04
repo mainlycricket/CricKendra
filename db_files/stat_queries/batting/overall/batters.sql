@@ -8,14 +8,6 @@ WITH match_stats AS (
         LEFT JOIN matches ON mse.match_id = matches.id
         LEFT JOIN teams ON teams.id = mse.team_id
     WHERE matches.playing_format = 'ODI'
-        AND mse.playing_status IN ('playing_xi')
-        AND mse.team_id IN (1, 10)
-        AND (
-            CASE
-                WHEN mse.team_id = matches.team1_id THEN matches.team2_id
-                ELSE matches.team1_id
-            END
-        ) IN (1, 8, 10)
         AND matches.start_date >= '2008-08-18'
         AND matches.start_date <= '2024-09-27'
         AND matches.ground_id IN (63, 70, 79, 90, 124)
@@ -26,6 +18,14 @@ WITH match_stats AS (
             '2013/14',
             '2011/12'
         )
+        AND mse.playing_status IN ('playing_xi')
+        AND mse.team_id IN (1, 10)
+        AND (
+            CASE
+                WHEN mse.team_id = matches.team1_id THEN matches.team2_id
+                ELSE matches.team1_id
+            END
+        ) IN (1, 8, 10)
     GROUP BY player_id
 ),
 batting_performance AS (
@@ -62,10 +62,7 @@ batting_performance AS (
     FROM batting_scorecards bs
         LEFT JOIN innings ON bs.innings_id = innings.id
         LEFT JOIN matches ON innings.match_id = matches.id
-    WHERE innings.is_super_over = FALSE
-        AND innings.batting_team_id IN (1, 10)
-        AND innings.bowling_team_id IN (1, 8, 10)
-        AND matches.playing_format = 'ODI'
+    WHERE matches.playing_format = 'ODI'
         AND matches.ground_id IN (63, 70, 79, 90, 124)
         AND matches.start_date >= '2008-08-18'
         AND matches.start_date <= '2024-09-27'
@@ -76,6 +73,9 @@ batting_performance AS (
             '2013/14',
             '2011/12'
         )
+        AND innings.is_super_over = FALSE
+        AND innings.batting_team_id IN (1, 10)
+        AND innings.bowling_team_id IN (1, 8, 10)
     GROUP BY batter_id
 )
 SELECT bs.batter_id,
@@ -119,10 +119,7 @@ FROM batting_scorecards bs
     LEFT JOIN matches ON innings.match_id = matches.id
     LEFT JOIN match_stats ms ON ms.player_id = bs.batter_id
     LEFT JOIN batting_performance bp ON bs.batter_id = bp.batter_id
-WHERE innings.is_super_over = FALSE
-    AND matches.playing_format = 'ODI'
-    AND innings.batting_team_id IN (1, 10)
-    AND innings.bowling_team_id IN (1, 8, 10)
+WHERE matches.playing_format = 'ODI'
     AND matches.ground_id IN (63, 70, 79, 90, 124)
     AND matches.start_date >= '2008-08-18'
     AND matches.start_date <= '2024-09-27'
@@ -133,6 +130,9 @@ WHERE innings.is_super_over = FALSE
         '2013/14',
         '2011/12'
     )
+    AND innings.is_super_over = FALSE
+    AND innings.batting_team_id IN (1, 10)
+    AND innings.bowling_team_id IN (1, 8, 10)
 GROUP BY bs.batter_id,
     players.name,
     ms.matches_count,
