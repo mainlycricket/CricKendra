@@ -1,48 +1,11 @@
-WITH match_stats AS (
-    SELECT mse.team_id,
-        COUNT(DISTINCT matches.id) AS matches_count,
-        COUNT(DISTINCT player_id) AS players_count
-    FROM match_squad_entries mse
-        LEFT JOIN matches ON mse.match_id = matches.id
-    WHERE matches.playing_format = 'ODI'
-        AND matches.start_date >= '2008-08-18'
-        AND matches.start_date <= '2024-09-27'
-        AND matches.ground_id IN (63, 70, 79, 90, 124)
-        AND matches.season IN (
-            '2022/23',
-            '2019/20',
-            '2017/18',
-            '2013/14',
-            '2011/12'
-        )
-        AND mse.playing_status IN ('playing_xi')
-        AND mse.team_id IN (1, 8, 10)
-        AND (
-            CASE
-                WHEN mse.team_id = matches.team1_id THEN matches.team2_id
-                ELSE matches.team1_id
-            END
-        ) IN (1, 8, 10)
-    GROUP BY mse.team_id
-),
-bowling_performance AS (
+WITH best_innings AS (
     SELECT innings.bowling_team_id,
-        MAX(bs.wickets_taken) AS best_innings_fig_wkts,
-        COUNT(
-            CASE
-                WHEN bs.wickets_taken = 4 THEN 1
-            END
-        ) AS four_wkt_hauls,
-        COUNT(
-            CASE
-                WHEN bs.wickets_taken >= 5 THEN 1
-            END
-        ) AS five_wkt_hauls
-    FROM bowling_scorecards bs
-        LEFT JOIN innings ON bs.innings_id = innings.id
-        LEFT JOIN matches ON innings.match_id = matches.id
+        MAX(bs.wickets_taken) AS max_wickets
+    FROM matches
+        LEFT JOIN innings ON innings.match_id = matches.id
+        LEFT JOIN bowling_scorecards bs ON bs.innings_id = innings.id
     WHERE matches.playing_format = 'ODI'
-        AND matches.ground_id IN (63, 70, 79, 90, 124)
+        AND matches.ground_id IN (63, 90)
         AND matches.start_date >= '2008-08-18'
         AND matches.start_date <= '2024-09-27'
         AND matches.season IN (
@@ -55,38 +18,14 @@ bowling_performance AS (
         AND innings.is_super_over = FALSE
         AND innings.batting_team_id IN (1, 8, 10)
         AND innings.bowling_team_id IN (1, 8, 10)
-    GROUP BY innings.bowling_team_id
-),
-best_innings_fig_runs AS (
-    SELECT innings.bowling_team_id,
-        MIN(bs.runs_conceded) AS best_innings_fig_runs
-    FROM bowling_scorecards bs
-        LEFT JOIN innings ON bs.innings_id = innings.id
-        LEFT JOIN matches ON innings.match_id = matches.id
-        LEFT JOIN bowling_performance bp ON bp.bowling_team_id = innings.bowling_team_id
-    WHERE matches.playing_format = 'ODI'
-        AND matches.ground_id IN (63, 70, 79, 90, 124)
-        AND matches.start_date >= '2008-08-18'
-        AND matches.start_date <= '2024-09-27'
-        AND matches.season IN (
-            '2022/23',
-            '2019/20',
-            '2017/18',
-            '2013/14',
-            '2011/12'
-        )
-        AND innings.is_super_over = FALSE
-        AND innings.batting_team_id IN (1, 8, 10)
-        AND innings.bowling_team_id IN (1, 8, 10)
-        AND bs.wickets_taken = bp.best_innings_fig_wkts
     GROUP BY innings.bowling_team_id
 )
 SELECT innings.bowling_team_id,
-    teams.name AS team_name,
-    ms.players_count,
+    teams.name AS bowling_team_name,
+    COUNT(DISTINCT mse.player_id) AS players_count,
     MIN(matches.start_date) AS min_date,
     MAX(matches.start_date) AS max_date,
-    ms.matches_count,
+    COUNT(DISTINCT matches.id) AS matches_played,
     COUNT(innings.id) AS innings_count,
     SUM(bs.balls_bowled) / 6 + (SUM(balls_bowled) % 6) * 0.1 AS overs_bowled,
     SUM(bs.runs_conceded) AS runs_conceded,
@@ -109,21 +48,34 @@ SELECT innings.bowling_team_id,
             ELSE '+infinity'
         END
     ) AS economy,
-    bp.best_innings_fig_wkts,
-    bifr.best_innings_fig_runs,
-    bp.five_wkt_hauls,
-    bp.four_wkt_hauls,
+    COUNT(
+        CASE
+            WHEN bs.wickets_taken = 4 THEN 1
+        END
+    ) AS four_wkt_hauls,
+    COUNT(
+        CASE
+            WHEN bs.wickets_taken >= 5 THEN 1
+        END
+    ) AS five_wkt_hauls,
+    MAX(bs.wickets_taken) AS best_innings_wickets,
+    MIN(
+        CASE
+            WHEN bs.wickets_taken = bi.max_wickets THEN bs.runs_conceded
+        END
+    ) AS best_innings_runs,
     SUM(bs.fours_conceded) AS fours_conceded,
     SUM(bs.sixes_conceded) AS sixes_conceded
-FROM bowling_scorecards bs
-    LEFT JOIN innings ON bs.innings_id = innings.id
+FROM matches
+    LEFT JOIN innings ON innings.match_id = matches.id
+    LEFT JOIN bowling_scorecards bs ON bs.innings_id = innings.id
+    LEFT JOIN best_innings bi ON bi.bowling_team_id = innings.bowling_team_id
+    LEFT JOIN match_squad_entries mse ON mse.match_id = matches.id
+    AND mse.team_id = innings.bowling_team_id
+    AND mse.player_id = bs.bowler_id
     LEFT JOIN teams ON innings.bowling_team_id = teams.id
-    LEFT JOIN matches ON innings.match_id = matches.id
-    LEFT JOIN bowling_performance bp ON innings.bowling_team_id = bp.bowling_team_id
-    LEFT JOIN match_stats ms ON ms.team_id = innings.bowling_team_id
-    LEFT JOIN best_innings_fig_runs bifr ON bifr.bowling_team_id = innings.bowling_team_id
 WHERE matches.playing_format = 'ODI'
-    AND matches.ground_id IN (63, 70, 79, 90, 124)
+    AND matches.ground_id IN (63, 90)
     AND matches.start_date >= '2008-08-18'
     AND matches.start_date <= '2024-09-27'
     AND matches.season IN (
@@ -137,11 +89,5 @@ WHERE matches.playing_format = 'ODI'
     AND innings.batting_team_id IN (1, 8, 10)
     AND innings.bowling_team_id IN (1, 8, 10)
 GROUP BY innings.bowling_team_id,
-    teams.name,
-    ms.matches_count,
-    ms.players_count,
-    bifr.best_innings_fig_runs,
-    bp.best_innings_fig_wkts,
-    bp.four_wkt_hauls,
-    bp.five_wkt_hauls
-ORDER BY wickets_taken DESC;
+    teams.name
+ORDER BY SUM(bs.wickets_taken) DESC;

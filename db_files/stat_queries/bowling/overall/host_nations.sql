@@ -1,10 +1,11 @@
 WITH best_innings AS (
-    SELECT bs.bowler_id,
-        innings.batting_team_id,
+    SELECT cities.host_nation_id,
         MAX(bs.wickets_taken) AS max_wickets
     FROM matches
         LEFT JOIN innings ON innings.match_id = matches.id
         LEFT JOIN bowling_scorecards bs ON bs.innings_id = innings.id
+        LEFT JOIN grounds ON matches.ground_id = grounds.id
+        LEFT JOIN cities ON grounds.city_id = cities.id
     WHERE matches.playing_format = 'ODI'
         AND matches.ground_id IN (63, 90)
         AND matches.start_date >= '2008-08-18'
@@ -19,14 +20,11 @@ WITH best_innings AS (
         AND innings.is_super_over = FALSE
         AND innings.batting_team_id IN (1, 8, 10)
         AND innings.bowling_team_id IN (1, 8, 10)
-    GROUP BY bs.bowler_id,
-        innings.batting_team_id
+    GROUP BY cities.host_nation_id
 )
-SELECT bs.bowler_id,
-    players.name AS bowler_name,
-    ARRAY_AGG(DISTINCT teams.short_name) AS teams_represented,
-    innings.batting_team_id,
-    teams2.name AS batting_team_name,
+SELECT host_nations.id AS host_nation_id,
+    host_nations.name AS host_nation_name,
+    COUNT(DISTINCT mse.player_id) AS players_count,
     MIN(matches.start_date) AS min_date,
     MAX(matches.start_date) AS max_date,
     COUNT(DISTINCT matches.id) AS matches_played,
@@ -73,15 +71,13 @@ SELECT bs.bowler_id,
 FROM matches
     LEFT JOIN innings ON innings.match_id = matches.id
     LEFT JOIN bowling_scorecards bs ON bs.innings_id = innings.id
-    LEFT JOIN best_innings bi ON bi.batting_team_id = innings.batting_team_id
-    AND bi.bowler_id = bs.bowler_id
+    LEFT JOIN grounds ON matches.ground_id = grounds.id
+    LEFT JOIN cities ON grounds.city_id = cities.id
+    LEFT JOIN host_nations ON cities.host_nation_id = host_nations.id
+    LEFT JOIN best_innings bi ON bi.host_nation_id = host_nations.id
     LEFT JOIN match_squad_entries mse ON mse.match_id = matches.id
     AND mse.team_id = innings.bowling_team_id
     AND mse.player_id = bs.bowler_id
-    LEFT JOIN grounds ON matches.ground_id = grounds.id
-    LEFT JOIN players ON bs.bowler_id = players.id
-    LEFT JOIN teams ON mse.team_id = teams.id
-    LEFT JOIN teams teams2 ON innings.batting_team_id = teams2.id
 WHERE matches.playing_format = 'ODI'
     AND matches.ground_id IN (63, 90)
     AND matches.start_date >= '2008-08-18'
@@ -96,8 +92,6 @@ WHERE matches.playing_format = 'ODI'
     AND innings.is_super_over = FALSE
     AND innings.batting_team_id IN (1, 8, 10)
     AND innings.bowling_team_id IN (1, 8, 10)
-GROUP BY innings.batting_team_id,
-    teams2.name,
-    bs.bowler_id,
-    players.name
+GROUP BY host_nations.id,
+    host_nations.name
 ORDER BY SUM(bs.wickets_taken) DESC;

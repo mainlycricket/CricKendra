@@ -1,128 +1,81 @@
-WITH match_stats AS (
-    SELECT mse.player_id,
-        date_part('year', matches.start_date) AS match_year,
-        ARRAY_AGG(DISTINCT teams.name) AS teams_represented,
-        COUNT(DISTINCT matches.id) AS match_count
-    FROM match_squad_entries mse
-        LEFT JOIN matches ON mse.match_id = matches.id
-        LEFT JOIN innings ON innings.match_id = matches.id
-        LEFT JOIN teams ON mse.team_id = teams.id
-    WHERE matches.playing_format = 'ODI'
-        AND matches.ground_id IN (63, 70, 79, 90, 124)
-        AND matches.start_date >= '2008-08-18'
-        AND matches.start_date <= '2024-09-27'
-        AND matches.season IN (
-            '2022/23',
-            '2019/20',
-            '2017/18',
-            '2013/14',
-            '2011/12'
-        )
-        AND innings.is_super_over = FALSE
-        AND innings.batting_team_id IN (1, 8, 10)
-        AND innings.bowling_team_id IN (1, 8, 10)
-        AND mse.playing_status IN ('playing_xi')
-    GROUP BY mse.player_id,
-        date_part('year', matches.start_date)
-),
-batting_performance AS (
-    SELECT bs.batter_id,
-        date_part('year', matches.start_date) AS match_year,
-        COUNT(
-            CASE
-                WHEN dismissal_type IS NULL
-                OR dismissal_type IN ('retired hurt', 'retired not out') THEN 1
-            END
-        ) AS not_outs,
-        COUNT(
-            CASE
-                WHEN runs_scored >= 100 THEN 1
-            END
-        ) AS centuries,
-        MAX(runs_scored) AS highest_score,
-        MAX(
-            CASE
-                WHEN dismissal_type IS NULL
-                OR dismissal_type IN ('retired hurt', 'retired not out') THEN runs_scored
-                ELSE 0
-            END
-        ) as highest_not_out_score,
-        COUNT(
-            CASE
-                WHEN runs_scored BETWEEN 50 AND 99 THEN 1
-            END
-        ) AS half_centuries,
-        COUNT(
-            CASE
-                WHEN runs_scored = 0 THEN 1
-            END
-        ) AS ducks
-    FROM batting_scorecards bs
-        LEFT JOIN innings ON bs.innings_id = innings.id
-        LEFT JOIN matches ON innings.match_id = matches.id
-    WHERE innings.is_super_over = FALSE
-        AND innings.batting_team_id IN (1, 8, 10)
-        AND innings.bowling_team_id IN (1, 8, 10)
-        AND matches.playing_format = 'ODI'
-        AND matches.ground_id IN (63, 70, 79, 90, 124)
-        AND matches.start_date >= '2008-08-18'
-        AND matches.start_date <= '2024-09-27'
-        AND matches.season IN (
-            '2022/23',
-            '2019/20',
-            '2017/18',
-            '2013/14',
-            '2011/12'
-        )
-    GROUP BY bs.batter_id,
-        date_part('year', matches.start_date)
-)
-SELECT ms.match_count,
-    bs.batter_id,
+SELECT bs.batter_id,
     players.name AS player_name,
-    ms.teams_represented,
-    date_part('year', matches.start_date)::integer,
+    date_part('year', matches.start_date)::integer AS match_year,
+    ARRAY_AGG(DISTINCT teams.short_name) AS teams_represented,
+    COUNT(DISTINCT matches.id) AS matches_played,
     COUNT(innings.id) AS innings_count,
     SUM(bs.runs_scored) AS runs_scored,
     SUM(bs.balls_faced) AS balls_faced,
+    COUNT(
+        CASE
+            WHEN bs.dismissal_type IS NULL
+            OR bs.dismissal_type IN ('retired hurt', 'retired not out') THEN 1
+        END
+    ) AS not_outs,
     (
         CASE
-            WHEN (COUNT(innings.id) - bp.not_outs) > 0 THEN SUM(bs.runs_scored) * 1.0 / (COUNT(innings.id) - bp.not_outs)
-            ELSE sum(bs.runs_scored)
+            WHEN COUNT(
+                CASE
+                    WHEN bs.dismissal_type IS NOT NULL
+                    AND bs.dismissal_type NOT IN ('retired hurt', 'retired not out') THEN 1
+                END
+            ) > 0 THEN SUM(bs.runs_scored) * 1.0 / COUNT(
+                CASE
+                    WHEN bs.dismissal_type IS NOT NULL
+                    AND bs.dismissal_type NOT IN ('retired hurt', 'retired not out') THEN 1
+                END
+            )
         END
     ) AS average,
     (
         CASE
             WHEN SUM(bs.balls_faced) > 0 THEN SUM(bs.runs_scored) * 100.0 / SUM(bs.balls_faced)
-            ELSE 0
         END
     ) AS strike_rate,
-    bp.not_outs,
-    bp.highest_score,
-    (
+    MAX(bs.runs_scored) AS highest_score,
+    MAX(
         CASE
-            WHEN bp.highest_score = bp.highest_not_out_score THEN TRUE
-            ELSE FALSE
+            WHEN bs.dismissal_type IS NULL
+            OR bs.dismissal_type IN ('retired hurt', 'retired not out') THEN runs_scored
+            ELSE 0
         END
-    ) AS is_highest_not_out,
-    bp.centuries,
-    bp.half_centuries,
-    bp.centuries + bp.half_centuries AS fifty_plus_scores,
-    bp.ducks,
+    ) as highest_not_out_score,
+    COUNT(
+        CASE
+            WHEN bs.runs_scored >= 100 THEN 1
+        END
+    ) AS centuries,
+    COUNT(
+        CASE
+            WHEN bs.runs_scored BETWEEN 50 AND 99 THEN 1
+        END
+    ) AS half_centuries,
+    COUNT(
+        CASE
+            WHEN bs.runs_scored >= 100 THEN 1
+        END
+    ) + COUNT(
+        CASE
+            WHEN bs.runs_scored BETWEEN 50 AND 99 THEN 1
+        END
+    ) AS fifty_plus_scores,
+    COUNT(
+        CASE
+            WHEN bs.runs_scored = 0 THEN 1
+        END
+    ) AS ducks,
     SUM(bs.fours_scored) AS fours_scored,
     SUM(bs.sixes_scored) AS sixes_scored
-FROM batting_scorecards bs
-    LEFT JOIN innings ON innings.id = bs.innings_id
-    LEFT JOIN matches ON innings.match_id = matches.id
-    LEFT JOIN batting_performance bp ON bp.batter_id = bs.batter_id
-    AND bp.match_year = date_part('year', matches.start_date)
-    LEFT JOIN match_stats ms ON ms.player_id = bs.batter_id
-    AND ms.match_year = date_part('year', matches.start_date)
+FROM matches
+    LEFT JOIN innings ON innings.match_id = matches.id
+    LEFT JOIN batting_scorecards bs ON bs.innings_id = innings.id
+    LEFT JOIN match_squad_entries mse ON mse.match_id = matches.id
+    AND mse.team_id = innings.batting_team_id
+    AND mse.player_id = bs.batter_id
+    LEFT JOIN grounds ON matches.ground_id = grounds.id
     LEFT JOIN players ON bs.batter_id = players.id
-WHERE innings.is_super_over = FALSE
-    AND matches.playing_format = 'ODI'
-    AND innings.batting_team_id IN (1, 8, 10)
-    AND innings.bowling_team_id IN (1, 8, 10)
+    LEFT JOIN teams ON mse.team_id = teams.id
+WHERE matches.playing_format = 'ODI'
     AND matches.ground_id IN (63, 70, 79, 90, 124)
     AND matches.start_date >= '2008-08-18'
     AND matches.start_date <= '2024-09-27'
@@ -133,16 +86,11 @@ WHERE innings.is_super_over = FALSE
         '2013/14',
         '2011/12'
     )
-GROUP BY date_part('year', matches.start_date),
-    bs.batter_id,
+    AND innings.is_super_over = FALSE
+    AND innings.batting_team_id IN (1, 8, 10)
+    AND innings.bowling_team_id IN (1, 8, 10)
+    AND mse.playing_status IN ('playing_xi')
+GROUP BY bs.batter_id,
     players.name,
-    ms.teams_represented,
-    bp.not_outs,
-    bp.centuries,
-    bp.half_centuries,
-    bp.ducks,
-    bp.highest_score,
-    bp.highest_not_out_score,
-    ms.match_count
-ORDER BY SUM(bs.runs_scored) DESC,
-    COUNT(innings.id) ASC;
+    date_part('year', matches.start_date)::integer
+ORDER BY runs_scored DESC;
