@@ -1,4 +1,4 @@
-SELECT date_part('year', matches.start_date) AS match_year,
+SELECT date_part('year', matches.start_date)::int AS match_year,
     COUNT(DISTINCT mse.player_id) AS players_count,
     COUNT(DISTINCT matches.id) AS matches_played,
     COUNT(innings.id) AS innings_count,
@@ -85,5 +85,5 @@ WHERE matches.playing_format = 'ODI'
     AND innings.batting_team_id IN (1, 8, 10)
     AND innings.bowling_team_id IN (1, 8, 10)
     AND mse.playing_status IN ('playing_xi')
-GROUP BY date_part('year', matches.start_date)
+GROUP BY date_part('year', matches.start_date)::int
 ORDER BY runs_scored DESC;

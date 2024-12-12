@@ -1,9 +1,9 @@
 SELECT bs.batter_id,
     players.name AS batter_name,
     ARRAY_AGG(DISTINCT teams.short_name) AS teams,
-    COUNT(DISTINCT matches.id) AS matches_played,
     MIN(matches.start_date) AS min_date,
     MAX(matches.start_date) AS max_date,
+    COUNT(DISTINCT matches.id) AS matches_played,
     COUNT(innings.id) AS innings_count,
     SUM(bs.runs_scored) AS runs_scored,
     SUM(bs.balls_faced) AS balls_faced,
@@ -73,7 +73,7 @@ FROM matches
     LEFT JOIN players ON bs.batter_id = players.id
     LEFT JOIN match_squad_entries mse ON mse.match_id = matches.id
     AND mse.team_id = innings.batting_team_id
-    AND mse.player_id = bs.bowler_id
+    AND mse.player_id = bs.batter_id
     LEFT JOIN teams ON mse.team_id = teams.id
 WHERE matches.playing_format = 'ODI'
     AND matches.ground_id IN (63, 70, 79, 90, 124)
