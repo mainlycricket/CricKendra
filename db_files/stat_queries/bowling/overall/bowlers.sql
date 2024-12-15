@@ -21,11 +21,11 @@ WITH best_innings AS (
     GROUP BY bs.bowler_id
 )
 SELECT bs.bowler_id,
-    players.name AS player_name,
-    ARRAY_AGG(DISTINCT teams.short_name) AS teams,
-    COUNT(DISTINCT matches.id) AS matches_played,
+    players.name AS bowler_name,
+    ARRAY_AGG(DISTINCT teams.short_name) AS teams_represented,
     MIN(matches.start_date) AS min_date,
     MAX(matches.start_date) AS max_date,
+    COUNT(DISTINCT matches.id) AS matches_played,
     COUNT(innings.id) AS innings_count,
     SUM(bs.balls_bowled) / 6 + (SUM(balls_bowled) % 6) * 0.1 AS overs_bowled,
     SUM(bs.runs_conceded) AS runs_conceded,
@@ -33,19 +33,19 @@ SELECT bs.bowler_id,
     (
         CASE
             WHEN SUM(bs.wickets_taken) > 0 THEN SUM(bs.runs_conceded) * 1.0 / SUM(bs.wickets_taken)
-            ELSE '+infinity'
+            ELSE NULL
         END
     ) AS average,
     (
         CASE
             WHEN SUM(bs.wickets_taken) > 0 THEN SUM(bs.balls_bowled) * 1.0 / SUM(bs.wickets_taken)
-            ELSE '+infinity'
+            ELSE NULL
         END
     ) AS strike_rate,
     (
         CASE
             WHEN SUM(bs.balls_bowled) > 0 THEN SUM(bs.runs_conceded) * 6.0 / SUM(bs.balls_bowled)
-            ELSE '+infinity'
+            ELSE NULL
         END
     ) AS economy,
     COUNT(
@@ -74,6 +74,7 @@ FROM matches
     LEFT JOIN match_squad_entries mse ON mse.match_id = matches.id
     AND mse.team_id = innings.bowling_team_id
     AND mse.player_id = bs.bowler_id
+    AND mse.playing_status IN ('playing_xi')
     LEFT JOIN teams ON mse.team_id = teams.id
 WHERE matches.playing_format = 'ODI'
     AND matches.ground_id IN (63, 90)

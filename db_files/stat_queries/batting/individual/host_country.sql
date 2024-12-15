@@ -1,7 +1,7 @@
-SELECT bs.batter_id,
-    players.name AS player_name,
-    host_nations.id AS host_nation_id,
+SELECT host_nations.id AS host_nation_id,
     host_nations.name AS host_nation_name,
+    bs.batter_id,
+    players.name AS batter_name,
     ARRAY_AGG(DISTINCT teams.short_name) AS teams_represented,
     MIN(matches.start_date) AS min_date,
     MAX(matches.start_date) AS max_date,
@@ -75,6 +75,7 @@ FROM matches
     LEFT JOIN match_squad_entries mse ON mse.match_id = matches.id
     AND mse.team_id = innings.batting_team_id
     AND mse.player_id = bs.batter_id
+    AND mse.playing_status IN ('playing_xi')
     LEFT JOIN grounds ON matches.ground_id = grounds.id
     LEFT JOIN cities ON grounds.city_id = cities.id
     LEFT JOIN host_nations ON cities.host_nation_id = host_nations.id
@@ -94,7 +95,6 @@ WHERE matches.playing_format = 'ODI'
     AND innings.is_super_over = FALSE
     AND innings.batting_team_id IN (1, 8, 10)
     AND innings.bowling_team_id IN (1, 8, 10)
-    AND mse.playing_status IN ('playing_xi')
 GROUP BY bs.batter_id,
     players.name,
     host_nations.id,

@@ -1,5 +1,5 @@
 WITH best_innings AS (
-    SELECT date_part('year', matches.start_date) AS match_year,
+    SELECT date_part('year', matches.start_date)::integer AS match_year,
         MAX(bs.wickets_taken) AS max_wickets
     FROM matches
         LEFT JOIN innings ON innings.match_id = matches.id
@@ -18,12 +18,10 @@ WITH best_innings AS (
         AND innings.is_super_over = FALSE
         AND innings.batting_team_id IN (1, 8, 10)
         AND innings.bowling_team_id IN (1, 8, 10)
-    GROUP BY date_part('year', matches.start_date)
+    GROUP BY date_part('year', matches.start_date)::integer
 )
-SELECT date_part('year', matches.start_date) AS match_year,
+SELECT date_part('year', matches.start_date)::integer AS match_year,
     COUNT(DISTINCT mse.player_id) AS players_count,
-    MIN(matches.start_date) AS min_date,
-    MAX(matches.start_date) AS max_date,
     COUNT(DISTINCT matches.id) AS matches_played,
     COUNT(innings.id) AS innings_count,
     SUM(bs.balls_bowled) / 6 + (SUM(balls_bowled) % 6) * 0.1 AS overs_bowled,
@@ -32,19 +30,19 @@ SELECT date_part('year', matches.start_date) AS match_year,
     (
         CASE
             WHEN SUM(bs.wickets_taken) > 0 THEN SUM(bs.runs_conceded) * 1.0 / SUM(bs.wickets_taken)
-            ELSE '+infinity'
+            ELSE NULL
         END
     ) AS average,
     (
         CASE
             WHEN SUM(bs.wickets_taken) > 0 THEN SUM(bs.balls_bowled) * 1.0 / SUM(bs.wickets_taken)
-            ELSE '+infinity'
+            ELSE NULL
         END
     ) AS strike_rate,
     (
         CASE
             WHEN SUM(bs.balls_bowled) > 0 THEN SUM(bs.runs_conceded) * 6.0 / SUM(bs.balls_bowled)
-            ELSE '+infinity'
+            ELSE NULL
         END
     ) AS economy,
     COUNT(
@@ -72,6 +70,7 @@ FROM matches
     LEFT JOIN match_squad_entries mse ON mse.match_id = matches.id
     AND mse.team_id = innings.bowling_team_id
     AND mse.player_id = bs.bowler_id
+    AND mse.playing_status IN ('playing_xi')
 WHERE matches.playing_format = 'ODI'
     AND matches.ground_id IN (63, 90)
     AND matches.start_date >= '2008-08-18'
@@ -86,5 +85,5 @@ WHERE matches.playing_format = 'ODI'
     AND innings.is_super_over = FALSE
     AND innings.batting_team_id IN (1, 8, 10)
     AND innings.bowling_team_id IN (1, 8, 10)
-GROUP BY date_part('year', matches.start_date)
+GROUP BY date_part('year', matches.start_date)::integer
 ORDER BY SUM(bs.wickets_taken) DESC;

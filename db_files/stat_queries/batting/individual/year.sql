@@ -1,6 +1,6 @@
-SELECT bs.batter_id,
-    players.name AS player_name,
-    date_part('year', matches.start_date)::integer AS match_year,
+SELECT date_part('year', matches.start_date)::integer AS match_year,
+    bs.batter_id,
+    players.name AS batter_name,
     ARRAY_AGG(DISTINCT teams.short_name) AS teams_represented,
     COUNT(DISTINCT matches.id) AS matches_played,
     COUNT(innings.id) AS innings_count,
@@ -72,6 +72,7 @@ FROM matches
     LEFT JOIN match_squad_entries mse ON mse.match_id = matches.id
     AND mse.team_id = innings.batting_team_id
     AND mse.player_id = bs.batter_id
+    AND mse.playing_status IN ('playing_xi')
     LEFT JOIN grounds ON matches.ground_id = grounds.id
     LEFT JOIN players ON bs.batter_id = players.id
     LEFT JOIN teams ON mse.team_id = teams.id
@@ -89,7 +90,6 @@ WHERE matches.playing_format = 'ODI'
     AND innings.is_super_over = FALSE
     AND innings.batting_team_id IN (1, 8, 10)
     AND innings.bowling_team_id IN (1, 8, 10)
-    AND mse.playing_status IN ('playing_xi')
 GROUP BY bs.batter_id,
     players.name,
     date_part('year', matches.start_date)::integer

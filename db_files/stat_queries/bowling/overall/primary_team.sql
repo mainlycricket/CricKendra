@@ -33,19 +33,19 @@ SELECT innings.bowling_team_id,
     (
         CASE
             WHEN SUM(bs.wickets_taken) > 0 THEN SUM(bs.runs_conceded) * 1.0 / SUM(bs.wickets_taken)
-            ELSE '+infinity'
+            ELSE NULL
         END
     ) AS average,
     (
         CASE
             WHEN SUM(bs.wickets_taken) > 0 THEN SUM(bs.balls_bowled) * 1.0 / SUM(bs.wickets_taken)
-            ELSE '+infinity'
+            ELSE NULL
         END
     ) AS strike_rate,
     (
         CASE
             WHEN SUM(bs.balls_bowled) > 0 THEN SUM(bs.runs_conceded) * 6.0 / SUM(bs.balls_bowled)
-            ELSE '+infinity'
+            ELSE NULL
         END
     ) AS economy,
     COUNT(
@@ -73,6 +73,7 @@ FROM matches
     LEFT JOIN match_squad_entries mse ON mse.match_id = matches.id
     AND mse.team_id = innings.bowling_team_id
     AND mse.player_id = bs.bowler_id
+    AND mse.playing_status IN ('playing_xi')
     LEFT JOIN teams ON innings.bowling_team_id = teams.id
 WHERE matches.playing_format = 'ODI'
     AND matches.ground_id IN (63, 90)

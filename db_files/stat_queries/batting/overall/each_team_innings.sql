@@ -1,6 +1,6 @@
 SELECT matches.id AS match_id,
-    innings.batting_team_id,
     innings.innings_number,
+    innings.batting_team_id,
     teams1.name AS batting_team_name,
     innings.bowling_team_id,
     teams2.name AS bowling_team_name,

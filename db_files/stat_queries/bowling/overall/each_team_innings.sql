@@ -20,18 +20,17 @@ WITH best_innings AS (
         AND innings.bowling_team_id IN (1, 8, 10)
     GROUP BY innings.id
 )
-SELECT matches.id,
-    innings.id,
+SELECT matches.id AS match_id,
     innings.innings_number,
-    matches.start_date,
-    matches.team1_id,
-    teams1.name AS team1_name,
-    matches.team2_id,
-    teams2.name AS team2_name,
-    cities.name AS city_name,
+    innings.bowling_team_id,
+    teams1.name AS bowling_team_name,
+    innings.batting_team_id,
+    teams2.name AS batting_team_name,
     matches.season,
-    COUNT(DISTINCT matches.id) AS matches_played,
+    cities.name AS city_name,
+    matches.start_date,
     COUNT(DISTINCT mse.player_id) AS players_count,
+    COUNT(DISTINCT matches.id) AS matches_played,
     COUNT(innings.id) AS innings_count,
     SUM(bs.balls_bowled) / 6 + (SUM(balls_bowled) % 6) * 0.1 AS overs_bowled,
     SUM(bs.runs_conceded) AS runs_conceded,
@@ -39,19 +38,19 @@ SELECT matches.id,
     (
         CASE
             WHEN SUM(bs.wickets_taken) > 0 THEN SUM(bs.runs_conceded) * 1.0 / SUM(bs.wickets_taken)
-            ELSE '+infinity'
+            ELSE NULL
         END
     ) AS average,
     (
         CASE
             WHEN SUM(bs.wickets_taken) > 0 THEN SUM(bs.balls_bowled) * 1.0 / SUM(bs.wickets_taken)
-            ELSE '+infinity'
+            ELSE NULL
         END
     ) AS strike_rate,
     (
         CASE
             WHEN SUM(bs.balls_bowled) > 0 THEN SUM(bs.runs_conceded) * 6.0 / SUM(bs.balls_bowled)
-            ELSE '+infinity'
+            ELSE NULL
         END
     ) AS economy,
     COUNT(
@@ -79,10 +78,11 @@ FROM matches
     LEFT JOIN match_squad_entries mse ON mse.match_id = matches.id
     AND mse.team_id = innings.bowling_team_id
     AND mse.player_id = bs.bowler_id
+    AND mse.playing_status IN ('playing_xi')
     LEFT JOIN grounds ON matches.ground_id = grounds.id
     LEFT JOIN cities ON grounds.city_id = cities.id
-    LEFT JOIN teams teams1 ON matches.team1_id = teams1.id
-    LEFT JOIN teams teams2 ON matches.team2_id = teams2.id
+    LEFT JOIN teams teams1 ON innings.bowling_team_id = teams1.id
+    LEFT JOIN teams teams2 ON innings.batting_team_id = teams2.id
 WHERE matches.playing_format = 'ODI'
     AND matches.ground_id IN (63, 90)
     AND matches.start_date >= '2008-08-18'

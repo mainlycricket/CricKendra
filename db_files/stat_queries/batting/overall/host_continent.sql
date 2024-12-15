@@ -1,8 +1,8 @@
 SELECT continents.id AS continent_id,
     continents.name AS continent_name,
+    COUNT(DISTINCT mse.player_id) AS players_count,
     MIN(matches.start_date) AS min_date,
     MAX(matches.start_date) AS max_date,
-    COUNT(DISTINCT mse.player_id) AS players_count,
     COUNT(DISTINCT matches.id) AS matches_played,
     COUNT(innings.id) AS innings_count,
     SUM(bs.runs_scored) AS runs_scored,
@@ -73,6 +73,7 @@ FROM matches
     LEFT JOIN match_squad_entries mse ON mse.match_id = matches.id
     AND mse.team_id = innings.batting_team_id
     AND mse.player_id = bs.batter_id
+    AND mse.playing_status IN ('playing_xi')
     LEFT JOIN grounds ON matches.ground_id = grounds.id
     LEFT JOIN cities ON grounds.city_id = cities.id
     LEFT JOIN host_nations ON cities.host_nation_id = host_nations.id
@@ -91,7 +92,6 @@ WHERE matches.playing_format = 'ODI'
     AND innings.is_super_over = FALSE
     AND innings.batting_team_id IN (1, 8, 10)
     AND innings.bowling_team_id IN (1, 8, 10)
-    AND mse.playing_status IN ('playing_xi')
 GROUP BY continents.id,
     continents.name
 ORDER BY runs_scored DESC;

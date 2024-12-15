@@ -2,20 +2,20 @@ SELECT matches.id AS match_id,
     matches.start_date,
     matches.ground_id,
     cities.name AS city_name,
-    bs.bowler_id,
-    players.name AS player_name,
     innings.innings_number,
-    innings.batting_team_id AS player_team_id,
-    teams.short_name as player_team_name,
-    innings.bowling_team_id AS opposition_team_id,
-    teams2.name AS opposition_team_name,
+    bs.bowler_id,
+    players.name AS bowler_name,
+    innings.batting_team_id AS bowling_team_id,
+    teams.short_name as bowling_team_name,
+    innings.bowling_team_id AS batting_team_id,
+    teams2.name AS batting_team_name,
     SUM(bs.balls_bowled) / 6 + (SUM(balls_bowled) % 6) * 0.1 AS overs_bowled,
     SUM(bs.runs_conceded) AS runs_conceded,
     SUM(bs.wickets_taken) AS wickets_taken,
     (
         CASE
             WHEN SUM(bs.balls_bowled) > 0 THEN SUM(bs.runs_conceded) * 6.0 / SUM(bs.balls_bowled)
-            ELSE '+infinity'
+            ELSE NULL
         END
     ) AS economy,
     SUM(bs.fours_conceded) AS fours_conceded,
