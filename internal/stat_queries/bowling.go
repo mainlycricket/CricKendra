@@ -3,27 +3,69 @@ package statqueries
 import (
 	"fmt"
 	"net/url"
-	"strings"
 
 	"github.com/mainlycricket/CricKendra/pkg/pgxutils"
 )
 
+const bowling_numbers_query string = `
+	COUNT(DISTINCT matches.id) AS matches_played,
+	COUNT(innings.id) AS innings_count,
+	SUM(bs.balls_bowled) / 6 + (SUM(balls_bowled) % 6) * 0.1 AS overs_bowled,
+	SUM(bs.runs_conceded) AS runs_conceded,
+	SUM(bs.wickets_taken) AS wickets_taken,
+	(
+		CASE
+			WHEN SUM(bs.wickets_taken) > 0 THEN SUM(bs.runs_conceded) * 1.0 / SUM(bs.wickets_taken)
+			ELSE NULL
+		END
+	) AS average,
+	(
+		CASE
+			WHEN SUM(bs.wickets_taken) > 0 THEN SUM(bs.balls_bowled) * 1.0 / SUM(bs.wickets_taken)
+			ELSE NULL
+		END
+	) AS strike_rate,
+	(
+		CASE
+			WHEN SUM(bs.balls_bowled) > 0 THEN SUM(bs.runs_conceded) * 6.0 / SUM(bs.balls_bowled)
+			ELSE NULL
+		END
+	) AS economy,
+	COUNT(
+		CASE
+			WHEN bs.wickets_taken = 4 THEN 1
+		END
+	) AS four_wkt_hauls,
+	COUNT(
+		CASE
+			WHEN bs.wickets_taken >= 5 THEN 1
+		END
+	) AS five_wkt_hauls,
+	MAX(bs.wickets_taken) AS best_innings_wickets,
+	MIN(
+		CASE
+			WHEN bs.wickets_taken = bi.max_wickets THEN bs.runs_conceded
+		END
+	) AS best_innings_runs,
+	SUM(bs.fours_conceded) AS fours_conceded,
+	SUM(bs.sixes_conceded) AS sixes_conceded
+`
+
+const bowling_common_joins string = `
+	LEFT JOIN innings ON innings.match_id = matches.id
+	LEFT JOIN bowling_scorecards bs ON bs.innings_id = innings.id
+	LEFT JOIN match_squad_entries mse ON mse.match_id = matches.id
+		AND mse.team_id = innings.bowling_team_id
+		AND mse.player_id = bs.bowler_id
+		AND mse.playing_status IN ('playing_xi')
+`
+
 // Function Names are in Query_Overall_Bowling_x format, x represents grouping
 
 func Query_Overall_Bowling_Bowlers(params *url.Values) (string, []any, int, error) {
-	var filters []string
-	var args []any
-
-	HandlePlayingFormat(params, &filters, &args)
-	HandleIsMale(params, &filters, &args)
-	HandleMinStartDate(params, &filters, &args)
-	HandleMaxStartDate(params, &filters, &args)
-	HandleSeasons(params, &filters, &args)
-	HandleBattingTeam(params, &filters, &args)
-	HandleBowlingTeam(params, &filters, &args)
-	HandleGround(params, &filters, &args)
-
-	condition := fmt.Sprintf(` AND %s`, strings.Join(filters, " AND "))
+	sqlWhere := &sqlWhere{}
+	sqlWhere.applyFilters(params, bowling_stats)
+	condition := sqlWhere.getConditionString()
 
 	skip, limit := pgxutils.GetPaginationParams(params)
 	pagination := fmt.Sprintf(`OFFSET %d ROWS FETCH FIRST %d ROWS ONLY`, skip, (limit + 1))
@@ -43,56 +85,11 @@ func Query_Overall_Bowling_Bowlers(params *url.Values) (string, []any, int, erro
 		ARRAY_AGG(DISTINCT teams.short_name) AS teams_represented,
 		MIN(matches.start_date) AS min_date,
 		MAX(matches.start_date) AS max_date,
-		COUNT(DISTINCT matches.id) AS matches_played,
-		COUNT(innings.id) AS innings_count,
-		SUM(bs.balls_bowled) / 6 + (SUM(balls_bowled) %% 6) * 0.1 AS overs_bowled,
-		SUM(bs.runs_conceded) AS runs_conceded,
-		SUM(bs.wickets_taken) AS wickets_taken,
-		(
-			CASE
-				WHEN SUM(bs.wickets_taken) > 0 THEN SUM(bs.runs_conceded) * 1.0 / SUM(bs.wickets_taken)
-				ELSE NULL
-			END
-		) AS average,
-		(
-			CASE
-				WHEN SUM(bs.wickets_taken) > 0 THEN SUM(bs.balls_bowled) * 1.0 / SUM(bs.wickets_taken)
-				ELSE NULL
-			END
-		) AS strike_rate,
-		(
-			CASE
-				WHEN SUM(bs.balls_bowled) > 0 THEN SUM(bs.runs_conceded) * 6.0 / SUM(bs.balls_bowled)
-				ELSE NULL
-			END
-		) AS economy,
-		COUNT(
-			CASE
-				WHEN bs.wickets_taken = 4 THEN 1
-			END
-		) AS four_wkt_hauls,
-		COUNT(
-			CASE
-				WHEN bs.wickets_taken >= 5 THEN 1
-			END
-		) AS five_wkt_hauls,
-		MAX(bs.wickets_taken) AS best_innings_wickets,
-		MIN(
-			CASE
-				WHEN bs.wickets_taken = bi.max_wickets THEN bs.runs_conceded
-			END
-		) AS best_innings_runs,
-		SUM(bs.fours_conceded) AS fours_conceded,
-		SUM(bs.sixes_conceded) AS sixes_conceded
+		%s
 	FROM matches
-		LEFT JOIN innings ON innings.match_id = matches.id
-		LEFT JOIN bowling_scorecards bs ON bs.innings_id = innings.id
+		%s
 		LEFT JOIN best_innings bi ON bi.bowler_id = bs.bowler_id
 		LEFT JOIN players ON bs.bowler_id = players.id
-		LEFT JOIN match_squad_entries mse ON mse.match_id = matches.id
-		AND mse.team_id = innings.bowling_team_id
-		AND mse.player_id = bs.bowler_id
-		AND mse.playing_status IN ('playing_xi')
 		LEFT JOIN teams ON mse.team_id = teams.id
 	WHERE innings.is_super_over = FALSE
 		%s
@@ -100,25 +97,15 @@ func Query_Overall_Bowling_Bowlers(params *url.Values) (string, []any, int, erro
 		players.name
 	ORDER BY SUM(bs.wickets_taken) DESC
 	%s;
-	`, condition, condition, pagination)
+	`, condition, bowling_numbers_query, bowling_common_joins, condition, pagination)
 
-	return query, args, limit, nil
+	return query, sqlWhere.args, limit, nil
 }
 
 func Query_Overall_Bowling_TeamInnings(params *url.Values) (string, []any, int, error) {
-	var filters []string
-	var args []any
-
-	HandlePlayingFormat(params, &filters, &args)
-	HandleIsMale(params, &filters, &args)
-	HandleMinStartDate(params, &filters, &args)
-	HandleMaxStartDate(params, &filters, &args)
-	HandleSeasons(params, &filters, &args)
-	HandleBattingTeam(params, &filters, &args)
-	HandleBowlingTeam(params, &filters, &args)
-	HandleGround(params, &filters, &args)
-
-	condition := fmt.Sprintf(` AND %s`, strings.Join(filters, " AND "))
+	sqlWhere := &sqlWhere{}
+	sqlWhere.applyFilters(params, bowling_stats)
+	condition := sqlWhere.getConditionString()
 
 	skip, limit := pgxutils.GetPaginationParams(params)
 	pagination := fmt.Sprintf(`OFFSET %d ROWS FETCH FIRST %d ROWS ONLY`, skip, (limit + 1))
@@ -143,55 +130,10 @@ func Query_Overall_Bowling_TeamInnings(params *url.Values) (string, []any, int, 
 		cities.name AS city_name,
 		matches.start_date,
 		COUNT(DISTINCT mse.player_id) AS players_count,
-		COUNT(DISTINCT matches.id) AS matches_played,
-		COUNT(innings.id) AS innings_count,
-		SUM(bs.balls_bowled) / 6 + (SUM(balls_bowled) %% 6) * 0.1 AS overs_bowled,
-		SUM(bs.runs_conceded) AS runs_conceded,
-		SUM(bs.wickets_taken) AS wickets_taken,
-		(
-			CASE
-				WHEN SUM(bs.wickets_taken) > 0 THEN SUM(bs.runs_conceded) * 1.0 / SUM(bs.wickets_taken)
-				ELSE NULL
-			END
-		) AS average,
-		(
-			CASE
-				WHEN SUM(bs.wickets_taken) > 0 THEN SUM(bs.balls_bowled) * 1.0 / SUM(bs.wickets_taken)
-				ELSE NULL
-			END
-		) AS strike_rate,
-		(
-			CASE
-				WHEN SUM(bs.balls_bowled) > 0 THEN SUM(bs.runs_conceded) * 6.0 / SUM(bs.balls_bowled)
-				ELSE NULL
-			END
-		) AS economy,
-		COUNT(
-			CASE
-				WHEN bs.wickets_taken = 4 THEN 1
-			END
-		) AS four_wkt_hauls,
-		COUNT(
-			CASE
-				WHEN bs.wickets_taken >= 5 THEN 1
-			END
-		) AS five_wkt_hauls,
-		MAX(bs.wickets_taken) AS best_innings_wickets,
-		MIN(
-			CASE
-				WHEN bs.wickets_taken = bi.max_wickets THEN bs.runs_conceded
-			END
-		) AS best_innings_runs,
-		SUM(bs.fours_conceded) AS fours_conceded,
-		SUM(bs.sixes_conceded) AS sixes_conceded
+		%s
 	FROM matches
-		LEFT JOIN innings ON innings.match_id = matches.id
-		LEFT JOIN bowling_scorecards bs ON bs.innings_id = innings.id
+		%s
 		LEFT JOIN best_innings bi ON bi.innings_id = innings.id
-		LEFT JOIN match_squad_entries mse ON mse.match_id = matches.id
-		AND mse.team_id = innings.bowling_team_id
-		AND mse.player_id = bs.bowler_id
-		AND mse.playing_status IN ('playing_xi')
 		LEFT JOIN grounds ON matches.ground_id = grounds.id
 		LEFT JOIN cities ON grounds.city_id = cities.id
 		LEFT JOIN teams teams1 ON innings.bowling_team_id = teams1.id
@@ -205,25 +147,15 @@ func Query_Overall_Bowling_TeamInnings(params *url.Values) (string, []any, int, 
 		cities.name
 	ORDER BY SUM(bs.wickets_taken) DESC
 	%s;
-	`, condition, condition, pagination)
+	`, condition, bowling_numbers_query, bowling_common_joins, condition, pagination)
 
-	return query, args, limit, nil
+	return query, sqlWhere.args, limit, nil
 }
 
 func Query_Overall_Bowling_Matches(params *url.Values) (string, []any, int, error) {
-	var filters []string
-	var args []any
-
-	HandlePlayingFormat(params, &filters, &args)
-	HandleIsMale(params, &filters, &args)
-	HandleMinStartDate(params, &filters, &args)
-	HandleMaxStartDate(params, &filters, &args)
-	HandleSeasons(params, &filters, &args)
-	HandleBattingTeam(params, &filters, &args)
-	HandleBowlingTeam(params, &filters, &args)
-	HandleGround(params, &filters, &args)
-
-	condition := fmt.Sprintf(` AND %s`, strings.Join(filters, " AND "))
+	sqlWhere := &sqlWhere{}
+	sqlWhere.applyFilters(params, bowling_stats)
+	condition := sqlWhere.getConditionString()
 
 	skip, limit := pgxutils.GetPaginationParams(params)
 	pagination := fmt.Sprintf(`OFFSET %d ROWS FETCH FIRST %d ROWS ONLY`, skip, (limit + 1))
@@ -247,55 +179,10 @@ func Query_Overall_Bowling_Matches(params *url.Values) (string, []any, int, erro
 		cities.name AS city_name,
 		matches.start_date,
 		COUNT(DISTINCT mse.player_id) AS players_count,
-		COUNT(DISTINCT matches.id) AS matches_played,
-		COUNT(innings.id) AS innings_count,
-		SUM(bs.balls_bowled) / 6 + (SUM(balls_bowled) %% 6) * 0.1 AS overs_bowled,
-		SUM(bs.runs_conceded) AS runs_conceded,
-		SUM(bs.wickets_taken) AS wickets_taken,
-		(
-			CASE
-				WHEN SUM(bs.wickets_taken) > 0 THEN SUM(bs.runs_conceded) * 1.0 / SUM(bs.wickets_taken)
-				ELSE NULL
-			END
-		) AS average,
-		(
-			CASE
-				WHEN SUM(bs.wickets_taken) > 0 THEN SUM(bs.balls_bowled) * 1.0 / SUM(bs.wickets_taken)
-				ELSE NULL
-			END
-		) AS strike_rate,
-		(
-			CASE
-				WHEN SUM(bs.balls_bowled) > 0 THEN SUM(bs.runs_conceded) * 6.0 / SUM(bs.balls_bowled)
-				ELSE NULL
-			END
-		) AS economy,
-		COUNT(
-			CASE
-				WHEN bs.wickets_taken = 4 THEN 1
-			END
-		) AS four_wkt_hauls,
-		COUNT(
-			CASE
-				WHEN bs.wickets_taken >= 5 THEN 1
-			END
-		) AS five_wkt_hauls,
-		MAX(bs.wickets_taken) AS best_innings_wickets,
-		MIN(
-			CASE
-				WHEN bs.wickets_taken = bi.max_wickets THEN bs.runs_conceded
-			END
-		) AS best_innings_runs,
-		SUM(bs.fours_conceded) AS fours_conceded,
-		SUM(bs.sixes_conceded) AS sixes_conceded
+		%s
 	FROM matches
-		LEFT JOIN innings ON innings.match_id = matches.id
-		LEFT JOIN bowling_scorecards bs ON bs.innings_id = innings.id
+		%s
 		LEFT JOIN best_innings bi ON bi.match_id = matches.id
-		LEFT JOIN match_squad_entries mse ON mse.match_id = matches.id
-		AND mse.team_id = innings.bowling_team_id
-		AND mse.player_id = bs.bowler_id
-		AND mse.playing_status IN ('playing_xi')
 		LEFT JOIN grounds ON matches.ground_id = grounds.id
 		LEFT JOIN cities ON grounds.city_id = cities.id
 		LEFT JOIN teams teams1 ON matches.team1_id = teams1.id
@@ -308,25 +195,15 @@ func Query_Overall_Bowling_Matches(params *url.Values) (string, []any, int, erro
 		cities.name
 	ORDER BY SUM(bs.wickets_taken) DESC
 	%s;
-	`, condition, condition, pagination)
+	`, condition, bowling_numbers_query, bowling_common_joins, condition, pagination)
 
-	return query, args, limit, nil
+	return query, sqlWhere.args, limit, nil
 }
 
 func Query_Overall_Bowling_Teams(params *url.Values) (string, []any, int, error) {
-	var filters []string
-	var args []any
-
-	HandlePlayingFormat(params, &filters, &args)
-	HandleIsMale(params, &filters, &args)
-	HandleMinStartDate(params, &filters, &args)
-	HandleMaxStartDate(params, &filters, &args)
-	HandleSeasons(params, &filters, &args)
-	HandleBattingTeam(params, &filters, &args)
-	HandleBowlingTeam(params, &filters, &args)
-	HandleGround(params, &filters, &args)
-
-	condition := fmt.Sprintf(` AND %s`, strings.Join(filters, " AND "))
+	sqlWhere := &sqlWhere{}
+	sqlWhere.applyFilters(params, bowling_stats)
+	condition := sqlWhere.getConditionString()
 
 	skip, limit := pgxutils.GetPaginationParams(params)
 	pagination := fmt.Sprintf(`OFFSET %d ROWS FETCH FIRST %d ROWS ONLY`, skip, (limit + 1))
@@ -346,55 +223,10 @@ func Query_Overall_Bowling_Teams(params *url.Values) (string, []any, int, error)
 		COUNT(DISTINCT mse.player_id) AS players_count,
 		MIN(matches.start_date) AS min_date,
 		MAX(matches.start_date) AS max_date,
-		COUNT(DISTINCT matches.id) AS matches_played,
-		COUNT(innings.id) AS innings_count,
-		SUM(bs.balls_bowled) / 6 + (SUM(balls_bowled) %% 6) * 0.1 AS overs_bowled,
-		SUM(bs.runs_conceded) AS runs_conceded,
-		SUM(bs.wickets_taken) AS wickets_taken,
-		(
-			CASE
-				WHEN SUM(bs.wickets_taken) > 0 THEN SUM(bs.runs_conceded) * 1.0 / SUM(bs.wickets_taken)
-				ELSE NULL
-			END
-		) AS average,
-		(
-			CASE
-				WHEN SUM(bs.wickets_taken) > 0 THEN SUM(bs.balls_bowled) * 1.0 / SUM(bs.wickets_taken)
-				ELSE NULL
-			END
-		) AS strike_rate,
-		(
-			CASE
-				WHEN SUM(bs.balls_bowled) > 0 THEN SUM(bs.runs_conceded) * 6.0 / SUM(bs.balls_bowled)
-				ELSE NULL
-			END
-		) AS economy,
-		COUNT(
-			CASE
-				WHEN bs.wickets_taken = 4 THEN 1
-			END
-		) AS four_wkt_hauls,
-		COUNT(
-			CASE
-				WHEN bs.wickets_taken >= 5 THEN 1
-			END
-		) AS five_wkt_hauls,
-		MAX(bs.wickets_taken) AS best_innings_wickets,
-		MIN(
-			CASE
-				WHEN bs.wickets_taken = bi.max_wickets THEN bs.runs_conceded
-			END
-		) AS best_innings_runs,
-		SUM(bs.fours_conceded) AS fours_conceded,
-		SUM(bs.sixes_conceded) AS sixes_conceded
+		%s
 	FROM matches
-		LEFT JOIN innings ON innings.match_id = matches.id
-		LEFT JOIN bowling_scorecards bs ON bs.innings_id = innings.id
+		%s
 		LEFT JOIN best_innings bi ON bi.bowling_team_id = innings.bowling_team_id
-		LEFT JOIN match_squad_entries mse ON mse.match_id = matches.id
-		AND mse.team_id = innings.bowling_team_id
-		AND mse.player_id = bs.bowler_id
-		AND mse.playing_status IN ('playing_xi')
 		LEFT JOIN teams ON innings.bowling_team_id = teams.id
 	WHERE innings.is_super_over = FALSE
 		%s
@@ -402,25 +234,15 @@ func Query_Overall_Bowling_Teams(params *url.Values) (string, []any, int, error)
 		teams.name
 	ORDER BY SUM(bs.wickets_taken) DESC
 	%s;
-	`, condition, condition, pagination)
+	`, condition, bowling_numbers_query, bowling_common_joins, condition, pagination)
 
-	return query, args, limit, nil
+	return query, sqlWhere.args, limit, nil
 }
 
 func Query_Overall_Bowling_Oppositions(params *url.Values) (string, []any, int, error) {
-	var filters []string
-	var args []any
-
-	HandlePlayingFormat(params, &filters, &args)
-	HandleIsMale(params, &filters, &args)
-	HandleMinStartDate(params, &filters, &args)
-	HandleMaxStartDate(params, &filters, &args)
-	HandleSeasons(params, &filters, &args)
-	HandleBattingTeam(params, &filters, &args)
-	HandleBowlingTeam(params, &filters, &args)
-	HandleGround(params, &filters, &args)
-
-	condition := fmt.Sprintf(` AND %s`, strings.Join(filters, " AND "))
+	sqlWhere := &sqlWhere{}
+	sqlWhere.applyFilters(params, bowling_stats)
+	condition := sqlWhere.getConditionString()
 
 	skip, limit := pgxutils.GetPaginationParams(params)
 	pagination := fmt.Sprintf(`OFFSET %d ROWS FETCH FIRST %d ROWS ONLY`, skip, (limit + 1))
@@ -440,55 +262,10 @@ func Query_Overall_Bowling_Oppositions(params *url.Values) (string, []any, int, 
 		COUNT(DISTINCT mse.player_id) AS players_count,
 		MIN(matches.start_date) AS min_date,
 		MAX(matches.start_date) AS max_date,
-		COUNT(DISTINCT matches.id) AS matches_played,
-		COUNT(innings.id) AS innings_count,
-		SUM(bs.balls_bowled) / 6 + (SUM(balls_bowled) %% 6) * 0.1 AS overs_bowled,
-		SUM(bs.runs_conceded) AS runs_conceded,
-		SUM(bs.wickets_taken) AS wickets_taken,
-		(
-			CASE
-				WHEN SUM(bs.wickets_taken) > 0 THEN SUM(bs.runs_conceded) * 1.0 / SUM(bs.wickets_taken)
-				ELSE NULL
-			END
-		) AS average,
-		(
-			CASE
-				WHEN SUM(bs.wickets_taken) > 0 THEN SUM(bs.balls_bowled) * 1.0 / SUM(bs.wickets_taken)
-				ELSE NULL
-			END
-		) AS strike_rate,
-		(
-			CASE
-				WHEN SUM(bs.balls_bowled) > 0 THEN SUM(bs.runs_conceded) * 6.0 / SUM(bs.balls_bowled)
-				ELSE NULL
-			END
-		) AS economy,
-		COUNT(
-			CASE
-				WHEN bs.wickets_taken = 4 THEN 1
-			END
-		) AS four_wkt_hauls,
-		COUNT(
-			CASE
-				WHEN bs.wickets_taken >= 5 THEN 1
-			END
-		) AS five_wkt_hauls,
-		MAX(bs.wickets_taken) AS best_innings_wickets,
-		MIN(
-			CASE
-				WHEN bs.wickets_taken = bi.max_wickets THEN bs.runs_conceded
-			END
-		) AS best_innings_runs,
-		SUM(bs.fours_conceded) AS fours_conceded,
-		SUM(bs.sixes_conceded) AS sixes_conceded
+		%s
 	FROM matches
-		LEFT JOIN innings ON innings.match_id = matches.id
-		LEFT JOIN bowling_scorecards bs ON bs.innings_id = innings.id
+		%s
 		LEFT JOIN best_innings bi ON bi.batting_team_id = innings.batting_team_id
-		LEFT JOIN match_squad_entries mse ON mse.match_id = matches.id
-		AND mse.team_id = innings.bowling_team_id
-		AND mse.player_id = bs.bowler_id
-		AND mse.playing_status IN ('playing_xi')
 		LEFT JOIN teams ON innings.batting_team_id = teams.id
 	WHERE innings.is_super_over = FALSE
 		%s
@@ -496,25 +273,15 @@ func Query_Overall_Bowling_Oppositions(params *url.Values) (string, []any, int, 
 		teams.name
 	ORDER BY SUM(bs.wickets_taken) DESC
 	%s;
-	`, condition, condition, pagination)
+	`, condition, bowling_numbers_query, bowling_common_joins, condition, pagination)
 
-	return query, args, limit, nil
+	return query, sqlWhere.args, limit, nil
 }
 
 func Query_Overall_Bowling_Grounds(params *url.Values) (string, []any, int, error) {
-	var filters []string
-	var args []any
-
-	HandlePlayingFormat(params, &filters, &args)
-	HandleIsMale(params, &filters, &args)
-	HandleMinStartDate(params, &filters, &args)
-	HandleMaxStartDate(params, &filters, &args)
-	HandleSeasons(params, &filters, &args)
-	HandleBattingTeam(params, &filters, &args)
-	HandleBowlingTeam(params, &filters, &args)
-	HandleGround(params, &filters, &args)
-
-	condition := fmt.Sprintf(` AND %s`, strings.Join(filters, " AND "))
+	sqlWhere := &sqlWhere{}
+	sqlWhere.applyFilters(params, bowling_stats)
+	condition := sqlWhere.getConditionString()
 
 	skip, limit := pgxutils.GetPaginationParams(params)
 	pagination := fmt.Sprintf(`OFFSET %d ROWS FETCH FIRST %d ROWS ONLY`, skip, (limit + 1))
@@ -534,55 +301,10 @@ func Query_Overall_Bowling_Grounds(params *url.Values) (string, []any, int, erro
 		COUNT(DISTINCT mse.player_id) AS players_count,
 		MIN(matches.start_date) AS min_date,
 		MAX(matches.start_date) AS max_date,
-		COUNT(DISTINCT matches.id) AS matches_played,
-		COUNT(innings.id) AS innings_count,
-		SUM(bs.balls_bowled) / 6 + (SUM(balls_bowled) %% 6) * 0.1 AS overs_bowled,
-		SUM(bs.runs_conceded) AS runs_conceded,
-		SUM(bs.wickets_taken) AS wickets_taken,
-		(
-			CASE
-				WHEN SUM(bs.wickets_taken) > 0 THEN SUM(bs.runs_conceded) * 1.0 / SUM(bs.wickets_taken)
-				ELSE NULL
-			END
-		) AS average,
-		(
-			CASE
-				WHEN SUM(bs.wickets_taken) > 0 THEN SUM(bs.balls_bowled) * 1.0 / SUM(bs.wickets_taken)
-				ELSE NULL
-			END
-		) AS strike_rate,
-		(
-			CASE
-				WHEN SUM(bs.balls_bowled) > 0 THEN SUM(bs.runs_conceded) * 6.0 / SUM(bs.balls_bowled)
-				ELSE NULL
-			END
-		) AS economy,
-		COUNT(
-			CASE
-				WHEN bs.wickets_taken = 4 THEN 1
-			END
-		) AS four_wkt_hauls,
-		COUNT(
-			CASE
-				WHEN bs.wickets_taken >= 5 THEN 1
-			END
-		) AS five_wkt_hauls,
-		MAX(bs.wickets_taken) AS best_innings_wickets,
-		MIN(
-			CASE
-				WHEN bs.wickets_taken = bi.max_wickets THEN bs.runs_conceded
-			END
-		) AS best_innings_runs,
-		SUM(bs.fours_conceded) AS fours_conceded,
-		SUM(bs.sixes_conceded) AS sixes_conceded
+		%s
 	FROM matches
-		LEFT JOIN innings ON innings.match_id = matches.id
-		LEFT JOIN bowling_scorecards bs ON bs.innings_id = innings.id
+		%s
 		LEFT JOIN best_innings bi ON bi.ground_id = matches.ground_id
-		LEFT JOIN match_squad_entries mse ON mse.match_id = matches.id
-		AND mse.team_id = innings.bowling_team_id
-		AND mse.player_id = bs.bowler_id
-		AND mse.playing_status IN ('playing_xi')
 		LEFT JOIN grounds ON matches.ground_id = grounds.id
 	WHERE innings.is_super_over = FALSE
 		%s
@@ -590,123 +312,58 @@ func Query_Overall_Bowling_Grounds(params *url.Values) (string, []any, int, erro
 		grounds.name
 	ORDER BY SUM(bs.wickets_taken) DESC
 	%s;
-	`, condition, condition, pagination)
+	`, condition, bowling_numbers_query, bowling_common_joins, condition, pagination)
 
-	return query, args, limit, nil
+	return query, sqlWhere.args, limit, nil
 }
 
 func Query_Overall_Bowling_HostNations(params *url.Values) (string, []any, int, error) {
-	var filters []string
-	var args []any
-
-	HandlePlayingFormat(params, &filters, &args)
-	HandleIsMale(params, &filters, &args)
-	HandleMinStartDate(params, &filters, &args)
-	HandleMaxStartDate(params, &filters, &args)
-	HandleSeasons(params, &filters, &args)
-	HandleBattingTeam(params, &filters, &args)
-	HandleBowlingTeam(params, &filters, &args)
-	HandleGround(params, &filters, &args)
-
-	condition := fmt.Sprintf(` AND %s`, strings.Join(filters, " AND "))
+	sqlWhere := &sqlWhere{}
+	sqlWhere.applyFilters(params, bowling_stats)
+	condition := sqlWhere.getConditionString()
 
 	skip, limit := pgxutils.GetPaginationParams(params)
 	pagination := fmt.Sprintf(`OFFSET %d ROWS FETCH FIRST %d ROWS ONLY`, skip, (limit + 1))
 
 	query := fmt.Sprintf(`WITH best_innings AS (
-    SELECT cities.host_nation_id,
-        MAX(bs.wickets_taken) AS max_wickets
-    FROM matches
-        LEFT JOIN innings ON innings.match_id = matches.id
-        LEFT JOIN bowling_scorecards bs ON bs.innings_id = innings.id
-        LEFT JOIN grounds ON matches.ground_id = grounds.id
-        LEFT JOIN cities ON grounds.city_id = cities.id
-    WHERE innings.is_super_over = FALSE
-        %s
-    GROUP BY cities.host_nation_id
-)
-SELECT host_nations.id AS host_nation_id,
-    host_nations.name AS host_nation_name,
-    COUNT(DISTINCT mse.player_id) AS players_count,
-    MIN(matches.start_date) AS min_date,
-    MAX(matches.start_date) AS max_date,
-    COUNT(DISTINCT matches.id) AS matches_played,
-    COUNT(innings.id) AS innings_count,
-    SUM(bs.balls_bowled) / 6 + (SUM(balls_bowled) %% 6) * 0.1 AS overs_bowled,
-    SUM(bs.runs_conceded) AS runs_conceded,
-    SUM(bs.wickets_taken) AS wickets_taken,
-    (
-        CASE
-            WHEN SUM(bs.wickets_taken) > 0 THEN SUM(bs.runs_conceded) * 1.0 / SUM(bs.wickets_taken)
-            ELSE NULL
-        END
-    ) AS average,
-    (
-        CASE
-            WHEN SUM(bs.wickets_taken) > 0 THEN SUM(bs.balls_bowled) * 1.0 / SUM(bs.wickets_taken)
-            ELSE NULL
-        END
-    ) AS strike_rate,
-    (
-        CASE
-            WHEN SUM(bs.balls_bowled) > 0 THEN SUM(bs.runs_conceded) * 6.0 / SUM(bs.balls_bowled)
-            ELSE NULL
-        END
-    ) AS economy,
-    COUNT(
-        CASE
-            WHEN bs.wickets_taken = 4 THEN 1
-        END
-    ) AS four_wkt_hauls,
-    COUNT(
-        CASE
-            WHEN bs.wickets_taken >= 5 THEN 1
-        END
-    ) AS five_wkt_hauls,
-    MAX(bs.wickets_taken) AS best_innings_wickets,
-    MIN(
-        CASE
-            WHEN bs.wickets_taken = bi.max_wickets THEN bs.runs_conceded
-        END
-    ) AS best_innings_runs,
-    SUM(bs.fours_conceded) AS fours_conceded,
-    SUM(bs.sixes_conceded) AS sixes_conceded
-FROM matches
-    LEFT JOIN innings ON innings.match_id = matches.id
-    LEFT JOIN bowling_scorecards bs ON bs.innings_id = innings.id
-    LEFT JOIN grounds ON matches.ground_id = grounds.id
-    LEFT JOIN cities ON grounds.city_id = cities.id
-    LEFT JOIN host_nations ON cities.host_nation_id = host_nations.id
-    LEFT JOIN best_innings bi ON bi.host_nation_id = host_nations.id
-    LEFT JOIN match_squad_entries mse ON mse.match_id = matches.id
-    AND mse.team_id = innings.bowling_team_id
-    AND mse.player_id = bs.bowler_id
-    AND mse.playing_status IN ('playing_xi')
-WHERE innings.is_super_over = FALSE
-    %s
-GROUP BY host_nations.id,
-    host_nations.name
-ORDER BY SUM(bs.wickets_taken) DESC
+	    SELECT cities.host_nation_id,
+	        MAX(bs.wickets_taken) AS max_wickets
+	    FROM matches
+	        LEFT JOIN innings ON innings.match_id = matches.id
+	        LEFT JOIN bowling_scorecards bs ON bs.innings_id = innings.id
+	        LEFT JOIN grounds ON matches.ground_id = grounds.id
+	        LEFT JOIN cities ON grounds.city_id = cities.id
+	    WHERE innings.is_super_over = FALSE
+	        %s
+	    GROUP BY cities.host_nation_id
+	)
+	SELECT host_nations.id AS host_nation_id,
+	    host_nations.name AS host_nation_name,
+	    COUNT(DISTINCT mse.player_id) AS players_count,
+	    MIN(matches.start_date) AS min_date,
+	    MAX(matches.start_date) AS max_date,
+	    %s
+	FROM matches
+		%s
+	    LEFT JOIN grounds ON matches.ground_id = grounds.id
+	    LEFT JOIN cities ON grounds.city_id = cities.id
+	    LEFT JOIN host_nations ON cities.host_nation_id = host_nations.id
+	    LEFT JOIN best_innings bi ON bi.host_nation_id = host_nations.id
+	WHERE innings.is_super_over = FALSE
+	    %s
+	GROUP BY host_nations.id,
+	    host_nations.name
+	ORDER BY SUM(bs.wickets_taken) DESC
 	%s;
-	`, condition, condition, pagination)
+	`, condition, bowling_numbers_query, bowling_common_joins, condition, pagination)
 
-	return query, args, limit, nil
+	return query, sqlWhere.args, limit, nil
 }
 
 func Query_Overall_Bowling_Continents(params *url.Values) (string, []any, int, error) {
-	var filters []string
-	var args []any
-
-	HandlePlayingFormat(params, &filters, &args)
-	HandleIsMale(params, &filters, &args)
-	HandleMinStartDate(params, &filters, &args)
-	HandleMaxStartDate(params, &filters, &args)
-	HandleSeasons(params, &filters, &args)
-	HandleBattingTeam(params, &filters, &args)
-	HandleBowlingTeam(params, &filters, &args)
-	HandleGround(params, &filters, &args)
-
-	condition := fmt.Sprintf(` AND %s`, strings.Join(filters, " AND "))
+	sqlWhere := &sqlWhere{}
+	sqlWhere.applyFilters(params, bowling_stats)
+	condition := sqlWhere.getConditionString()
 
 	skip, limit := pgxutils.GetPaginationParams(params)
 	pagination := fmt.Sprintf(`OFFSET %d ROWS FETCH FIRST %d ROWS ONLY`, skip, (limit + 1))
@@ -729,84 +386,29 @@ func Query_Overall_Bowling_Continents(params *url.Values) (string, []any, int, e
 		COUNT(DISTINCT mse.player_id) AS players_count,
 		MIN(matches.start_date) AS min_date,
 		MAX(matches.start_date) AS max_date,
-		COUNT(DISTINCT matches.id) AS matches_played,
-		COUNT(innings.id) AS innings_count,
-		SUM(bs.balls_bowled) / 6 + (SUM(balls_bowled) %% 6) * 0.1 AS overs_bowled,
-		SUM(bs.runs_conceded) AS runs_conceded,
-		SUM(bs.wickets_taken) AS wickets_taken,
-		(
-			CASE
-				WHEN SUM(bs.wickets_taken) > 0 THEN SUM(bs.runs_conceded) * 1.0 / SUM(bs.wickets_taken)
-				ELSE NULL
-			END
-		) AS average,
-		(
-			CASE
-				WHEN SUM(bs.wickets_taken) > 0 THEN SUM(bs.balls_bowled) * 1.0 / SUM(bs.wickets_taken)
-				ELSE NULL
-			END
-		) AS strike_rate,
-		(
-			CASE
-				WHEN SUM(bs.balls_bowled) > 0 THEN SUM(bs.runs_conceded) * 6.0 / SUM(bs.balls_bowled)
-				ELSE NULL
-			END
-		) AS economy,
-		COUNT(
-			CASE
-				WHEN bs.wickets_taken = 4 THEN 1
-			END
-		) AS four_wkt_hauls,
-		COUNT(
-			CASE
-				WHEN bs.wickets_taken >= 5 THEN 1
-			END
-		) AS five_wkt_hauls,
-		MAX(bs.wickets_taken) AS best_innings_wickets,
-		MIN(
-			CASE
-				WHEN bs.wickets_taken = bi.max_wickets THEN bs.runs_conceded
-			END
-		) AS best_innings_runs,
-		SUM(bs.fours_conceded) AS fours_conceded,
-		SUM(bs.sixes_conceded) AS sixes_conceded
+		%s
 	FROM matches
-		LEFT JOIN innings ON innings.match_id = matches.id
-		LEFT JOIN bowling_scorecards bs ON bs.innings_id = innings.id
+		%s
 		LEFT JOIN grounds ON matches.ground_id = grounds.id
 		LEFT JOIN cities ON grounds.city_id = cities.id
 		LEFT JOIN host_nations ON cities.host_nation_id = host_nations.id
 		LEFT JOIN continents ON host_nations.continent_id = continents.id
 		LEFT JOIN best_innings bi ON bi.continent_id = continents.id
-		LEFT JOIN match_squad_entries mse ON mse.match_id = matches.id
-		AND mse.team_id = innings.bowling_team_id
-		AND mse.player_id = bs.bowler_id
-		AND mse.playing_status IN ('playing_xi')
 	WHERE innings.is_super_over = FALSE
 		%s
 	GROUP BY continents.id,
 		continents.name
 	ORDER BY SUM(bs.wickets_taken) DESC
 	%s;
-	`, condition, condition, pagination)
+	`, condition, bowling_numbers_query, bowling_common_joins, condition, pagination)
 
-	return query, args, limit, nil
+	return query, sqlWhere.args, limit, nil
 }
 
 func Query_Overall_Bowling_Years(params *url.Values) (string, []any, int, error) {
-	var filters []string
-	var args []any
-
-	HandlePlayingFormat(params, &filters, &args)
-	HandleIsMale(params, &filters, &args)
-	HandleMinStartDate(params, &filters, &args)
-	HandleMaxStartDate(params, &filters, &args)
-	HandleSeasons(params, &filters, &args)
-	HandleBattingTeam(params, &filters, &args)
-	HandleBowlingTeam(params, &filters, &args)
-	HandleGround(params, &filters, &args)
-
-	condition := fmt.Sprintf(` AND %s`, strings.Join(filters, " AND "))
+	sqlWhere := &sqlWhere{}
+	sqlWhere.applyFilters(params, bowling_stats)
+	condition := sqlWhere.getConditionString()
 
 	skip, limit := pgxutils.GetPaginationParams(params)
 	pagination := fmt.Sprintf(`OFFSET %d ROWS FETCH FIRST %d ROWS ONLY`, skip, (limit + 1))
@@ -823,79 +425,24 @@ func Query_Overall_Bowling_Years(params *url.Values) (string, []any, int, error)
 	)
 	SELECT date_part('year', matches.start_date)::integer AS match_year,
 		COUNT(DISTINCT mse.player_id) AS players_count,
-		COUNT(DISTINCT matches.id) AS matches_played,
-		COUNT(innings.id) AS innings_count,
-		SUM(bs.balls_bowled) / 6 + (SUM(balls_bowled) %% 6) * 0.1 AS overs_bowled,
-		SUM(bs.runs_conceded) AS runs_conceded,
-		SUM(bs.wickets_taken) AS wickets_taken,
-		(
-			CASE
-				WHEN SUM(bs.wickets_taken) > 0 THEN SUM(bs.runs_conceded) * 1.0 / SUM(bs.wickets_taken)
-				ELSE NULL
-			END
-		) AS average,
-		(
-			CASE
-				WHEN SUM(bs.wickets_taken) > 0 THEN SUM(bs.balls_bowled) * 1.0 / SUM(bs.wickets_taken)
-				ELSE NULL
-			END
-		) AS strike_rate,
-		(
-			CASE
-				WHEN SUM(bs.balls_bowled) > 0 THEN SUM(bs.runs_conceded) * 6.0 / SUM(bs.balls_bowled)
-				ELSE NULL
-			END
-		) AS economy,
-		COUNT(
-			CASE
-				WHEN bs.wickets_taken = 4 THEN 1
-			END
-		) AS four_wkt_hauls,
-		COUNT(
-			CASE
-				WHEN bs.wickets_taken >= 5 THEN 1
-			END
-		) AS five_wkt_hauls,
-		MAX(bs.wickets_taken) AS best_innings_wickets,
-		MIN(
-			CASE
-				WHEN bs.wickets_taken = bi.max_wickets THEN bs.runs_conceded
-			END
-		) AS best_innings_runs,
-		SUM(bs.fours_conceded) AS fours_conceded,
-		SUM(bs.sixes_conceded) AS sixes_conceded
+		%s
 	FROM matches
-		LEFT JOIN innings ON innings.match_id = matches.id
-		LEFT JOIN bowling_scorecards bs ON bs.innings_id = innings.id
+		%s
 		LEFT JOIN best_innings bi ON bi.match_year = date_part('year', matches.start_date)
-		LEFT JOIN match_squad_entries mse ON mse.match_id = matches.id
-		AND mse.team_id = innings.bowling_team_id
-		AND mse.player_id = bs.bowler_id
-		AND mse.playing_status IN ('playing_xi')
 	WHERE innings.is_super_over = FALSE
 		%s
 	GROUP BY date_part('year', matches.start_date)::integer
 	ORDER BY SUM(bs.wickets_taken) DESC
 	%s;
-	`, condition, condition, pagination)
+	`, condition, bowling_numbers_query, bowling_common_joins, condition, pagination)
 
-	return query, args, limit, nil
+	return query, sqlWhere.args, limit, nil
 }
 
 func Query_Overall_Bowling_Seasons(params *url.Values) (string, []any, int, error) {
-	var filters []string
-	var args []any
-
-	HandlePlayingFormat(params, &filters, &args)
-	HandleIsMale(params, &filters, &args)
-	HandleMinStartDate(params, &filters, &args)
-	HandleMaxStartDate(params, &filters, &args)
-	HandleSeasons(params, &filters, &args)
-	HandleBattingTeam(params, &filters, &args)
-	HandleBowlingTeam(params, &filters, &args)
-	HandleGround(params, &filters, &args)
-
-	condition := fmt.Sprintf(` AND %s`, strings.Join(filters, " AND "))
+	sqlWhere := &sqlWhere{}
+	sqlWhere.applyFilters(params, bowling_stats)
+	condition := sqlWhere.getConditionString()
 
 	skip, limit := pgxutils.GetPaginationParams(params)
 	pagination := fmt.Sprintf(`OFFSET %d ROWS FETCH FIRST %d ROWS ONLY`, skip, (limit + 1))
@@ -912,79 +459,24 @@ func Query_Overall_Bowling_Seasons(params *url.Values) (string, []any, int, erro
 	)
 	SELECT matches.season,
 		COUNT(DISTINCT mse.player_id) AS players_count,
-		COUNT(DISTINCT matches.id) AS matches_played,
-		COUNT(innings.id) AS innings_count,
-		SUM(bs.balls_bowled) / 6 + (SUM(balls_bowled) %% 6) * 0.1 AS overs_bowled,
-		SUM(bs.runs_conceded) AS runs_conceded,
-		SUM(bs.wickets_taken) AS wickets_taken,
-		(
-			CASE
-				WHEN SUM(bs.wickets_taken) > 0 THEN SUM(bs.runs_conceded) * 1.0 / SUM(bs.wickets_taken)
-				ELSE NULL
-			END
-		) AS average,
-		(
-			CASE
-				WHEN SUM(bs.wickets_taken) > 0 THEN SUM(bs.balls_bowled) * 1.0 / SUM(bs.wickets_taken)
-				ELSE NULL
-			END
-		) AS strike_rate,
-		(
-			CASE
-				WHEN SUM(bs.balls_bowled) > 0 THEN SUM(bs.runs_conceded) * 6.0 / SUM(bs.balls_bowled)
-				ELSE NULL
-			END
-		) AS economy,
-		COUNT(
-			CASE
-				WHEN bs.wickets_taken = 4 THEN 1
-			END
-		) AS four_wkt_hauls,
-		COUNT(
-			CASE
-				WHEN bs.wickets_taken >= 5 THEN 1
-			END
-		) AS five_wkt_hauls,
-		MAX(bs.wickets_taken) AS best_innings_wickets,
-		MIN(
-			CASE
-				WHEN bs.wickets_taken = bi.max_wickets THEN bs.runs_conceded
-			END
-		) AS best_innings_runs,
-		SUM(bs.fours_conceded) AS fours_conceded,
-		SUM(bs.sixes_conceded) AS sixes_conceded
+		%s
 	FROM matches
-		LEFT JOIN innings ON innings.match_id = matches.id
-		LEFT JOIN bowling_scorecards bs ON bs.innings_id = innings.id
+		%s
 		LEFT JOIN best_innings bi ON bi.season = matches.season
-		LEFT JOIN match_squad_entries mse ON mse.match_id = matches.id
-		AND mse.team_id = innings.bowling_team_id
-		AND mse.player_id = bs.bowler_id
-		AND mse.playing_status IN ('playing_xi')
 	WHERE innings.is_super_over = FALSE
 		%s
 	GROUP BY matches.season
 	ORDER BY SUM(bs.wickets_taken) DESC
 	%s;
-	`, condition, condition, pagination)
+	`, condition, bowling_numbers_query, bowling_common_joins, condition, pagination)
 
-	return query, args, limit, nil
+	return query, sqlWhere.args, limit, nil
 }
 
 func Query_Overall_Bowling_Aggregate(params *url.Values) (string, []any, error) {
-	var filters []string
-	var args []any
-
-	HandlePlayingFormat(params, &filters, &args)
-	HandleIsMale(params, &filters, &args)
-	HandleMinStartDate(params, &filters, &args)
-	HandleMaxStartDate(params, &filters, &args)
-	HandleSeasons(params, &filters, &args)
-	HandleBattingTeam(params, &filters, &args)
-	HandleBowlingTeam(params, &filters, &args)
-	HandleGround(params, &filters, &args)
-
-	condition := fmt.Sprintf(` AND %s`, strings.Join(filters, " AND "))
+	sqlWhere := &sqlWhere{}
+	sqlWhere.applyFilters(params, bowling_stats)
+	condition := sqlWhere.getConditionString()
 
 	query := fmt.Sprintf(`WITH best_innings AS (
 		SELECT MAX(bs.wickets_taken) AS max_wickets
@@ -997,79 +489,24 @@ func Query_Overall_Bowling_Aggregate(params *url.Values) (string, []any, error) 
 	SELECT COUNT(DISTINCT mse.player_id) AS players_count,
 		MIN(matches.start_date) AS min_date,
 		MAX(matches.start_date) AS max_date,
-		COUNT(DISTINCT matches.id) AS matches_played,
-		COUNT(innings.id) AS innings_count,
-		SUM(bs.balls_bowled) / 6 + (SUM(balls_bowled) %% 6) * 0.1 AS overs_bowled,
-		SUM(bs.runs_conceded) AS runs_conceded,
-		SUM(bs.wickets_taken) AS wickets_taken,
-		(
-			CASE
-				WHEN SUM(bs.wickets_taken) > 0 THEN SUM(bs.runs_conceded) * 1.0 / SUM(bs.wickets_taken)
-				ELSE NULL
-			END
-		) AS average,
-		(
-			CASE
-				WHEN SUM(bs.wickets_taken) > 0 THEN SUM(bs.balls_bowled) * 1.0 / SUM(bs.wickets_taken)
-				ELSE NULL
-			END
-		) AS strike_rate,
-		(
-			CASE
-				WHEN SUM(bs.balls_bowled) > 0 THEN SUM(bs.runs_conceded) * 6.0 / SUM(bs.balls_bowled)
-				ELSE NULL
-			END
-		) AS economy,
-		COUNT(
-			CASE
-				WHEN bs.wickets_taken = 4 THEN 1
-			END
-		) AS four_wkt_hauls,
-		COUNT(
-			CASE
-				WHEN bs.wickets_taken >= 5 THEN 1
-			END
-		) AS five_wkt_hauls,
-		MAX(bs.wickets_taken) AS best_innings_wickets,
-		MIN(
-			CASE
-				WHEN bs.wickets_taken = bi.max_wickets THEN bs.runs_conceded
-			END
-		) AS best_innings_runs,
-		SUM(bs.fours_conceded) AS fours_conceded,
-		SUM(bs.sixes_conceded) AS sixes_conceded
+		%s
 	FROM matches
-		LEFT JOIN innings ON innings.match_id = matches.id
-		LEFT JOIN bowling_scorecards bs ON bs.innings_id = innings.id
+		%s
 		LEFT JOIN best_innings bi ON TRUE
-		LEFT JOIN match_squad_entries mse ON mse.match_id = matches.id
-		AND mse.team_id = innings.bowling_team_id
-		AND mse.player_id = bs.bowler_id
-		AND mse.playing_status IN ('playing_xi')
 	WHERE innings.is_super_over = FALSE
 		%s
 	ORDER BY SUM(bs.wickets_taken) DESC;
-	`, condition, condition)
+	`, condition, bowling_numbers_query, bowling_common_joins, condition)
 
-	return query, args, nil
+	return query, sqlWhere.args, nil
 }
 
 // Function Names are in Query_Individual_Bowling_x format, x represents grouping
 
 func Query_Individual_Bowling_Innings(params *url.Values) (string, []any, int, error) {
-	var filters []string
-	var args []any
-
-	HandlePlayingFormat(params, &filters, &args)
-	HandleIsMale(params, &filters, &args)
-	HandleMinStartDate(params, &filters, &args)
-	HandleMaxStartDate(params, &filters, &args)
-	HandleSeasons(params, &filters, &args)
-	HandleBattingTeam(params, &filters, &args)
-	HandleBowlingTeam(params, &filters, &args)
-	HandleGround(params, &filters, &args)
-
-	condition := fmt.Sprintf(` AND %s`, strings.Join(filters, " AND "))
+	sqlWhere := &sqlWhere{}
+	sqlWhere.applyFilters(params, bowling_stats)
+	condition := sqlWhere.getConditionString()
 
 	skip, limit := pgxutils.GetPaginationParams(params)
 	pagination := fmt.Sprintf(`OFFSET %d ROWS FETCH FIRST %d ROWS ONLY`, skip, (limit + 1))
@@ -1125,23 +562,13 @@ func Query_Individual_Bowling_Innings(params *url.Values) (string, []any, int, e
 	%s;
 	`, condition, pagination)
 
-	return query, args, limit, nil
+	return query, sqlWhere.args, limit, nil
 }
 
 func Query_Individual_Bowling_Grounds(params *url.Values) (string, []any, int, error) {
-	var filters []string
-	var args []any
-
-	HandlePlayingFormat(params, &filters, &args)
-	HandleIsMale(params, &filters, &args)
-	HandleMinStartDate(params, &filters, &args)
-	HandleMaxStartDate(params, &filters, &args)
-	HandleSeasons(params, &filters, &args)
-	HandleBattingTeam(params, &filters, &args)
-	HandleBowlingTeam(params, &filters, &args)
-	HandleGround(params, &filters, &args)
-
-	condition := fmt.Sprintf(` AND %s`, strings.Join(filters, " AND "))
+	sqlWhere := &sqlWhere{}
+	sqlWhere.applyFilters(params, bowling_stats)
+	condition := sqlWhere.getConditionString()
 
 	skip, limit := pgxutils.GetPaginationParams(params)
 	pagination := fmt.Sprintf(`OFFSET %d ROWS FETCH FIRST %d ROWS ONLY`, skip, (limit + 1))
@@ -1165,56 +592,11 @@ func Query_Individual_Bowling_Grounds(params *url.Values) (string, []any, int, e
 		ARRAY_AGG(DISTINCT teams.short_name) AS teams_represented,
 		MIN(matches.start_date) AS min_date,
 		MAX(matches.start_date) AS max_date,
-		COUNT(DISTINCT matches.id) AS matches_played,
-		COUNT(innings.id) AS innings_count,
-		SUM(bs.balls_bowled) / 6 + (SUM(balls_bowled) %% 6) * 0.1 AS overs_bowled,
-		SUM(bs.runs_conceded) AS runs_conceded,
-		SUM(bs.wickets_taken) AS wickets_taken,
-		(
-			CASE
-				WHEN SUM(bs.wickets_taken) > 0 THEN SUM(bs.runs_conceded) * 1.0 / SUM(bs.wickets_taken)
-				ELSE NULL
-			END
-		) AS average,
-		(
-			CASE
-				WHEN SUM(bs.wickets_taken) > 0 THEN SUM(bs.balls_bowled) * 1.0 / SUM(bs.wickets_taken)
-				ELSE NULL
-			END
-		) AS strike_rate,
-		(
-			CASE
-				WHEN SUM(bs.balls_bowled) > 0 THEN SUM(bs.runs_conceded) * 6.0 / SUM(bs.balls_bowled)
-				ELSE NULL
-			END
-		) AS economy,
-		COUNT(
-			CASE
-				WHEN bs.wickets_taken = 4 THEN 1
-			END
-		) AS four_wkt_hauls,
-		COUNT(
-			CASE
-				WHEN bs.wickets_taken >= 5 THEN 1
-			END
-		) AS five_wkt_hauls,
-		MAX(bs.wickets_taken) AS best_innings_wickets,
-		MIN(
-			CASE
-				WHEN bs.wickets_taken = bi.max_wickets THEN bs.runs_conceded
-			END
-		) AS best_innings_runs,
-		SUM(bs.fours_conceded) AS fours_conceded,
-		SUM(bs.sixes_conceded) AS sixes_conceded
+		%s
 	FROM matches
-		LEFT JOIN innings ON innings.match_id = matches.id
-		LEFT JOIN bowling_scorecards bs ON bs.innings_id = innings.id
+		%s
 		LEFT JOIN best_innings bi ON bi.ground_id = matches.ground_id
-		AND bi.bowler_id = bs.bowler_id
-		LEFT JOIN match_squad_entries mse ON mse.match_id = matches.id
-		AND mse.team_id = innings.bowling_team_id
-		AND mse.player_id = bs.bowler_id
-		AND mse.playing_status IN ('playing_xi')
+			AND bi.bowler_id = bs.bowler_id
 		LEFT JOIN grounds ON matches.ground_id = grounds.id
 		LEFT JOIN players ON bs.bowler_id = players.id
 		LEFT JOIN teams ON mse.team_id = teams.id
@@ -1226,25 +608,15 @@ func Query_Individual_Bowling_Grounds(params *url.Values) (string, []any, int, e
 		players.name
 	ORDER BY SUM(bs.wickets_taken) DESC
 	%s;
-	`, condition, condition, pagination)
+	`, condition, bowling_numbers_query, bowling_common_joins, condition, pagination)
 
-	return query, args, limit, nil
+	return query, sqlWhere.args, limit, nil
 }
 
 func Query_Individual_Bowling_HostNations(params *url.Values) (string, []any, int, error) {
-	var filters []string
-	var args []any
-
-	HandlePlayingFormat(params, &filters, &args)
-	HandleIsMale(params, &filters, &args)
-	HandleMinStartDate(params, &filters, &args)
-	HandleMaxStartDate(params, &filters, &args)
-	HandleSeasons(params, &filters, &args)
-	HandleBattingTeam(params, &filters, &args)
-	HandleBowlingTeam(params, &filters, &args)
-	HandleGround(params, &filters, &args)
-
-	condition := fmt.Sprintf(` AND %s`, strings.Join(filters, " AND "))
+	sqlWhere := &sqlWhere{}
+	sqlWhere.applyFilters(params, bowling_stats)
+	condition := sqlWhere.getConditionString()
 
 	skip, limit := pgxutils.GetPaginationParams(params)
 	pagination := fmt.Sprintf(`OFFSET %d ROWS FETCH FIRST %d ROWS ONLY`, skip, (limit + 1))
@@ -1270,59 +642,14 @@ func Query_Individual_Bowling_HostNations(params *url.Values) (string, []any, in
 		ARRAY_AGG(DISTINCT teams.short_name) AS teams_represented,
 		MIN(matches.start_date) AS min_date,
 		MAX(matches.start_date) AS max_date,
-		COUNT(DISTINCT matches.id) AS matches_played,
-		COUNT(innings.id) AS innings_count,
-		SUM(bs.balls_bowled) / 6 + (SUM(balls_bowled) %% 6) * 0.1 AS overs_bowled,
-		SUM(bs.runs_conceded) AS runs_conceded,
-		SUM(bs.wickets_taken) AS wickets_taken,
-		(
-			CASE
-				WHEN SUM(bs.wickets_taken) > 0 THEN SUM(bs.runs_conceded) * 1.0 / SUM(bs.wickets_taken)
-				ELSE NULL
-			END
-		) AS average,
-		(
-			CASE
-				WHEN SUM(bs.wickets_taken) > 0 THEN SUM(bs.balls_bowled) * 1.0 / SUM(bs.wickets_taken)
-				ELSE NULL
-			END
-		) AS strike_rate,
-		(
-			CASE
-				WHEN SUM(bs.balls_bowled) > 0 THEN SUM(bs.runs_conceded) * 6.0 / SUM(bs.balls_bowled)
-				ELSE NULL
-			END
-		) AS economy,
-		COUNT(
-			CASE
-				WHEN bs.wickets_taken = 4 THEN 1
-			END
-		) AS four_wkt_hauls,
-		COUNT(
-			CASE
-				WHEN bs.wickets_taken >= 5 THEN 1
-			END
-		) AS five_wkt_hauls,
-		MAX(bs.wickets_taken) AS best_innings_wickets,
-		MIN(
-			CASE
-				WHEN bs.wickets_taken = bi.max_wickets THEN bs.runs_conceded
-			END
-		) AS best_innings_runs,
-		SUM(bs.fours_conceded) AS fours_conceded,
-		SUM(bs.sixes_conceded) AS sixes_conceded
+		%s
 	FROM matches
+		%s
 		LEFT JOIN grounds ON matches.ground_id = grounds.id
 		LEFT JOIN cities ON grounds.city_id = cities.id
 		LEFT JOIN host_nations ON cities.host_nation_id = host_nations.id
-		LEFT JOIN innings ON innings.match_id = matches.id
-		LEFT JOIN bowling_scorecards bs ON bs.innings_id = innings.id
 		LEFT JOIN best_innings bi ON bi.host_nation_id = cities.host_nation_id
-		AND bi.bowler_id = bs.bowler_id
-		LEFT JOIN match_squad_entries mse ON mse.match_id = matches.id
-		AND mse.team_id = innings.bowling_team_id
-		AND mse.player_id = bs.bowler_id
-		AND mse.playing_status IN ('playing_xi')
+			AND bi.bowler_id = bs.bowler_id
 		LEFT JOIN players ON bs.bowler_id = players.id
 		LEFT JOIN teams ON mse.team_id = teams.id
 	WHERE innings.is_super_over = FALSE
@@ -1333,25 +660,15 @@ func Query_Individual_Bowling_HostNations(params *url.Values) (string, []any, in
 		players.name
 	ORDER BY SUM(bs.wickets_taken) DESC
 	%s;
-	`, condition, condition, pagination)
+	`, condition, bowling_numbers_query, bowling_common_joins, condition, pagination)
 
-	return query, args, limit, nil
+	return query, sqlWhere.args, limit, nil
 }
 
 func Query_Individual_Bowling_Oppositions(params *url.Values) (string, []any, int, error) {
-	var filters []string
-	var args []any
-
-	HandlePlayingFormat(params, &filters, &args)
-	HandleIsMale(params, &filters, &args)
-	HandleMinStartDate(params, &filters, &args)
-	HandleMaxStartDate(params, &filters, &args)
-	HandleSeasons(params, &filters, &args)
-	HandleBattingTeam(params, &filters, &args)
-	HandleBowlingTeam(params, &filters, &args)
-	HandleGround(params, &filters, &args)
-
-	condition := fmt.Sprintf(` AND %s`, strings.Join(filters, " AND "))
+	sqlWhere := &sqlWhere{}
+	sqlWhere.applyFilters(params, bowling_stats)
+	condition := sqlWhere.getConditionString()
 
 	skip, limit := pgxutils.GetPaginationParams(params)
 	pagination := fmt.Sprintf(`OFFSET %d ROWS FETCH FIRST %d ROWS ONLY`, skip, (limit + 1))
@@ -1375,56 +692,11 @@ func Query_Individual_Bowling_Oppositions(params *url.Values) (string, []any, in
 		ARRAY_AGG(DISTINCT teams.short_name) AS teams_represented,
 		MIN(matches.start_date) AS min_date,
 		MAX(matches.start_date) AS max_date,
-		COUNT(DISTINCT matches.id) AS matches_played,
-		COUNT(innings.id) AS innings_count,
-		SUM(bs.balls_bowled) / 6 + (SUM(balls_bowled) %% 6) * 0.1 AS overs_bowled,
-		SUM(bs.runs_conceded) AS runs_conceded,
-		SUM(bs.wickets_taken) AS wickets_taken,
-		(
-			CASE
-				WHEN SUM(bs.wickets_taken) > 0 THEN SUM(bs.runs_conceded) * 1.0 / SUM(bs.wickets_taken)
-				ELSE NULL
-			END
-		) AS average,
-		(
-			CASE
-				WHEN SUM(bs.wickets_taken) > 0 THEN SUM(bs.balls_bowled) * 1.0 / SUM(bs.wickets_taken)
-				ELSE NULL
-			END
-		) AS strike_rate,
-		(
-			CASE
-				WHEN SUM(bs.balls_bowled) > 0 THEN SUM(bs.runs_conceded) * 6.0 / SUM(bs.balls_bowled)
-				ELSE NULL
-			END
-		) AS economy,
-		COUNT(
-			CASE
-				WHEN bs.wickets_taken = 4 THEN 1
-			END
-		) AS four_wkt_hauls,
-		COUNT(
-			CASE
-				WHEN bs.wickets_taken >= 5 THEN 1
-			END
-		) AS five_wkt_hauls,
-		MAX(bs.wickets_taken) AS best_innings_wickets,
-		MIN(
-			CASE
-				WHEN bs.wickets_taken = bi.max_wickets THEN bs.runs_conceded
-			END
-		) AS best_innings_runs,
-		SUM(bs.fours_conceded) AS fours_conceded,
-		SUM(bs.sixes_conceded) AS sixes_conceded
+		%s
 	FROM matches
-		LEFT JOIN innings ON innings.match_id = matches.id
-		LEFT JOIN bowling_scorecards bs ON bs.innings_id = innings.id
+		%s
 		LEFT JOIN best_innings bi ON bi.batting_team_id = innings.batting_team_id
-		AND bi.bowler_id = bs.bowler_id
-		LEFT JOIN match_squad_entries mse ON mse.match_id = matches.id
-		AND mse.team_id = innings.bowling_team_id
-		AND mse.player_id = bs.bowler_id
-		AND mse.playing_status IN ('playing_xi')
+			AND bi.bowler_id = bs.bowler_id
 		LEFT JOIN grounds ON matches.ground_id = grounds.id
 		LEFT JOIN players ON bs.bowler_id = players.id
 		LEFT JOIN teams ON mse.team_id = teams.id
@@ -1437,25 +709,15 @@ func Query_Individual_Bowling_Oppositions(params *url.Values) (string, []any, in
 		players.name
 	ORDER BY SUM(bs.wickets_taken) DESC
 	%s;
-	`, condition, condition, pagination)
+	`, condition, bowling_numbers_query, bowling_common_joins, condition, pagination)
 
-	return query, args, limit, nil
+	return query, sqlWhere.args, limit, nil
 }
 
 func Query_Individual_Bowling_Years(params *url.Values) (string, []any, int, error) {
-	var filters []string
-	var args []any
-
-	HandlePlayingFormat(params, &filters, &args)
-	HandleIsMale(params, &filters, &args)
-	HandleMinStartDate(params, &filters, &args)
-	HandleMaxStartDate(params, &filters, &args)
-	HandleSeasons(params, &filters, &args)
-	HandleBattingTeam(params, &filters, &args)
-	HandleBowlingTeam(params, &filters, &args)
-	HandleGround(params, &filters, &args)
-
-	condition := fmt.Sprintf(` AND %s`, strings.Join(filters, " AND "))
+	sqlWhere := &sqlWhere{}
+	sqlWhere.applyFilters(params, bowling_stats)
+	condition := sqlWhere.getConditionString()
 
 	skip, limit := pgxutils.GetPaginationParams(params)
 	pagination := fmt.Sprintf(`OFFSET %d ROWS FETCH FIRST %d ROWS ONLY`, skip, (limit + 1))
@@ -1478,56 +740,11 @@ func Query_Individual_Bowling_Years(params *url.Values) (string, []any, int, err
 		ARRAY_AGG(DISTINCT teams.short_name) AS teams_represented,
 		MIN(matches.start_date) AS min_date,
 		MAX(matches.start_date) AS max_date,
-		COUNT(DISTINCT matches.id) AS matches_played,
-		COUNT(innings.id) AS innings_count,
-		SUM(bs.balls_bowled) / 6 + (SUM(balls_bowled) %% 6) * 0.1 AS overs_bowled,
-		SUM(bs.runs_conceded) AS runs_conceded,
-		SUM(bs.wickets_taken) AS wickets_taken,
-		(
-			CASE
-				WHEN SUM(bs.wickets_taken) > 0 THEN SUM(bs.runs_conceded) * 1.0 / SUM(bs.wickets_taken)
-				ELSE NULL
-			END
-		) AS average,
-		(
-			CASE
-				WHEN SUM(bs.wickets_taken) > 0 THEN SUM(bs.balls_bowled) * 1.0 / SUM(bs.wickets_taken)
-				ELSE NULL
-			END
-		) AS strike_rate,
-		(
-			CASE
-				WHEN SUM(bs.balls_bowled) > 0 THEN SUM(bs.runs_conceded) * 6.0 / SUM(bs.balls_bowled)
-				ELSE NULL
-			END
-		) AS economy,
-		COUNT(
-			CASE
-				WHEN bs.wickets_taken = 4 THEN 1
-			END
-		) AS four_wkt_hauls,
-		COUNT(
-			CASE
-				WHEN bs.wickets_taken >= 5 THEN 1
-			END
-		) AS five_wkt_hauls,
-		MAX(bs.wickets_taken) AS best_innings_wickets,
-		MIN(
-			CASE
-				WHEN bs.wickets_taken = bi.max_wickets THEN bs.runs_conceded
-			END
-		) AS best_innings_runs,
-		SUM(bs.fours_conceded) AS fours_conceded,
-		SUM(bs.sixes_conceded) AS sixes_conceded
+		%s
 	FROM matches
-		LEFT JOIN innings ON innings.match_id = matches.id
-		LEFT JOIN bowling_scorecards bs ON bs.innings_id = innings.id
+		%s
 		LEFT JOIN best_innings bi ON bi.match_year = date_part('year', matches.start_date)::integer
-		AND bi.bowler_id = bs.bowler_id
-		LEFT JOIN match_squad_entries mse ON mse.match_id = matches.id
-		AND mse.team_id = innings.bowling_team_id
-		AND mse.player_id = bs.bowler_id
-		AND mse.playing_status IN ('playing_xi')
+			AND bi.bowler_id = bs.bowler_id
 		LEFT JOIN grounds ON matches.ground_id = grounds.id
 		LEFT JOIN players ON bs.bowler_id = players.id
 		LEFT JOIN teams ON mse.team_id = teams.id
@@ -1538,25 +755,15 @@ func Query_Individual_Bowling_Years(params *url.Values) (string, []any, int, err
 		players.name
 	ORDER BY SUM(bs.wickets_taken) DESC
 	%s;
-	`, condition, condition, pagination)
+	`, condition, bowling_numbers_query, bowling_common_joins, condition, pagination)
 
-	return query, args, limit, nil
+	return query, sqlWhere.args, limit, nil
 }
 
 func Query_Individual_Bowling_Seasons(params *url.Values) (string, []any, int, error) {
-	var filters []string
-	var args []any
-
-	HandlePlayingFormat(params, &filters, &args)
-	HandleIsMale(params, &filters, &args)
-	HandleMinStartDate(params, &filters, &args)
-	HandleMaxStartDate(params, &filters, &args)
-	HandleSeasons(params, &filters, &args)
-	HandleBattingTeam(params, &filters, &args)
-	HandleBowlingTeam(params, &filters, &args)
-	HandleGround(params, &filters, &args)
-
-	condition := fmt.Sprintf(` AND %s`, strings.Join(filters, " AND "))
+	sqlWhere := &sqlWhere{}
+	sqlWhere.applyFilters(params, bowling_stats)
+	condition := sqlWhere.getConditionString()
 
 	skip, limit := pgxutils.GetPaginationParams(params)
 	pagination := fmt.Sprintf(`OFFSET %d ROWS FETCH FIRST %d ROWS ONLY`, skip, (limit + 1))
@@ -1579,56 +786,11 @@ func Query_Individual_Bowling_Seasons(params *url.Values) (string, []any, int, e
 		ARRAY_AGG(DISTINCT teams.short_name) AS teams_represented,
 		MIN(matches.start_date) AS min_date,
 		MAX(matches.start_date) AS max_date,
-		COUNT(DISTINCT matches.id) AS matches_played,
-		COUNT(innings.id) AS innings_count,
-		SUM(bs.balls_bowled) / 6 + (SUM(balls_bowled) %% 6) * 0.1 AS overs_bowled,
-		SUM(bs.runs_conceded) AS runs_conceded,
-		SUM(bs.wickets_taken) AS wickets_taken,
-		(
-			CASE
-				WHEN SUM(bs.wickets_taken) > 0 THEN SUM(bs.runs_conceded) * 1.0 / SUM(bs.wickets_taken)
-				ELSE NULL
-			END
-		) AS average,
-		(
-			CASE
-				WHEN SUM(bs.wickets_taken) > 0 THEN SUM(bs.balls_bowled) * 1.0 / SUM(bs.wickets_taken)
-				ELSE NULL
-			END
-		) AS strike_rate,
-		(
-			CASE
-				WHEN SUM(bs.balls_bowled) > 0 THEN SUM(bs.runs_conceded) * 6.0 / SUM(bs.balls_bowled)
-				ELSE NULL
-			END
-		) AS economy,
-		COUNT(
-			CASE
-				WHEN bs.wickets_taken = 4 THEN 1
-			END
-		) AS four_wkt_hauls,
-		COUNT(
-			CASE
-				WHEN bs.wickets_taken >= 5 THEN 1
-			END
-		) AS five_wkt_hauls,
-		MAX(bs.wickets_taken) AS best_innings_wickets,
-		MIN(
-			CASE
-				WHEN bs.wickets_taken = bi.max_wickets THEN bs.runs_conceded
-			END
-		) AS best_innings_runs,
-		SUM(bs.fours_conceded) AS fours_conceded,
-		SUM(bs.sixes_conceded) AS sixes_conceded
+		%s
 	FROM matches
-		LEFT JOIN innings ON innings.match_id = matches.id
-		LEFT JOIN bowling_scorecards bs ON bs.innings_id = innings.id
+		%s
 		LEFT JOIN best_innings bi ON bi.season = matches.season
-		AND bi.bowler_id = bs.bowler_id
-		LEFT JOIN match_squad_entries mse ON mse.match_id = matches.id
-		AND mse.team_id = innings.bowling_team_id
-		AND mse.player_id = bs.bowler_id
-		AND mse.playing_status IN ('playing_xi')
+			AND bi.bowler_id = bs.bowler_id
 		LEFT JOIN grounds ON matches.ground_id = grounds.id
 		LEFT JOIN players ON bs.bowler_id = players.id
 		LEFT JOIN teams ON mse.team_id = teams.id
@@ -1639,7 +801,7 @@ func Query_Individual_Bowling_Seasons(params *url.Values) (string, []any, int, e
 		players.name
 	ORDER BY SUM(bs.wickets_taken) DESC
 	%s;
-	`, condition, condition, pagination)
+	`, condition, bowling_numbers_query, bowling_common_joins, condition, pagination)
 
-	return query, args, limit, nil
+	return query, sqlWhere.args, limit, nil
 }
