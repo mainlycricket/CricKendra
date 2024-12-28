@@ -55,6 +55,7 @@ func main() {
 	/* Stats */
 	r.Mount("/stats/batting", BattingStatsRouter())
 	r.Mount("/stats/bowling", BowlingStatsRouter())
+	r.Mount("/stats/team", TeamStatsRouter())
 
 	err = http.ListenAndServe(":8080", r)
 	if err != nil {

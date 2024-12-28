@@ -1,4 +1,5 @@
-SELECT mse.player_id,
+SELECT
+    mse.player_id,
     players.name AS player_name,
     COUNT(DISTINCT mse.team_id) AS teams_count,
     MIN(matches.start_date) AS min_date,
@@ -13,7 +14,7 @@ SELECT mse.player_id,
         DISTINCT CASE
             WHEN matches.match_loser_team_id = mse.team_id THEN matches.id
         END
-    ) AS matches_won,
+    ) AS matches_lost,
     (
         CASE
             WHEN COUNT(
@@ -47,12 +48,14 @@ SELECT mse.player_id,
     ) AS scoring_rate,
     MAX(innings.total_runs) AS highest_score,
     MIN(innings.total_runs) AS lowest_score
-FROM match_squad_entries mse
+FROM
+    match_squad_entries mse
     LEFT JOIN matches ON matches.id = mse.match_id
     LEFT JOIN innings ON innings.match_id = matches.id
     AND innings.batting_team_id = mse.team_id
     LEFT JOIN players ON mse.player_id = players.id
-WHERE matches.playing_format = 'ODI'
+WHERE
+    matches.playing_format = 'ODI'
     AND matches.team1_id IN (1, 8, 10)
     AND matches.team2_id IN (1, 8, 10)
     AND matches.ground_id IN (63, 70, 79, 90, 124)
@@ -66,6 +69,8 @@ WHERE matches.playing_format = 'ODI'
         '2011/12'
     )
     AND innings.is_super_over = FALSE
-GROUP BY mse.player_id,
+GROUP BY
+    mse.player_id,
     players.name
-ORDER BY SUM(innings.total_runs) DESC
+ORDER BY
+    SUM(innings.total_runs) DESC

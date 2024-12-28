@@ -84,7 +84,7 @@ const batting_common_joins string = `
 func Query_Overall_Batting_Batters(params *url.Values) (string, []any, int, error) {
 	sqlWhere := &sqlWhere{}
 	sqlWhere.applyFilters(params, batting_stats)
-	condition := sqlWhere.getConditionString()
+	condition := sqlWhere.getConditionString("AND ")
 
 	skip, limit := pgxutils.GetPaginationParams(params)
 	pagination := fmt.Sprintf(`OFFSET %d ROWS FETCH FIRST %d ROWS ONLY`, skip, (limit + 1))
@@ -113,7 +113,7 @@ func Query_Overall_Batting_Batters(params *url.Values) (string, []any, int, erro
 func Query_Overall_Batting_TeamInnings(params *url.Values) (string, []any, int, error) {
 	sqlWhere := &sqlWhere{}
 	sqlWhere.applyFilters(params, batting_stats)
-	condition := sqlWhere.getConditionString()
+	condition := sqlWhere.getConditionString("AND ")
 
 	skip, limit := pgxutils.GetPaginationParams(params)
 	pagination := fmt.Sprintf(`OFFSET %d ROWS FETCH FIRST %d ROWS ONLY`, skip, (limit + 1))
@@ -152,7 +152,7 @@ func Query_Overall_Batting_TeamInnings(params *url.Values) (string, []any, int, 
 func Query_Overall_Batting_Matches(params *url.Values) (string, []any, int, error) {
 	sqlWhere := &sqlWhere{}
 	sqlWhere.applyFilters(params, batting_stats)
-	condition := sqlWhere.getConditionString()
+	condition := sqlWhere.getConditionString("AND ")
 
 	skip, limit := pgxutils.GetPaginationParams(params)
 	pagination := fmt.Sprintf(`OFFSET %d ROWS FETCH FIRST %d ROWS ONLY`, skip, (limit + 1))
@@ -189,7 +189,7 @@ func Query_Overall_Batting_Matches(params *url.Values) (string, []any, int, erro
 func Query_Overall_Batting_Teams(params *url.Values) (string, []any, int, error) {
 	sqlWhere := &sqlWhere{}
 	sqlWhere.applyFilters(params, batting_stats)
-	condition := sqlWhere.getConditionString()
+	condition := sqlWhere.getConditionString("AND ")
 
 	skip, limit := pgxutils.GetPaginationParams(params)
 	pagination := fmt.Sprintf(`OFFSET %d ROWS FETCH FIRST %d ROWS ONLY`, skip, (limit + 1))
@@ -217,7 +217,7 @@ func Query_Overall_Batting_Teams(params *url.Values) (string, []any, int, error)
 func Query_Overall_Batting_Oppositions(params *url.Values) (string, []any, int, error) {
 	sqlWhere := &sqlWhere{}
 	sqlWhere.applyFilters(params, batting_stats)
-	condition := sqlWhere.getConditionString()
+	condition := sqlWhere.getConditionString("AND ")
 
 	skip, limit := pgxutils.GetPaginationParams(params)
 	pagination := fmt.Sprintf(`OFFSET %d ROWS FETCH FIRST %d ROWS ONLY`, skip, (limit + 1))
@@ -246,7 +246,7 @@ func Query_Overall_Batting_Oppositions(params *url.Values) (string, []any, int, 
 func Query_Overall_Batting_Grounds(params *url.Values) (string, []any, int, error) {
 	sqlWhere := &sqlWhere{}
 	sqlWhere.applyFilters(params, batting_stats)
-	condition := sqlWhere.getConditionString()
+	condition := sqlWhere.getConditionString("AND ")
 
 	skip, limit := pgxutils.GetPaginationParams(params)
 	pagination := fmt.Sprintf(`OFFSET %d ROWS FETCH FIRST %d ROWS ONLY`, skip, (limit + 1))
@@ -274,7 +274,7 @@ func Query_Overall_Batting_Grounds(params *url.Values) (string, []any, int, erro
 func Query_Overall_Batting_HostNations(params *url.Values) (string, []any, int, error) {
 	sqlWhere := &sqlWhere{}
 	sqlWhere.applyFilters(params, batting_stats)
-	condition := sqlWhere.getConditionString()
+	condition := sqlWhere.getConditionString("AND ")
 
 	skip, limit := pgxutils.GetPaginationParams(params)
 	pagination := fmt.Sprintf(`OFFSET %d ROWS FETCH FIRST %d ROWS ONLY`, skip, (limit + 1))
@@ -304,7 +304,7 @@ func Query_Overall_Batting_HostNations(params *url.Values) (string, []any, int, 
 func Query_Overall_Batting_Continents(params *url.Values) (string, []any, int, error) {
 	sqlWhere := &sqlWhere{}
 	sqlWhere.applyFilters(params, batting_stats)
-	condition := sqlWhere.getConditionString()
+	condition := sqlWhere.getConditionString("AND ")
 
 	skip, limit := pgxutils.GetPaginationParams(params)
 	pagination := fmt.Sprintf(`OFFSET %d ROWS FETCH FIRST %d ROWS ONLY`, skip, (limit + 1))
@@ -335,7 +335,7 @@ func Query_Overall_Batting_Continents(params *url.Values) (string, []any, int, e
 func Query_Overall_Batting_Years(params *url.Values) (string, []any, int, error) {
 	sqlWhere := &sqlWhere{}
 	sqlWhere.applyFilters(params, batting_stats)
-	condition := sqlWhere.getConditionString()
+	condition := sqlWhere.getConditionString("AND ")
 
 	skip, limit := pgxutils.GetPaginationParams(params)
 	pagination := fmt.Sprintf(`OFFSET %d ROWS FETCH FIRST %d ROWS ONLY`, skip, (limit + 1))
@@ -358,7 +358,7 @@ func Query_Overall_Batting_Years(params *url.Values) (string, []any, int, error)
 func Query_Overall_Batting_Seasons(params *url.Values) (string, []any, int, error) {
 	sqlWhere := &sqlWhere{}
 	sqlWhere.applyFilters(params, batting_stats)
-	condition := sqlWhere.getConditionString()
+	condition := sqlWhere.getConditionString("AND ")
 
 	skip, limit := pgxutils.GetPaginationParams(params)
 	pagination := fmt.Sprintf(`OFFSET %d ROWS FETCH FIRST %d ROWS ONLY`, skip, (limit + 1))
@@ -381,7 +381,7 @@ func Query_Overall_Batting_Seasons(params *url.Values) (string, []any, int, erro
 func Query_Overall_Batting_Aggregate(params *url.Values) (string, []any, error) {
 	sqlWhere := &sqlWhere{}
 	sqlWhere.applyFilters(params, batting_stats)
-	condition := sqlWhere.getConditionString()
+	condition := sqlWhere.getConditionString("AND ")
 
 	query := fmt.Sprintf(`SELECT COUNT(DISTINCT mse.player_id) AS players_count,
 		MIN(matches.start_date) AS min_date,
@@ -402,7 +402,7 @@ func Query_Overall_Batting_Aggregate(params *url.Values) (string, []any, error) 
 func Query_Individual_Batting_Innings(params *url.Values) (string, []any, int, error) {
 	sqlWhere := &sqlWhere{}
 	sqlWhere.applyFilters(params, batting_stats)
-	condition := sqlWhere.getConditionString()
+	condition := sqlWhere.getConditionString("AND ")
 
 	skip, limit := pgxutils.GetPaginationParams(params)
 	pagination := fmt.Sprintf(`OFFSET %d ROWS FETCH FIRST %d ROWS ONLY`, skip, (limit + 1))
@@ -470,7 +470,7 @@ func Query_Individual_Batting_Innings(params *url.Values) (string, []any, int, e
 func Query_Individual_Batting_Grounds(params *url.Values) (string, []any, int, error) {
 	sqlWhere := &sqlWhere{}
 	sqlWhere.applyFilters(params, batting_stats)
-	condition := sqlWhere.getConditionString()
+	condition := sqlWhere.getConditionString("AND ")
 
 	skip, limit := pgxutils.GetPaginationParams(params)
 	pagination := fmt.Sprintf(`OFFSET %d ROWS FETCH FIRST %d ROWS ONLY`, skip, (limit + 1))
@@ -504,7 +504,7 @@ func Query_Individual_Batting_Grounds(params *url.Values) (string, []any, int, e
 func Query_Individual_Batting_HostNations(params *url.Values) (string, []any, int, error) {
 	sqlWhere := &sqlWhere{}
 	sqlWhere.applyFilters(params, batting_stats)
-	condition := sqlWhere.getConditionString()
+	condition := sqlWhere.getConditionString("AND ")
 
 	skip, limit := pgxutils.GetPaginationParams(params)
 	pagination := fmt.Sprintf(`OFFSET %d ROWS FETCH FIRST %d ROWS ONLY`, skip, (limit + 1))
@@ -540,7 +540,7 @@ func Query_Individual_Batting_HostNations(params *url.Values) (string, []any, in
 func Query_Individual_Batting_Oppositions(params *url.Values) (string, []any, int, error) {
 	sqlWhere := &sqlWhere{}
 	sqlWhere.applyFilters(params, batting_stats)
-	condition := sqlWhere.getConditionString()
+	condition := sqlWhere.getConditionString("AND ")
 
 	skip, limit := pgxutils.GetPaginationParams(params)
 	pagination := fmt.Sprintf(`OFFSET %d ROWS FETCH FIRST %d ROWS ONLY`, skip, (limit + 1))
@@ -575,7 +575,7 @@ func Query_Individual_Batting_Oppositions(params *url.Values) (string, []any, in
 func Query_Individual_Batting_Years(params *url.Values) (string, []any, int, error) {
 	sqlWhere := &sqlWhere{}
 	sqlWhere.applyFilters(params, batting_stats)
-	condition := sqlWhere.getConditionString()
+	condition := sqlWhere.getConditionString("AND ")
 
 	skip, limit := pgxutils.GetPaginationParams(params)
 	pagination := fmt.Sprintf(`OFFSET %d ROWS FETCH FIRST %d ROWS ONLY`, skip, (limit + 1))
@@ -605,7 +605,7 @@ func Query_Individual_Batting_Years(params *url.Values) (string, []any, int, err
 func Query_Individual_Batting_Seasons(params *url.Values) (string, []any, int, error) {
 	sqlWhere := &sqlWhere{}
 	sqlWhere.applyFilters(params, batting_stats)
-	condition := sqlWhere.getConditionString()
+	condition := sqlWhere.getConditionString("AND ")
 
 	skip, limit := pgxutils.GetPaginationParams(params)
 	pagination := fmt.Sprintf(`OFFSET %d ROWS FETCH FIRST %d ROWS ONLY`, skip, (limit + 1))

@@ -9,6 +9,7 @@ import (
 const (
 	batting_stats = iota
 	bowling_stats
+	team_stats
 )
 
 type sqlWhere struct {
@@ -27,11 +28,11 @@ func (sqlWhere *sqlWhere) applyFilters(params *url.Values, stats_type int) {
 	sqlWhere.ground(params)
 }
 
-func (sqlWhere *sqlWhere) getConditionString() string {
+func (sqlWhere *sqlWhere) getConditionString(prefix string) string {
 	var condition string
 
 	if len(sqlWhere.conditions) > 0 {
-		condition = "AND " + strings.Join(sqlWhere.conditions, " AND ")
+		condition = prefix + strings.Join(sqlWhere.conditions, " AND ")
 	}
 
 	return condition
@@ -93,17 +94,15 @@ func (sqlWhere *sqlWhere) primaryTeam(params *url.Values, statsType int) {
 	}
 
 	if len(placeholders) > 0 {
-		var column string
-
 		switch statsType {
 		case batting_stats:
-			column = "innings.batting_team_id"
+			sqlWhere.conditions = append(sqlWhere.conditions, fmt.Sprintf(`innings.batting_team_id IN (%s)`, strings.Join(placeholders, ", ")))
 		case bowling_stats:
-			column = "innings.bowling_team_id"
+			sqlWhere.conditions = append(sqlWhere.conditions, fmt.Sprintf(`innings.bowling_team_id IN (%s)`, strings.Join(placeholders, ", ")))
+		case team_stats:
+			sqlWhere.conditions = append(sqlWhere.conditions, fmt.Sprintf(`matches.team1_id IN (%s)`, strings.Join(placeholders, ", ")))
+			sqlWhere.conditions = append(sqlWhere.conditions, fmt.Sprintf(`matches.team2_id IN (%s)`, strings.Join(placeholders, ", ")))
 		}
-
-		sqlWhere.conditions = append(sqlWhere.conditions, fmt.Sprintf(`%s IN (%s)`, column, strings.Join(placeholders, ", ")))
-
 	}
 }
 
@@ -117,17 +116,15 @@ func (sqlWhere *sqlWhere) oppositionTeam(params *url.Values, statsType int) {
 	}
 
 	if len(placeholders) > 0 {
-		var column string
-
 		switch statsType {
 		case batting_stats:
-			column = "innings.bowling_team_id"
+			sqlWhere.conditions = append(sqlWhere.conditions, fmt.Sprintf(`innings.bowling_team_Id IN (%s)`, strings.Join(placeholders, ", ")))
 		case bowling_stats:
-			column = "innings.batting_team_id"
+			sqlWhere.conditions = append(sqlWhere.conditions, fmt.Sprintf(`innings.batting_team_id IN (%s)`, strings.Join(placeholders, ", ")))
+		case team_stats:
+			sqlWhere.conditions = append(sqlWhere.conditions, fmt.Sprintf(`matches.team1_id IN (%s)`, strings.Join(placeholders, ", ")))
+			sqlWhere.conditions = append(sqlWhere.conditions, fmt.Sprintf(`matches.team2_id IN (%s)`, strings.Join(placeholders, ", ")))
 		}
-
-		sqlWhere.conditions = append(sqlWhere.conditions, fmt.Sprintf(`%s IN (%s)`, column, strings.Join(placeholders, ", ")))
-
 	}
 }
 

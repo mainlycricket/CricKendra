@@ -29,7 +29,7 @@ WITH match_teams AS (
             '2011/12'
         )
 )
-SELECT date_part('year', matches.start_date) AS match_year,
+SELECT date_part('year', matches.start_date)::integer AS match_year,
     COUNT(DISTINCT match_teams.team_id) AS teams_count,
     COUNT(DISTINCT matches.id) AS matches_played,
     SUM(
@@ -112,5 +112,5 @@ WHERE matches.playing_format = 'ODI'
         '2011/12'
     )
     AND innings.is_super_over = FALSE
-GROUP BY date_part('year', matches.start_date)
+GROUP BY date_part('year', matches.start_date)::integer
 ORDER BY matches_won DESC;

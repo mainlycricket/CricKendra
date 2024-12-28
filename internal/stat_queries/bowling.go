@@ -65,7 +65,7 @@ const bowling_common_joins string = `
 func Query_Overall_Bowling_Bowlers(params *url.Values) (string, []any, int, error) {
 	sqlWhere := &sqlWhere{}
 	sqlWhere.applyFilters(params, bowling_stats)
-	condition := sqlWhere.getConditionString()
+	condition := sqlWhere.getConditionString("AND ")
 
 	skip, limit := pgxutils.GetPaginationParams(params)
 	pagination := fmt.Sprintf(`OFFSET %d ROWS FETCH FIRST %d ROWS ONLY`, skip, (limit + 1))
@@ -105,7 +105,7 @@ func Query_Overall_Bowling_Bowlers(params *url.Values) (string, []any, int, erro
 func Query_Overall_Bowling_TeamInnings(params *url.Values) (string, []any, int, error) {
 	sqlWhere := &sqlWhere{}
 	sqlWhere.applyFilters(params, bowling_stats)
-	condition := sqlWhere.getConditionString()
+	condition := sqlWhere.getConditionString("AND ")
 
 	skip, limit := pgxutils.GetPaginationParams(params)
 	pagination := fmt.Sprintf(`OFFSET %d ROWS FETCH FIRST %d ROWS ONLY`, skip, (limit + 1))
@@ -155,7 +155,7 @@ func Query_Overall_Bowling_TeamInnings(params *url.Values) (string, []any, int, 
 func Query_Overall_Bowling_Matches(params *url.Values) (string, []any, int, error) {
 	sqlWhere := &sqlWhere{}
 	sqlWhere.applyFilters(params, bowling_stats)
-	condition := sqlWhere.getConditionString()
+	condition := sqlWhere.getConditionString("AND ")
 
 	skip, limit := pgxutils.GetPaginationParams(params)
 	pagination := fmt.Sprintf(`OFFSET %d ROWS FETCH FIRST %d ROWS ONLY`, skip, (limit + 1))
@@ -203,7 +203,7 @@ func Query_Overall_Bowling_Matches(params *url.Values) (string, []any, int, erro
 func Query_Overall_Bowling_Teams(params *url.Values) (string, []any, int, error) {
 	sqlWhere := &sqlWhere{}
 	sqlWhere.applyFilters(params, bowling_stats)
-	condition := sqlWhere.getConditionString()
+	condition := sqlWhere.getConditionString("AND ")
 
 	skip, limit := pgxutils.GetPaginationParams(params)
 	pagination := fmt.Sprintf(`OFFSET %d ROWS FETCH FIRST %d ROWS ONLY`, skip, (limit + 1))
@@ -242,7 +242,7 @@ func Query_Overall_Bowling_Teams(params *url.Values) (string, []any, int, error)
 func Query_Overall_Bowling_Oppositions(params *url.Values) (string, []any, int, error) {
 	sqlWhere := &sqlWhere{}
 	sqlWhere.applyFilters(params, bowling_stats)
-	condition := sqlWhere.getConditionString()
+	condition := sqlWhere.getConditionString("AND ")
 
 	skip, limit := pgxutils.GetPaginationParams(params)
 	pagination := fmt.Sprintf(`OFFSET %d ROWS FETCH FIRST %d ROWS ONLY`, skip, (limit + 1))
@@ -281,7 +281,7 @@ func Query_Overall_Bowling_Oppositions(params *url.Values) (string, []any, int, 
 func Query_Overall_Bowling_Grounds(params *url.Values) (string, []any, int, error) {
 	sqlWhere := &sqlWhere{}
 	sqlWhere.applyFilters(params, bowling_stats)
-	condition := sqlWhere.getConditionString()
+	condition := sqlWhere.getConditionString("AND ")
 
 	skip, limit := pgxutils.GetPaginationParams(params)
 	pagination := fmt.Sprintf(`OFFSET %d ROWS FETCH FIRST %d ROWS ONLY`, skip, (limit + 1))
@@ -320,7 +320,7 @@ func Query_Overall_Bowling_Grounds(params *url.Values) (string, []any, int, erro
 func Query_Overall_Bowling_HostNations(params *url.Values) (string, []any, int, error) {
 	sqlWhere := &sqlWhere{}
 	sqlWhere.applyFilters(params, bowling_stats)
-	condition := sqlWhere.getConditionString()
+	condition := sqlWhere.getConditionString("AND ")
 
 	skip, limit := pgxutils.GetPaginationParams(params)
 	pagination := fmt.Sprintf(`OFFSET %d ROWS FETCH FIRST %d ROWS ONLY`, skip, (limit + 1))
@@ -363,7 +363,7 @@ func Query_Overall_Bowling_HostNations(params *url.Values) (string, []any, int, 
 func Query_Overall_Bowling_Continents(params *url.Values) (string, []any, int, error) {
 	sqlWhere := &sqlWhere{}
 	sqlWhere.applyFilters(params, bowling_stats)
-	condition := sqlWhere.getConditionString()
+	condition := sqlWhere.getConditionString("AND ")
 
 	skip, limit := pgxutils.GetPaginationParams(params)
 	pagination := fmt.Sprintf(`OFFSET %d ROWS FETCH FIRST %d ROWS ONLY`, skip, (limit + 1))
@@ -408,7 +408,7 @@ func Query_Overall_Bowling_Continents(params *url.Values) (string, []any, int, e
 func Query_Overall_Bowling_Years(params *url.Values) (string, []any, int, error) {
 	sqlWhere := &sqlWhere{}
 	sqlWhere.applyFilters(params, bowling_stats)
-	condition := sqlWhere.getConditionString()
+	condition := sqlWhere.getConditionString("AND ")
 
 	skip, limit := pgxutils.GetPaginationParams(params)
 	pagination := fmt.Sprintf(`OFFSET %d ROWS FETCH FIRST %d ROWS ONLY`, skip, (limit + 1))
@@ -442,7 +442,7 @@ func Query_Overall_Bowling_Years(params *url.Values) (string, []any, int, error)
 func Query_Overall_Bowling_Seasons(params *url.Values) (string, []any, int, error) {
 	sqlWhere := &sqlWhere{}
 	sqlWhere.applyFilters(params, bowling_stats)
-	condition := sqlWhere.getConditionString()
+	condition := sqlWhere.getConditionString("AND ")
 
 	skip, limit := pgxutils.GetPaginationParams(params)
 	pagination := fmt.Sprintf(`OFFSET %d ROWS FETCH FIRST %d ROWS ONLY`, skip, (limit + 1))
@@ -476,7 +476,7 @@ func Query_Overall_Bowling_Seasons(params *url.Values) (string, []any, int, erro
 func Query_Overall_Bowling_Aggregate(params *url.Values) (string, []any, error) {
 	sqlWhere := &sqlWhere{}
 	sqlWhere.applyFilters(params, bowling_stats)
-	condition := sqlWhere.getConditionString()
+	condition := sqlWhere.getConditionString("AND ")
 
 	query := fmt.Sprintf(`WITH best_innings AS (
 		SELECT MAX(bs.wickets_taken) AS max_wickets
@@ -506,7 +506,7 @@ func Query_Overall_Bowling_Aggregate(params *url.Values) (string, []any, error) 
 func Query_Individual_Bowling_Innings(params *url.Values) (string, []any, int, error) {
 	sqlWhere := &sqlWhere{}
 	sqlWhere.applyFilters(params, bowling_stats)
-	condition := sqlWhere.getConditionString()
+	condition := sqlWhere.getConditionString("AND ")
 
 	skip, limit := pgxutils.GetPaginationParams(params)
 	pagination := fmt.Sprintf(`OFFSET %d ROWS FETCH FIRST %d ROWS ONLY`, skip, (limit + 1))
@@ -568,7 +568,7 @@ func Query_Individual_Bowling_Innings(params *url.Values) (string, []any, int, e
 func Query_Individual_Bowling_Grounds(params *url.Values) (string, []any, int, error) {
 	sqlWhere := &sqlWhere{}
 	sqlWhere.applyFilters(params, bowling_stats)
-	condition := sqlWhere.getConditionString()
+	condition := sqlWhere.getConditionString("AND ")
 
 	skip, limit := pgxutils.GetPaginationParams(params)
 	pagination := fmt.Sprintf(`OFFSET %d ROWS FETCH FIRST %d ROWS ONLY`, skip, (limit + 1))
@@ -616,7 +616,7 @@ func Query_Individual_Bowling_Grounds(params *url.Values) (string, []any, int, e
 func Query_Individual_Bowling_HostNations(params *url.Values) (string, []any, int, error) {
 	sqlWhere := &sqlWhere{}
 	sqlWhere.applyFilters(params, bowling_stats)
-	condition := sqlWhere.getConditionString()
+	condition := sqlWhere.getConditionString("AND ")
 
 	skip, limit := pgxutils.GetPaginationParams(params)
 	pagination := fmt.Sprintf(`OFFSET %d ROWS FETCH FIRST %d ROWS ONLY`, skip, (limit + 1))
@@ -668,7 +668,7 @@ func Query_Individual_Bowling_HostNations(params *url.Values) (string, []any, in
 func Query_Individual_Bowling_Oppositions(params *url.Values) (string, []any, int, error) {
 	sqlWhere := &sqlWhere{}
 	sqlWhere.applyFilters(params, bowling_stats)
-	condition := sqlWhere.getConditionString()
+	condition := sqlWhere.getConditionString("AND ")
 
 	skip, limit := pgxutils.GetPaginationParams(params)
 	pagination := fmt.Sprintf(`OFFSET %d ROWS FETCH FIRST %d ROWS ONLY`, skip, (limit + 1))
@@ -717,7 +717,7 @@ func Query_Individual_Bowling_Oppositions(params *url.Values) (string, []any, in
 func Query_Individual_Bowling_Years(params *url.Values) (string, []any, int, error) {
 	sqlWhere := &sqlWhere{}
 	sqlWhere.applyFilters(params, bowling_stats)
-	condition := sqlWhere.getConditionString()
+	condition := sqlWhere.getConditionString("AND ")
 
 	skip, limit := pgxutils.GetPaginationParams(params)
 	pagination := fmt.Sprintf(`OFFSET %d ROWS FETCH FIRST %d ROWS ONLY`, skip, (limit + 1))
@@ -763,7 +763,7 @@ func Query_Individual_Bowling_Years(params *url.Values) (string, []any, int, err
 func Query_Individual_Bowling_Seasons(params *url.Values) (string, []any, int, error) {
 	sqlWhere := &sqlWhere{}
 	sqlWhere.applyFilters(params, bowling_stats)
-	condition := sqlWhere.getConditionString()
+	condition := sqlWhere.getConditionString("AND ")
 
 	skip, limit := pgxutils.GetPaginationParams(params)
 	pagination := fmt.Sprintf(`OFFSET %d ROWS FETCH FIRST %d ROWS ONLY`, skip, (limit + 1))

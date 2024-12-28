@@ -1,37 +1,43 @@
-WITH match_teams AS (
-    SELECT matches.team1_id AS team_id
-    FROM matches
-    WHERE matches.playing_format = 'ODI'
-        AND matches.team1_id IN (1, 8, 10)
-        AND matches.team2_id IN (1, 8, 10)
-        AND matches.ground_id IN (63, 70, 79, 90, 124)
-        AND matches.start_date BETWEEN '2008-08-18' AND '2024-09-27'
-        AND matches.season IN (
-            '2022/23',
-            '2019/20',
-            '2017/18',
-            '2013/14',
-            '2011/12'
-        )
-    UNION
-    SELECT matches.team2_id AS team_id
-    FROM matches
-    WHERE matches.playing_format = 'ODI'
-        AND matches.team1_id IN (1, 8, 10)
-        AND matches.team2_id IN (1, 8, 10)
-        AND matches.ground_id IN (63, 70, 79, 90, 124)
-        AND matches.start_date BETWEEN '2008-08-18' AND '2024-09-27'
-        AND matches.season IN (
-            '2022/23',
-            '2019/20',
-            '2017/18',
-            '2013/14',
-            '2011/12'
-        )
-)
-SELECT matches.season,
-    MIN(matches.start_date) AS min_date,
-    MAX(matches.start_date) AS max_date,
+WITH
+    match_teams AS (
+        SELECT
+            matches.team1_id AS team_id
+        FROM
+            matches
+        WHERE
+            matches.playing_format = 'ODI'
+            AND matches.team1_id IN (1, 8, 10)
+            AND matches.team2_id IN (1, 8, 10)
+            AND matches.ground_id IN (63, 70, 79, 90, 124)
+            AND matches.start_date BETWEEN '2008-08-18' AND '2024-09-27'
+            AND matches.season IN (
+                '2022/23',
+                '2019/20',
+                '2017/18',
+                '2013/14',
+                '2011/12'
+            )
+        UNION
+        SELECT
+            matches.team2_id AS team_id
+        FROM
+            matches
+        WHERE
+            matches.playing_format = 'ODI'
+            AND matches.team1_id IN (1, 8, 10)
+            AND matches.team2_id IN (1, 8, 10)
+            AND matches.ground_id IN (63, 70, 79, 90, 124)
+            AND matches.start_date BETWEEN '2008-08-18' AND '2024-09-27'
+            AND matches.season IN (
+                '2022/23',
+                '2019/20',
+                '2017/18',
+                '2013/14',
+                '2011/12'
+            )
+    )
+SELECT
+    matches.season,
     COUNT(DISTINCT match_teams.team_id) AS teams_count,
     COUNT(DISTINCT matches.id) AS matches_played,
     SUM(
@@ -97,11 +103,13 @@ SELECT matches.season,
     ) AS scoring_rate,
     MAX(innings.total_runs) AS highest_score,
     MIN(innings.total_runs) AS lowest_score
-FROM match_teams
+FROM
+    match_teams
     LEFT JOIN innings ON innings.batting_team_id = match_teams.team_id
     LEFT JOIN matches ON innings.match_id = matches.id
     LEFT JOIN teams ON match_teams.team_id = teams.id
-WHERE matches.playing_format = 'ODI'
+WHERE
+    matches.playing_format = 'ODI'
     AND matches.team1_id IN (1, 8, 10)
     AND matches.team2_id IN (1, 8, 10)
     AND matches.ground_id IN (63, 70, 79, 90, 124)
@@ -114,5 +122,7 @@ WHERE matches.playing_format = 'ODI'
         '2011/12'
     )
     AND innings.is_super_over = FALSE
-GROUP BY matches.season
-ORDER BY matches_won DESC;
+GROUP BY
+    matches.season
+ORDER BY
+    matches_won DESC;
