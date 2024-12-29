@@ -111,19 +111,7 @@ func ParseQuery[T any](input QueryInfoInput) (QueryInfoOutput, error) {
 	res.OrderByClause = fmt.Sprintf(`ORDER BY %s`, strings.Join(sortColumns, ", "))
 
 	/* Pagination Clause */
-
-	page, _ := strconv.Atoi(input.UrlQuery.Get("__page"))
-	if page < 1 {
-		page = 1
-	}
-
-	limit, _ := strconv.Atoi(input.UrlQuery.Get("__limit"))
-	if limit < 1 {
-		limit = input.DefaultLimit
-	}
-
-	res.RecordsCount = limit
-	skip := (page - 1) * limit
+	skip, limit := GetPaginationParams(&input.UrlQuery)
 	res.PaginationClause = fmt.Sprintf(`OFFSET %d ROWS FETCH FIRST %d ROWS ONLY`, skip, (limit + 1))
 
 	return res, nil

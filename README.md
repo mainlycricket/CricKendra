@@ -1,6 +1,7 @@
-I am building `CricKendra` out of my passion for cricket and programming.
+I am building `CricKendra` out of my passion for cricket and programming. Checkout the Postman Collection [here](https://documenter.getpostman.com/view/25403102/2sAYBREZ3x)
 
-- I am currently working on the [`stats-engine` branch](https://github.com/mainlycricket/CricKendra/tree/stats-engine)
-- Checkout the Postman Collection [here](https://documenter.getpostman.com/view/25403102/2sAYBREZ3x)
+### Current Progress
 
-This is only the backend repository. My friend [Akshay Dixit](https://github.com/Akshay-pro) is developing the front-end. Checkout the front-end repo [here](https://github.com/Akshay-pro/CricKendra).
+- A CSV parser - `cmd/csv-parser` - that extracts data from CSV files available on [cricsheet.org](https://cricsheet.org) and saves in the database.
+
+- A main server - `cmd/main-server` - that provides basic endpoints, currently focused on stats engine.

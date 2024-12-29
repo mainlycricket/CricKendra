@@ -52,6 +52,11 @@ func main() {
 	r.Mount("/users", usersRouter())
 	r.Mount("/blog-articles", blogArticlesRouter())
 
+	/* Stats */
+	r.Mount("/stats/batting", BattingStatsRouter())
+	r.Mount("/stats/bowling", BowlingStatsRouter())
+	r.Mount("/stats/team", TeamStatsRouter())
+
 	err = http.ListenAndServe(":8080", r)
 	if err != nil {
 		log.Fatalf(`error while starting server: %v`, err)

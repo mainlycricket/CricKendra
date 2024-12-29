@@ -406,6 +406,12 @@ type AllInnings struct {
 	InningsNumber pgtype.Int8 `json:"innings_number"`
 }
 
+// Stats
+type StatsResponse[T any] struct {
+	Stats []T  `json:"stats"`
+	Next  bool `json:"next"`
+}
+
 // Extras
 
 type CareerStats struct {
