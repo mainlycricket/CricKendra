@@ -519,3 +519,312 @@ func Query_Overall_Team_Aggregate(params *url.Values) (string, []any, error) {
 
 	return query, sqlWhere.args, nil
 }
+
+// Function Names are in Query_Individual_Team_x format, x represents grouping
+
+func Query_Individual_Team_Matches(params *url.Values) (string, []any, int, error) {
+	sqlWhere := &sqlWhere{}
+	sqlWhere.applyFilters(params, team_stats)
+	condition := sqlWhere.getConditionString("WHERE ")
+
+	skip, limit := pgxutils.GetPaginationParams(params)
+	pagination := fmt.Sprintf(`OFFSET %d ROWS FETCH FIRST %d ROWS ONLY`, skip, (limit + 1))
+
+	team1_matches_query := getIndividualMatchesQuery(condition, false)
+	team2_matches_query := getIndividualMatchesQuery(condition, true)
+
+	query := fmt.Sprintf(`WITH matches_list AS (
+		%s
+		UNION
+		%s
+	)
+	SELECT matches.*
+	FROM matches_list matches
+    ORDER BY matches.start_date DESC
+    %s;
+	`, team1_matches_query, team2_matches_query, pagination)
+
+	return query, sqlWhere.args, limit, nil
+}
+
+func Query_Individual_Team_Innings(params *url.Values) (string, []any, int, error) {
+	sqlWhere := &sqlWhere{}
+	sqlWhere.applyFilters(params, team_stats)
+	main_condition := sqlWhere.getConditionString("AND ")
+
+	team_field, opposition_field := "batting_team_id", "bowling_team_id"
+	if params.Get("team_total_for") == "bowling" {
+		team_field, opposition_field = "bowling_team_id", "batting_team_id"
+	}
+
+	skip, limit := pgxutils.GetPaginationParams(params)
+	pagination := fmt.Sprintf(`OFFSET %d ROWS FETCH FIRST %d ROWS ONLY`, skip, (limit + 1))
+
+	query := fmt.Sprintf(`SELECT matches.id,
+		innings.%s AS team_id,
+		teams.name AS team_name,
+		innings.%s AS opposition_id,
+		teams2.name AS opposition_name,
+		matches.ground_id,
+  		cities.name AS city_name,
+	    matches.start_date,
+		matches.final_result,
+		matches.match_winner_team_id,
+		innings.id AS innings_id,
+		innings.innings_number,
+		innings.innings_end,
+		innings.total_runs,
+		innings.total_wickets,
+		innings.total_balls / 6 + (innings.total_balls %% 6) * 0.1 AS overs,
+		(
+		    CASE
+		        WHEN innings.total_balls > 0 THEN innings.total_runs * 6.0 / innings.total_balls
+		    END
+		) AS scoring_rate
+    FROM innings
+        LEFT JOIN matches ON innings.match_id = matches.id
+        LEFT JOIN teams ON innings.%s = teams.id
+        LEFT JOIN teams teams2 ON innings.%s = teams2.id
+        LEFT JOIN grounds ON matches.ground_id = grounds.id
+        LEFT JOIN cities ON grounds.city_id = cities.id
+    WHERE innings.is_super_over = FALSE
+    	%s
+    GROUP BY matches.id,
+		innings.batting_team_id,
+		teams.name,
+		innings.bowling_team_id,
+		teams2.name,
+		matches.ground_id,
+    	cities.name ,
+	    matches.start_date,
+		matches.final_result,
+		matches.match_winner_team_id,
+		innings.id,
+		innings.innings_number,
+		innings.innings_end,
+		innings.total_runs,
+		innings.total_wickets
+    ORDER BY matches.start_date DESC
+    %s;
+	`, team_field, opposition_field, team_field, opposition_field, main_condition, pagination)
+
+	return query, sqlWhere.args, limit, nil
+}
+
+func Query_Individual_Team_Grounds(params *url.Values) (string, []any, int, error) {
+	sqlWhere := &sqlWhere{}
+	sqlWhere.applyFilters(params, team_stats)
+	teams_conditon := sqlWhere.getConditionString("WHERE ")
+	main_condition := sqlWhere.getConditionString("AND ")
+
+	team_total_for := "batting_team_id"
+	if params.Get("team_total_for") == "bowling" {
+		team_total_for = "bowling_team_id"
+	}
+
+	skip, limit := pgxutils.GetPaginationParams(params)
+	pagination := fmt.Sprintf(`OFFSET %d ROWS FETCH FIRST %d ROWS ONLY`, skip, (limit + 1))
+
+	query := fmt.Sprintf(`WITH match_teams AS (
+	    SELECT matches.team1_id AS team_id FROM matches %s
+	    UNION
+	    SELECT matches.team2_id AS team_id FROM matches %s
+	)
+	SELECT match_teams.team_id,
+		teams.name AS team_name,
+		matches.ground_id,
+	    grounds.name AS ground_name,
+	    MIN(matches.start_date) AS min_date,
+	    MAX(matches.start_date) AS max_date,
+	    %s
+    FROM match_teams
+        LEFT JOIN innings ON innings.%s = match_teams.team_id
+        %s
+        LEFT JOIN grounds ON matches.ground_id = grounds.id
+    WHERE innings.is_super_over = FALSE
+    	%s
+    GROUP BY match_teams.team_id,
+    	teams.name,	
+    	matches.ground_id,
+        grounds.name
+    ORDER BY matches_won DESC
+    %s;
+	`, teams_conditon, teams_conditon, team_numbers_query, team_total_for, team_common_joins, main_condition, pagination)
+
+	return query, sqlWhere.args, limit, nil
+}
+
+func Query_Individual_Team_HostNations(params *url.Values) (string, []any, int, error) {
+	sqlWhere := &sqlWhere{}
+	sqlWhere.applyFilters(params, team_stats)
+	teams_conditon := sqlWhere.getConditionString("WHERE ")
+	main_condition := sqlWhere.getConditionString("AND ")
+
+	team_total_for := "batting_team_id"
+	if params.Get("team_total_for") == "bowling" {
+		team_total_for = "bowling_team_id"
+	}
+
+	skip, limit := pgxutils.GetPaginationParams(params)
+	pagination := fmt.Sprintf(`OFFSET %d ROWS FETCH FIRST %d ROWS ONLY`, skip, (limit + 1))
+
+	query := fmt.Sprintf(`WITH match_teams AS (
+	    SELECT matches.team1_id AS team_id FROM matches %s
+	    UNION
+	    SELECT matches.team2_id AS team_id FROM matches %s
+	)
+	SELECT match_teams.team_id,
+		teams.name AS team_name,
+		cities.host_nation_id,
+	    host_nations.name AS host_nation_name,
+	    MIN(matches.start_date) AS min_date,
+	    MAX(matches.start_date) AS max_date,
+	    %s
+    FROM match_teams
+        LEFT JOIN innings ON innings.%s = match_teams.team_id
+        %s
+        LEFT JOIN grounds ON matches.ground_id = grounds.id
+        LEFT JOIN cities ON grounds.city_id = cities.id
+        LEFT JOIN host_nations ON cities.host_nation_id = host_nations.id
+    WHERE innings.is_super_over = FALSE
+    	%s
+    GROUP BY match_teams.team_id,
+    	teams.name,	
+    	cities.host_nation_id,
+        host_nations.name
+    ORDER BY matches_won DESC
+    %s;
+	`, teams_conditon, teams_conditon, team_numbers_query, team_total_for, team_common_joins, main_condition, pagination)
+
+	return query, sqlWhere.args, limit, nil
+}
+
+func Query_Individual_Team_Years(params *url.Values) (string, []any, int, error) {
+	sqlWhere := &sqlWhere{}
+	sqlWhere.applyFilters(params, team_stats)
+	teams_conditon := sqlWhere.getConditionString("WHERE ")
+	main_condition := sqlWhere.getConditionString("AND ")
+
+	team_total_for := "batting_team_id"
+	if params.Get("team_total_for") == "bowling" {
+		team_total_for = "bowling_team_id"
+	}
+
+	skip, limit := pgxutils.GetPaginationParams(params)
+	pagination := fmt.Sprintf(`OFFSET %d ROWS FETCH FIRST %d ROWS ONLY`, skip, (limit + 1))
+
+	query := fmt.Sprintf(`WITH match_teams AS (
+	    SELECT matches.team1_id AS team_id FROM matches %s
+	    UNION
+	    SELECT matches.team2_id AS team_id FROM matches %s
+	)
+	SELECT match_teams.team_id,
+		teams.name AS team_name,
+		date_part('year', matches.start_date)::integer AS match_year,
+	    %s
+    FROM match_teams
+        LEFT JOIN innings ON innings.%s = match_teams.team_id
+        %s
+    WHERE innings.is_super_over = FALSE
+    	%s
+    GROUP BY match_teams.team_id,
+    	teams.name,	
+    	date_part('year', matches.start_date)::integer
+    ORDER BY matches_won DESC
+    %s;
+	`, teams_conditon, teams_conditon, team_numbers_query, team_total_for, team_common_joins, main_condition, pagination)
+
+	return query, sqlWhere.args, limit, nil
+}
+
+func Query_Individual_Team_Seasons(params *url.Values) (string, []any, int, error) {
+	sqlWhere := &sqlWhere{}
+	sqlWhere.applyFilters(params, team_stats)
+	teams_conditon := sqlWhere.getConditionString("WHERE ")
+	main_condition := sqlWhere.getConditionString("AND ")
+
+	team_total_for := "batting_team_id"
+	if params.Get("team_total_for") == "bowling" {
+		team_total_for = "bowling_team_id"
+	}
+
+	skip, limit := pgxutils.GetPaginationParams(params)
+	pagination := fmt.Sprintf(`OFFSET %d ROWS FETCH FIRST %d ROWS ONLY`, skip, (limit + 1))
+
+	query := fmt.Sprintf(`WITH match_teams AS (
+	    SELECT matches.team1_id AS team_id FROM matches %s
+	    UNION
+	    SELECT matches.team2_id AS team_id FROM matches %s
+	)
+	SELECT match_teams.team_id,
+		teams.name AS team_name,
+		matches.season,
+	    %s
+    FROM match_teams
+        LEFT JOIN innings ON innings.%s = match_teams.team_id
+        %s
+    WHERE innings.is_super_over = FALSE
+    	%s
+    GROUP BY match_teams.team_id,
+    	teams.name,	
+    	matches.season
+    ORDER BY matches_won DESC
+    %s;
+	`, teams_conditon, teams_conditon, team_numbers_query, team_total_for, team_common_joins, main_condition, pagination)
+
+	return query, sqlWhere.args, limit, nil
+}
+
+// helpers
+
+func getIndividualMatchesQuery(condition string, isTeamSwitch bool) string {
+	const common_fields string = `
+		matches.ground_id,
+	    cities.name,
+	    matches.start_date,
+	    matches.final_result,
+		matches.match_winner_team_id,
+		matches.toss_winner_team_id,
+		matches.is_toss_decision_bat,
+		matches.win_margin,
+		matches.balls_remaining_after_win,
+		matches.is_won_by_runs,
+		matches.is_won_by_innings
+	`
+
+	team_fields := `
+		matches.team1_id AS team_id,
+		teams.name AS team_name,
+		matches.team2_id AS opposition_id,
+		teams2.name AS opposition_name
+	`
+
+	if isTeamSwitch {
+		team_fields = `
+			matches.team1_id AS opposition_id,
+			teams.name AS opposition_name,
+			matches.team2_id AS team_id,
+			teams2.name AS team_name
+		`
+	}
+
+	query := fmt.Sprintf(`
+		SELECT matches.id,
+			%s,
+			%s
+	    FROM matches
+ 			LEFT JOIN teams ON matches.team1_id = teams.id
+		 	LEFT JOIN teams teams2 ON matches.team2_id = teams2.id
+		    LEFT JOIN grounds ON matches.ground_id = grounds.id
+		    LEFT JOIN cities ON grounds.city_id = cities.id
+			%s
+	    GROUP BY matches.id,
+			matches.team1_id,
+			teams.name,
+			matches.team2_id,
+			teams2.name,
+			%s
+	`, team_fields, common_fields, condition, common_fields)
+
+	return query
+}
