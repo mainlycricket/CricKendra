@@ -1,0 +1,319 @@
+id,name,city_id
+1,Senwes Park,1
+2,Old Trafford,2
+3,The Rose Bowl,3
+4,Trent Bridge,4
+5,County Ground,5
+6,Kennington Oval,6
+7,Edgbaston,7
+8,Saxton Oval,8
+9,"Kensington Oval, Barbados",9
+10,Queenstown Events Centre,112
+11,Eden Park,10
+12,"Sabina Park, Kingston",11
+13,Harare Sports Club,106
+14,Headingley,12
+15,R Premadasa Stadium,13
+16,"Mahinda Rajapaksa International Cricket Stadium, Sooriyawewa",14
+17,Pallekele International Cricket Stadium,148
+18,Bellerive Oval,15
+19,Western Australia Cricket Association Ground,16
+20,Mangaung Oval,17
+21,St George's Park,18
+22,SuperSport Park,19
+23,New Wanderers Stadium,20
+24,Newlands,21
+25,Sophia Gardens,22
+26,"Darren Sammy National Cricket Stadium, Gros Islet",23
+27,Lord's,6
+28,Sir Vivian Richards Stadium,24
+29,"Bharat Ratna Shri Atal Bihari Vajpayee Ekana Cricket Stadium, Lucknow",25
+30,"Wankhede Stadium, Mumbai",26
+31,"M Chinnaswamy Stadium, Bengaluru",27
+32,"Maharashtra Cricket Association Stadium, Pune",28
+33,"Narendra Modi Stadium, Ahmedabad",29
+34,Greater Noida Sports Complex Ground,30
+35,"Kensington Oval, Bridgetown",31
+36,"Brisbane Cricket Ground, Woolloongabba",32
+37,"Sir Vivian Richards Stadium, North Sound",33
+38,"SuperSport Park, Centurion",19
+39,"The Village, Malahide, Dublin",34
+40,The Wanderers Stadium,20
+41,"Riverside Ground, Chester-le-Street",35
+42,"Old Trafford, Manchester",2
+43,Melbourne Cricket Ground,67
+44,"Kensington Oval, Bridgetown, Barbados",9
+45,"R.Premadasa Stadium, Khettarama",13
+46,Seddon Park,36
+47,Westpac Stadium,37
+48,McLean Park,38
+49,AMI Stadium,39
+50,"Headingley, Leeds",12
+51,"Sabina Park, Kingston, Jamaica",40
+52,Kingsmead,41
+53,Sydney Cricket Ground,59
+54,Adelaide Oval,60
+55,Providence Stadium,42
+56,"Beausejour Stadium, Gros Islet",23
+57,Perth Stadium,16
+58,Feroz Shah Kotla,43
+59,Queens Sports Club,44
+60,"MA Chidambaram Stadium, Chepauk",45
+61,Shere Bangla National Stadium,46
+62,Pallekele International Cricket Stadium,47
+63,"Windsor Park, Roseau",48
+64,"Queen''s Park Oval, Port of Spain",49
+65,"R Premadasa Stadium, Colombo",13
+66,Willowmoore Park,50
+67,University Oval,51
+68,Sheikh Zayed Stadium,52
+69,Riverside Ground,35
+70,Hagley Oval,39
+71,Bay Oval,53
+72,Boland Park,54
+73,Chevrolet Park,17
+74,Buffalo Park,55
+75,"Rajiv Gandhi International Stadium, Uppal",56
+76,"Punjab Cricket Association Stadium, Mohali",57
+77,Dubai International Cricket Stadium,122
+78,"Civil Service Cricket Club, Stormont",58
+79,Sydney Cricket Ground,59
+80,Adelaide Oval,60
+81,"Arnos Vale Ground, Kingstown",61
+82,Multan Cricket Stadium,62
+83,"Warner Park, Basseterre",63
+84,De Beers Diamond Oval,64
+85,"Cazaly''s Stadium, Cairns",65
+86,Manuka Oval,66
+87,Clontarf Cricket Club Ground,34
+88,Melbourne Cricket Ground,67
+89,Rangiri Dambulla International Stadium,113
+90,Queen's Park Oval,68
+91,Daren Sammy National Cricket Stadium,69
+92,Basin Reserve,37
+93,"Queens Sports Club, Bulawayo",44
+94,"St George''s Park, Port Elizabeth",70
+95,"New Wanderers Stadium, Johannesburg",20
+96,"Goodyear Park, Bloemfontein",17
+97,Brabourne Stadium,26
+98,Greenfield International Stadium,71
+99,"Darren Sammy National Cricket Stadium, St Lucia",69
+100,"National Cricket Stadium, Grenada",72
+101,Sharjah Cricket Association Stadium,73
+102,"Nehru Stadium, Poona",28
+103,"Nahar Singh Stadium, Faridabad",74
+104,Docklands Stadium,67
+105,Castle Avenue,34
+106,"Gaddafi Stadium, Lahore",75
+107,"Clontarf Cricket Club Ground, Dublin",34
+108,Khan Shaheb Osman Ali Stadium,76
+109,"Mangaung Oval, Bloemfontein",17
+110,"Diamond Oval, Kimberley",64
+111,Nehru Stadium,77
+112,Himachal Pradesh Cricket Association Stadium,78
+113,Eden Gardens,79
+114,JSCA International Stadium Complex,80
+115,Gaddafi Stadium,75
+116,Green Park,81
+117,Holkar Cricket Stadium,82
+118,Wankhede Stadium,26
+119,Saurashtra Cricket Association Stadium,83
+120,Dr. Y.S. Rajasekhara Reddy ACA-VDCA Cricket Stadium,84
+121,Barabati Stadium,85
+122,"Providence Stadium, Guyana",86
+123,"Queen''s Park Oval, Trinidad",68
+124,Bharat Ratna Shri Atal Bihari Vajpayee Ekana Cricket Stadium,25
+125,"Dr. Y.S. Rajasekhara Reddy ACA-VDCA Cricket Stadium, Visakhapatnam",84
+126,"MA Chidambaram Stadium, Chepauk, Chennai",45
+136,"Arun Jaitley Stadium, Delhi",43
+137,"Rajiv Gandhi International Stadium, Uppal, Hyderabad",56
+140,"Trent Bridge, Nottingham",4
+145,Sharjah Cricket Stadium,73
+149,"National Cricket Stadium, St George''s",92
+153,Jade Stadium,39
+154,Maharashtra Cricket Association Stadium,28
+165,Diamond Oval,64
+127,Galle International Stadium,149
+133,"Kennington Oval, London",6
+138,"Eden Gardens, Kolkata",79
+139,M.Chinnaswamy Stadium,27
+142,"Titwood, Glasgow",90
+144,"Holkar Cricket Stadium, Indore",82
+148,Narayanganj Osmani Stadium,76
+151,"Sardar Patel Stadium, Motera",29
+152,Cambusdoon New Ground,94
+156,Kinrara Academy Oval,95
+159,Shaheed Chandu Stadium,96
+161,The Cooper Associates County Ground,97
+162,Gymkhana Club Ground,98
+164,Marrara Cricket Ground,100
+166,Reliance Stadium,101
+128,National Stadium,87
+129,"The Wanderers Stadium, Johannesburg",20
+131,"Grange Cricket Club Ground, Raeburn Place",88
+132,"Mahinda Rajapaksa International Cricket Stadium, Sooriyawewa, Hambantota",14
+135,Al Amerat Cricket Ground Oman Cricket (Ministry Turf 1),89
+143,"Punjab Cricket Association IS Bindra Stadium, Mohali, Chandigarh",57
+146,"United Cricket Club Ground, Windhoek",91
+150,Sawai Mansingh Stadium,93
+155,Goodyear Park,17
+157,Sedgars Park,1
+163,Iqbal Stadium,99
+130,Sinhalese Sports Club Ground,13
+134,"County Ground, Bristol",5
+141,"Lord''s, London",6
+147,Malahide,34
+158,OUTsurance Oval,17
+160,Madhavrao Scindia Cricket Ground,83
+167,Zohur Ahmed Chowdhury Stadium,102
+168,"Vidarbha Cricket Association Stadium, Jamtha",103
+169,M Chinnaswamy Stadium,104
+170,Zahur Ahmed Chowdhury Stadium,102
+171,Captain Roop Singh Stadium,105
+172,"Grange Cricket Club Ground, Raeburn Place, Edinburgh",88
+173,Harare Sports Club,106
+174,Cobham Oval (New),107
+175,"Shere Bangla National Stadium, Mirpur",108
+176,Himachal Pradesh Cricket Association Stadium,109
+177,"The Village, Malahide",34
+178,"Tony Ireland Stadium, Townsville",110
+179,Sheikh Abu Naser Stadium,111
+180,"Queen''s Park Oval, Port of Spain, Trinidad",68
+181,"Westpac Stadium, Wellington",37
+182,"Westpac Park, Hamilton",36
+183,"Davies Park, Queenstown",112
+184,"Bundaberg Rum Stadium, Cairns",65
+185,"Marrara Cricket Ground, Darwin",100
+186,"Punjab Cricket Association IS Bindra Stadium, Mohali",57
+187,Carisbrook,51
+188,Rangiri Dambulla International Stadium,113
+189,Sylhet International Cricket Stadium,114
+190,National Cricket Stadium,72
+191,Arnos Vale Ground,115
+192,Zahur Ahmed Chowdhury Stadium,116
+193,MA Aziz Stadium,116
+194,Bangabandhu National Stadium,108
+195,"Eden Park, Auckland",10
+196,"Seddon Park, Hamilton",36
+197,"North West Cricket Stadium, Potchefstroom",1
+198,"Kingsmead, Durban",41
+199,"Buffalo Park, East London",55
+200,"Gymkhana Club Ground, Nairobi",98
+201,"De Beers Diamond Oval, Kimberley",64
+202,"JSCA International Stadium Complex, Ranchi",80
+203,"Bellerive Oval, Hobart",15
+204,"Newlands, Cape Town",21
+205,"Brisbane Cricket Ground, Woolloongabba, Brisbane",32
+206,"Willowmoore Park, Benoni",50
+207,Barsapara Cricket Stadium,117
+208,"Sophia Gardens, Cardiff",22
+209,Brisbane Cricket Ground,32
+210,W.A.C.A. Ground,16
+211,"The Rose Bowl, Southampton",3
+212,"Rajiv Gandhi International Cricket Stadium, Dehradun",118
+213,R.Premadasa Stadium,13
+214,"St Lawrence Ground, Canterbury",119
+215,"The Royal & Sun Alliance County Ground, Bristol",5
+216,"Bangabandhu National Stadium, Dhaka",108
+217,"Captain Roop Singh Stadium, Gwalior",105
+218,"Barabati Stadium, Cuttack",85
+219,"Lal Bahadur Shastri Stadium, Hyderabad, Deccan",56
+220,Mannofield Park,120
+221,Arun Jaitley Stadium,43
+222,"Senwes Park, Potchefstroom",1
+223,"National Stadium, Karachi",87
+224,"Bready Cricket Club, Magheramason",121
+225,Old Hararians,106
+226,ICC Academy,122
+227,Dubai International Cricket Stadium,122
+228,"Grange Cricket Club, Raeburn Place",88
+229,Rawalpindi Cricket Stadium,123
+230,"Barsapara Cricket Stadium, Guwahati",117
+231,"Greenfield International Stadium, Thiruvananthapuram",71
+232,"Shaheed Veer Narayan Singh International Stadium, Raipur",124
+233,"Zahur Ahmed Chowdhury Stadium, Chattogram",116
+234,"Sedgars Park, Potchefstroom",1
+235,"Manuka Oval, Canberra",66
+236,Bulawayo Athletic Club,44
+237,"Takashinga Sports Club, Highfield, Harare",106
+238,Al Amerat Cricket Ground Oman Cricket (Ministry Turf 2),89
+239,"Hazelaarweg, Rotterdam",125
+240,"Brian Lara Stadium, Tarouba, Trinidad",126
+241,"Himachal Pradesh Cricket Association Stadium, Dharamsala",109
+242,"Bay Oval, Mount Maunganui",53
+243,"West End Park International Cricket Stadium, Doha",127
+244,"VRA Ground, Amstelveen",128
+245,"Tribhuvan University International Cricket Ground, Kirtipur",129
+246,"Cambusdoon New Ground, Ayr",94
+247,"Saurashtra Cricket Association Stadium, Rajkot",83
+248,"Daren Sammy National Cricket Stadium, Gros Islet",23
+249,St Lawrence Ground,119
+250,Vidarbha C.A. Ground,103
+251,Nehru Stadium,28
+252,"Sardar Patel (Gujarat) Stadium, Motera",29
+253,"Forthill, Dundee",131
+254,"Sportpark Westvliet, The Hague",130
+255,John Davies Oval,112
+256,"Maple Leaf North-West Ground, King City",132
+257,Arbab Niaz Stadium,133
+258,Chittagong Divisional Stadium,102
+259,Nahar Singh Stadium,74
+260,"Nehru Stadium, Fatorda",134
+261,Maharani Usharaje Trust Cricket Ground,82
+262,Keenan Stadium,135
+263,"Antigua Recreation Ground, St John''s",33
+264,"Edgbaston, Birmingham",7
+265,Nehru Stadium,117
+266,Shere Bangla National Stadium,108
+267,Indian Petrochemicals Corporation Limited Sports Complex Ground,101
+268,Andhra Cricket Association-Visakhapatnam District Cricket Association Stadium,84
+269,Titwood,90
+270,"Civil Service Cricket Club, Stormont, Belfast",58
+271,P Saravanamuttu Stadium,13
+272,Sector 16 Stadium,57
+273,Vidarbha Cricket Association Ground,103
+274,Sher-e-Bangla National Cricket Stadium,46
+275,"Boland Park, Paarl",54
+276,Sheikhupura Stadium,150
+277,"Niaz Stadium, Hyderabad",136
+278,Dubai Sports City Cricket Stadium,122
+283,VRA Ground,128
+284,"McLean Park, Napier",38
+294,Maple Leaf North-West Ground,132
+299,"Wanderers Cricket Ground, Windhoek",91
+302,"Sportpark Maarschalkerweerd, Utrecht",141
+279,VRA Cricket Ground,128
+281,"Riverway Stadium, Townsville",110
+282,ICC Global Cricket Academy,122
+285,"Jade Stadium, Christchurch",39
+289,"MA Aziz Stadium, Chittagong",116
+292,"Hagley Oval, Christchurch",39
+293,"Boland Bank Park, Paarl",54
+300,"Sir Vivian Richards Stadium, North Sound, Antigua",24
+280,Mombasa Sports Club Ground,151
+287,"Arnos Vale Ground, Kingstown, St Vincent",115
+288,"Iqbal Stadium, Faisalabad",99
+298,"County Ground, Chelmsford",140
+301,Tribhuvan University International Cricket Ground,129
+286,"Queen''s Park (New), St George''s, Grenada",72
+290,"Mannofield Park, Aberdeen",120
+291,Sinhalese Sports Club,13
+295,Bert Sutcliffe Oval,137
+296,Sportpark Het Schootsveld,138
+297,"Mission Road Ground, Mong Kok",139
+303,"ICC Academy, Dubai",122
+304,"Choice Moosa Stadium, Pearland",142
+305,"Moosa Cricket Stadium, Pearland",142
+306,"St George''s Park, Gqeberha",70
+307,"University Oval, Dunedin",51
+308,"Amini Park, Port Moresby",143
+309,Mulpani Cricket Ground,144
+310,Affies Park,91
+311,Wanderers Cricket Ground,91
+312,Ruaraka Sports Club Ground,98
+313,Jaffery Sports Club Ground,98
+314,"City Oval, Pietermaritzburg",145
+315,Central Broward Regional Park Stadium Turf Ground,146
+316,"Saxton Oval, Nelson",8
+317,"Toronto Cricket, Skating and Curling Club",147
+318,Maple Leaf North-West Ground,147

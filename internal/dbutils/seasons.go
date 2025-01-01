@@ -52,9 +52,7 @@ func ReadSeasons(ctx context.Context, db DB_Exec, queryMap url.Values) (response
 
 	seasons, err := pgx.CollectRows(rows, func(row pgx.CollectableRow) (string, error) {
 		var season string
-
 		err := rows.Scan(&season)
-
 		return season, err
 	})
 

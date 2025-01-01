@@ -29,9 +29,9 @@ func InsertSeries(ctx context.Context, db *pgxpool.Pool, series *models.Series) 
 		}
 	}()
 
-	query := `INSERT INTO series (name, is_male, playing_level, playing_format, season, tournament_id, parent_series_id, start_date, end_date, winner_team_id, final_status) VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11) RETURNING id`
+	query := `INSERT INTO series (name, is_male, playing_level, playing_format, season, tournament_id, tour_flag, start_date, end_date, winner_team_id, final_status) VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11) RETURNING id`
 
-	err = tx.QueryRow(ctx, query, series.Name, series.IsMale, series.PlayingLevel, series.PlayingFormat, series.Season, series.TournamentId, series.ParentSeriesId, series.StartDate, series.EndDate, series.WinnerTeamId, series.FinalStatus).Scan(&seriesId)
+	err = tx.QueryRow(ctx, query, series.Name, series.IsMale, series.PlayingLevel, series.PlayingFormat, series.Season, series.TournamentId, series.TourFlag, series.StartDate, series.EndDate, series.WinnerTeamId, series.FinalStatus).Scan(&seriesId)
 	if err != nil {
 		return seriesId, err
 	}

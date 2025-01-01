@@ -7,20 +7,52 @@ import (
 	"net/url"
 
 	"github.com/jackc/pgx/v5"
+	"github.com/jackc/pgx/v5/pgtype"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/mainlycricket/CricKendra/internal/models"
 	"github.com/mainlycricket/CricKendra/internal/responses"
 	"github.com/mainlycricket/CricKendra/pkg/pgxutils"
 )
 
-func InsertMatch(ctx context.Context, db DB_Exec, match *models.Match) (int64, error) {
-	var id int64
+func InsertMatch(ctx context.Context, db *pgxpool.Pool, match *models.Match) (int64, error) {
+	var matchId int64
 
-	query := `INSERT INTO matches (start_date, start_time, team1_id, team2_id, is_male, series_id, ground_id, is_neutral_venue, current_status, final_result, home_team_id, away_team_id, match_type, playing_level, playing_format, season, is_day_night, outcome_special_method, toss_winner_team_id, toss_loser_team_id, is_toss_decision_bat, match_winner_team_id, match_loser_team_id, bowl_out_winner_id, super_over_winner_id, is_won_by_innings, is_won_by_runs, win_margin, balls_remaining_after_win, balls_per_over, cricsheet_id, is_bbb_done, event_match_number, end_date) VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22, $23, $24, $25, $26, $27, $28, $29, $30, $31, $32, $33, $34) RETURNING id`
+	tx, err := db.Begin(ctx)
+	if err != nil {
+		return matchId, err
+	}
 
-	err := db.QueryRow(ctx, query, match.StartDate, match.StartTime, match.Team1Id, match.Team2Id, match.IsMale, match.SeriesId, match.GroundId, match.IsNeutralVenue, match.CurrentStatus, match.FinalResult, match.HomeTeamId, match.AwayTeamId, match.MatchType, match.PlayingLevel, match.PlayingFormat, match.Season, match.IsDayNight, match.OutcomeSpecialMethod, match.TossWinnerId, match.TossLoserId, match.IsTossDecisionBat, match.MatchWinnerId, match.MatchLoserId, match.BowlOutWinnerId, match.SuperOverWinnerId, match.IsWonByInnings, match.IsWonByRuns, match.WinMargin, match.BallsMargin, match.BallsPerOver, match.CricsheetId, match.IsBBBDone, match.EventMatchNumber, match.EndDate).Scan(&id)
+	defer func() {
+		if err != nil {
+			tx.Rollback(ctx)
+		} else {
+			tx.Commit(ctx)
+		}
+	}()
 
-	return id, err
+	query := `INSERT INTO matches (start_date, start_time, team1_id, team2_id, is_male, main_series_id, ground_id, is_neutral_venue, current_status, final_result, home_team_id, away_team_id, match_type, playing_level, playing_format, season, is_day_night, outcome_special_method, toss_winner_team_id, toss_loser_team_id, is_toss_decision_bat, match_winner_team_id, match_loser_team_id, bowl_out_winner_id, super_over_winner_id, is_won_by_innings, is_won_by_runs, win_margin, balls_remaining_after_win, balls_per_over, cricsheet_id, is_bbb_done, event_match_number, end_date) VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22, $23, $24, $25, $26, $27, $28, $29, $30, $31, $32, $33, $34) RETURNING id`
+
+	err = db.QueryRow(ctx, query, match.StartDate, match.StartTime, match.Team1Id, match.Team2Id, match.IsMale, match.MainSeriesId, match.GroundId, match.IsNeutralVenue, match.CurrentStatus, match.FinalResult, match.HomeTeamId, match.AwayTeamId, match.MatchType, match.PlayingLevel, match.PlayingFormat, match.Season, match.IsDayNight, match.OutcomeSpecialMethod, match.TossWinnerId, match.TossLoserId, match.IsTossDecisionBat, match.MatchWinnerId, match.MatchLoserId, match.BowlOutWinnerId, match.SuperOverWinnerId, match.IsWonByInnings, match.IsWonByRuns, match.WinMargin, match.BallsMargin, match.BallsPerOver, match.CricsheetId, match.IsBBBDone, match.EventMatchNumber, match.EndDate).Scan(&matchId)
+
+	if len(match.SeriesListId) > 0 {
+		if err = UpsertMatchSeriesEntries(ctx, tx, matchId, match.SeriesListId); err != nil {
+			return matchId, err
+		}
+	}
+
+	return matchId, err
+}
+
+func UpsertMatchSeriesEntries(ctx context.Context, db DB_Exec, matchId int64, seriesListId []pgtype.Int8) error {
+	query := `INSERT INTO match_series_entries (match_id, series_id) VALUES ($1, $2) ON CONFLICT (match_id, series_id) DO NOTHING`
+
+	batch := &pgx.Batch{}
+	for _, seriesId := range seriesListId {
+		batch.Queue(query, matchId, seriesId)
+	}
+
+	batchResults := db.SendBatch(ctx, batch)
+	return batchResults.Close()
 }
 
 func ReadMatches(ctx context.Context, db DB_Exec, queryMap url.Values) (responses.AllMatchesResponse, error) {
@@ -49,14 +81,14 @@ func ReadMatches(ctx context.Context, db DB_Exec, queryMap url.Values) (response
 	matches.current_status, matches.final_result, matches.outcome_special_method, matches.match_winner_team_id, matches.bowl_out_winner_id, matches.super_over_winner_id, matches.is_won_by_innings, matches.is_won_by_runs, matches.win_margin, matches.balls_remaining_after_win, 
 	
 	get_match_innings(matches.id)::team_innings_short_info[] AS innings,
-	matches.series_id, series.name
+	matches.main_series_id, series.name
 	
 	FROM matches 
 	
 	LEFT JOIN teams t1 ON matches.team1_id = t1.id 
 	LEFT JOIN teams t2 ON matches.team2_id = t2.id 
 	LEFT JOIN grounds ON matches.ground_id = grounds.id
-	LEFT JOIN series ON matches.series_id = series.id
+	LEFT JOIN series ON matches.main_series_id = series.id
 	
 	%s %s %s`, queryInfoOutput.WhereClause, queryInfoOutput.OrderByClause, queryInfoOutput.PaginationClause)
 
@@ -92,7 +124,7 @@ func ReadMatchById(ctx context.Context, db DB_Exec, matchId int) (responses.Sing
 	matches.id, matches.playing_level, matches.playing_format, matches.match_type, matches.cricsheet_id, matches.balls_per_over, matches.event_match_number, matches.start_date, matches.end_date, matches.start_time, matches.is_day_night, matches.season,
 	
 	matches.ground_id, grounds.name,
-	matches.series_id, series.name,
+	matches.main_series_id, series.name,
 	
 	matches.team1_id, t1.name, t1.image_url, matches.team2_id, t2.name, t2.image_url,
 	
@@ -109,7 +141,7 @@ func ReadMatchById(ctx context.Context, db DB_Exec, matchId int) (responses.Sing
 	LEFT JOIN teams t1 ON matches.team1_id = t1.id 
 	LEFT JOIN teams t2 ON matches.team2_id = t2.id 
 	LEFT JOIN grounds ON matches.ground_id = grounds.id
-	LEFT JOIN series ON matches.series_id = series.id
+	LEFT JOIN series ON matches.main_series_id = series.id
 	WHERE matches.id = $1`
 
 	row := db.QueryRow(ctx, query, matchId)
@@ -120,9 +152,9 @@ func ReadMatchById(ctx context.Context, db DB_Exec, matchId int) (responses.Sing
 }
 
 func UpdateMatch(ctx context.Context, db DB_Exec, match *models.Match) error {
-	query := `UPDATE matches SET start_date = $1, start_time = $2, team1_id = $3, team2_id = $4, is_male = $5, series_id = $6, ground_id = $7, is_neutral_venue = $8, current_status = $9, final_result = $10, home_team_id = $11, away_team_id = $12, match_type = $13, playing_level = $14, playing_format = $15, season = $16, is_day_night = $17, outcome_special_method = $18, toss_winner_team_id = $19, toss_loser_team_id = $20, is_toss_decision_bat = $21, match_winner_team_id = $22, match_loser_team_id = $23, bowl_out_winner_id = $24, super_over_winner_id = $25, is_won_by_innings = $26, is_won_by_runs = $27, win_margin = $28, balls_remaining_after_win = $29, balls_per_over = $30, cricsheet_id = $31, is_bbb_done = $32, event_match_number = $33, end_date = $34 WHERE id = $35`
+	query := `UPDATE matches SET start_date = $1, start_time = $2, team1_id = $3, team2_id = $4, is_male = $5, main_series_id = $6, ground_id = $7, is_neutral_venue = $8, current_status = $9, final_result = $10, home_team_id = $11, away_team_id = $12, match_type = $13, playing_level = $14, playing_format = $15, season = $16, is_day_night = $17, outcome_special_method = $18, toss_winner_team_id = $19, toss_loser_team_id = $20, is_toss_decision_bat = $21, match_winner_team_id = $22, match_loser_team_id = $23, bowl_out_winner_id = $24, super_over_winner_id = $25, is_won_by_innings = $26, is_won_by_runs = $27, win_margin = $28, balls_remaining_after_win = $29, balls_per_over = $30, cricsheet_id = $31, is_bbb_done = $32, event_match_number = $33, end_date = $34 WHERE id = $35`
 
-	cmd, err := db.Exec(ctx, query, match.StartDate, match.StartTime, match.Team1Id, match.Team2Id, match.IsMale, match.SeriesId, match.GroundId, match.IsNeutralVenue, match.CurrentStatus, match.FinalResult, match.HomeTeamId, match.AwayTeamId, match.MatchType, match.PlayingLevel, match.PlayingFormat, match.Season, match.IsDayNight, match.OutcomeSpecialMethod, match.TossWinnerId, match.TossLoserId, match.IsTossDecisionBat, match.MatchWinnerId, match.MatchLoserId, match.BowlOutWinnerId, match.SuperOverWinnerId, match.IsWonByInnings, match.IsWonByRuns, match.WinMargin, match.BallsMargin, match.BallsPerOver, match.CricsheetId, match.IsBBBDone, match.EventMatchNumber, match.EndDate, match.Id)
+	cmd, err := db.Exec(ctx, query, match.StartDate, match.StartTime, match.Team1Id, match.Team2Id, match.IsMale, match.MainSeriesId, match.GroundId, match.IsNeutralVenue, match.CurrentStatus, match.FinalResult, match.HomeTeamId, match.AwayTeamId, match.MatchType, match.PlayingLevel, match.PlayingFormat, match.Season, match.IsDayNight, match.OutcomeSpecialMethod, match.TossWinnerId, match.TossLoserId, match.IsTossDecisionBat, match.MatchWinnerId, match.MatchLoserId, match.BowlOutWinnerId, match.SuperOverWinnerId, match.IsWonByInnings, match.IsWonByRuns, match.WinMargin, match.BallsMargin, match.BallsPerOver, match.CricsheetId, match.IsBBBDone, match.EventMatchNumber, match.EndDate, match.Id)
 
 	if err != nil {
 		return err
@@ -139,13 +171,13 @@ func UpsertCricsheetMatch(ctx context.Context, db DB_Exec, match *models.Match) 
 	var id int64
 
 	query := `
-	INSERT INTO matches (start_date, start_time, team1_id, team2_id, is_male, series_id, ground_id, is_neutral_venue, current_status, final_result, home_team_id, away_team_id, match_type, playing_level, playing_format, season, is_day_night, outcome_special_method, toss_winner_team_id, toss_loser_team_id, is_toss_decision_bat, match_winner_team_id, match_loser_team_id, bowl_out_winner_id, super_over_winner_id, is_won_by_innings, is_won_by_runs, win_margin, balls_remaining_after_win, balls_per_over, cricsheet_id, is_bbb_done, event_match_number, end_date) VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22, $23, $24, $25, $26, $27, $28, $29, $30, $31, $32, $33, $34)
+	INSERT INTO matches (start_date, start_time, team1_id, team2_id, is_male, main_series_id, ground_id, is_neutral_venue, current_status, final_result, home_team_id, away_team_id, match_type, playing_level, playing_format, season, is_day_night, outcome_special_method, toss_winner_team_id, toss_loser_team_id, is_toss_decision_bat, match_winner_team_id, match_loser_team_id, bowl_out_winner_id, super_over_winner_id, is_won_by_innings, is_won_by_runs, win_margin, balls_remaining_after_win, balls_per_over, cricsheet_id, is_bbb_done, event_match_number, end_date) VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22, $23, $24, $25, $26, $27, $28, $29, $30, $31, $32, $33, $34)
 	ON CONFLICT (cricsheet_id)
-	DO UPDATE SET start_date = $1, start_time = $2, team1_id = $3, team2_id = $4, is_male = $5, series_id = $6, ground_id = $7, is_neutral_venue = $8, current_status = $9, final_result = $10, home_team_id = $11, away_team_id = $12, match_type = $13, playing_level = $14, playing_format = $15, season = $16, is_day_night = $17, outcome_special_method = $18, toss_winner_team_id = $19, toss_loser_team_id = $20, is_toss_decision_bat = $21, match_winner_team_id = $22, match_loser_team_id = $23, bowl_out_winner_id = $24, super_over_winner_id = $25, is_won_by_innings = $26, is_won_by_runs = $27, win_margin = $28, balls_remaining_after_win = $29, balls_per_over = $30, cricsheet_id = $31, is_bbb_done = $32, event_match_number = $33, end_date = $34
+	DO UPDATE SET start_date = $1, start_time = $2, team1_id = $3, team2_id = $4, is_male = $5, main_series_id = $6, ground_id = $7, is_neutral_venue = $8, current_status = $9, final_result = $10, home_team_id = $11, away_team_id = $12, match_type = $13, playing_level = $14, playing_format = $15, season = $16, is_day_night = $17, outcome_special_method = $18, toss_winner_team_id = $19, toss_loser_team_id = $20, is_toss_decision_bat = $21, match_winner_team_id = $22, match_loser_team_id = $23, bowl_out_winner_id = $24, super_over_winner_id = $25, is_won_by_innings = $26, is_won_by_runs = $27, win_margin = $28, balls_remaining_after_win = $29, balls_per_over = $30, cricsheet_id = $31, is_bbb_done = $32, event_match_number = $33, end_date = $34
 	RETURNING id
 	`
 
-	err := db.QueryRow(ctx, query, match.StartDate, match.StartTime, match.Team1Id, match.Team2Id, match.IsMale, match.SeriesId, match.GroundId, match.IsNeutralVenue, match.CurrentStatus, match.FinalResult, match.HomeTeamId, match.AwayTeamId, match.MatchType, match.PlayingLevel, match.PlayingFormat, match.Season, match.IsDayNight, match.OutcomeSpecialMethod, match.TossWinnerId, match.TossLoserId, match.IsTossDecisionBat, match.MatchWinnerId, match.MatchLoserId, match.BowlOutWinnerId, match.SuperOverWinnerId, match.IsWonByInnings, match.IsWonByRuns, match.WinMargin, match.BallsMargin, match.BallsPerOver, match.CricsheetId, match.IsBBBDone, match.EventMatchNumber, match.EndDate).Scan(&id)
+	err := db.QueryRow(ctx, query, match.StartDate, match.StartTime, match.Team1Id, match.Team2Id, match.IsMale, match.MainSeriesId, match.GroundId, match.IsNeutralVenue, match.CurrentStatus, match.FinalResult, match.HomeTeamId, match.AwayTeamId, match.MatchType, match.PlayingLevel, match.PlayingFormat, match.Season, match.IsDayNight, match.OutcomeSpecialMethod, match.TossWinnerId, match.TossLoserId, match.IsTossDecisionBat, match.MatchWinnerId, match.MatchLoserId, match.BowlOutWinnerId, match.SuperOverWinnerId, match.IsWonByInnings, match.IsWonByRuns, match.WinMargin, match.BallsMargin, match.BallsPerOver, match.CricsheetId, match.IsBBBDone, match.EventMatchNumber, match.EndDate).Scan(&id)
 
 	return id, err
 }
@@ -153,11 +185,11 @@ func UpsertCricsheetMatch(ctx context.Context, db DB_Exec, match *models.Match) 
 func ReadMatchByCricsheetId(ctx context.Context, db DB_Exec, cricsheetId string) (models.Match, error) {
 	var match models.Match
 
-	query := `SELECT id, start_date, start_time, end_date, team1_id, team2_id, is_male, series_id, ground_id, is_neutral_venue, current_status, final_result, home_team_id, away_team_id, match_type, playing_level, playing_format, season, is_day_night, outcome_special_method, toss_winner_team_id, toss_loser_team_id, is_toss_decision_bat, match_winner_team_id, match_loser_team_id, bowl_out_winner_id, super_over_winner_id, is_won_by_innings, is_won_by_runs, win_margin, balls_remaining_after_win, balls_per_over, cricsheet_id, is_bbb_done, event_match_number FROM matches WHERE cricsheet_id = $1`
+	query := `SELECT id, start_date, start_time, end_date, team1_id, team2_id, is_male, main_series_id, ground_id, is_neutral_venue, current_status, final_result, home_team_id, away_team_id, match_type, playing_level, playing_format, season, is_day_night, outcome_special_method, toss_winner_team_id, toss_loser_team_id, is_toss_decision_bat, match_winner_team_id, match_loser_team_id, bowl_out_winner_id, super_over_winner_id, is_won_by_innings, is_won_by_runs, win_margin, balls_remaining_after_win, balls_per_over, cricsheet_id, is_bbb_done, event_match_number FROM matches WHERE cricsheet_id = $1`
 
 	row := db.QueryRow(ctx, query, cricsheetId)
 
-	err := row.Scan(&match.Id, &match.StartDate, &match.StartTime, &match.EndDate, &match.Team1Id, &match.Team2Id, &match.IsMale, &match.SeriesId, &match.GroundId, &match.IsNeutralVenue, &match.CurrentStatus, &match.FinalResult, &match.HomeTeamId, &match.AwayTeamId, &match.MatchType, &match.PlayingLevel, &match.PlayingFormat, &match.Season, &match.IsDayNight, &match.OutcomeSpecialMethod, &match.TossWinnerId, &match.TossLoserId, &match.IsTossDecisionBat, &match.MatchWinnerId, &match.MatchLoserId, &match.BowlOutWinnerId, &match.SuperOverWinnerId, &match.IsWonByInnings, &match.IsWonByRuns, &match.WinMargin, &match.BallsMargin, &match.BallsPerOver, &match.CricsheetId, &match.IsBBBDone, &match.EventMatchNumber)
+	err := row.Scan(&match.Id, &match.StartDate, &match.StartTime, &match.EndDate, &match.Team1Id, &match.Team2Id, &match.IsMale, &match.MainSeriesId, &match.GroundId, &match.IsNeutralVenue, &match.CurrentStatus, &match.FinalResult, &match.HomeTeamId, &match.AwayTeamId, &match.MatchType, &match.PlayingLevel, &match.PlayingFormat, &match.Season, &match.IsDayNight, &match.OutcomeSpecialMethod, &match.TossWinnerId, &match.TossLoserId, &match.IsTossDecisionBat, &match.MatchWinnerId, &match.MatchLoserId, &match.BowlOutWinnerId, &match.SuperOverWinnerId, &match.IsWonByInnings, &match.IsWonByRuns, &match.WinMargin, &match.BallsMargin, &match.BallsPerOver, &match.CricsheetId, &match.IsBBBDone, &match.EventMatchNumber)
 
 	return match, err
 }

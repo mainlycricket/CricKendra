@@ -6,14 +6,12 @@ import (
 	"log"
 	"net/http"
 	"os"
-	"path/filepath"
 
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
 	"github.com/go-chi/cors"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/mainlycricket/CricKendra/internal/dbutils"
-	"github.com/mainlycricket/CricKendra/pkg/dotenv"
 )
 
 var DB_POOL *pgxpool.Pool
@@ -64,16 +62,7 @@ func main() {
 }
 
 func initDB() error {
-	basePath, err := os.Getwd()
-	if err != nil {
-		return fmt.Errorf("failed to read base path: %v", err)
-	}
-
-	dotEnvPath := filepath.Join(basePath, ".env")
-	err = dotenv.ReadDotEnv(dotEnvPath)
-	if err != nil {
-		return fmt.Errorf("error while reading .env file: %v", err)
-	}
+	var err error
 
 	ctx, DB_URL := context.Background(), os.Getenv("DB_URL")
 	DB_POOL, err = dbutils.Connect(ctx, DB_URL)

@@ -2,8 +2,8 @@
 -- PostgreSQL database dump
 --
 
--- Dumped from database version 16.4 (Ubuntu 16.4-1.pgdg22.04+2)
--- Dumped by pg_dump version 17.0 (Ubuntu 17.0-1.pgdg22.04+1)
+-- Dumped from database version 16.6 (Ubuntu 16.6-1.pgdg22.04+1)
+-- Dumped by pg_dump version 17.2 (Ubuntu 17.2-1.pgdg22.04+1)
 
 SET statement_timeout = 0;
 SET lock_timeout = 0;
@@ -365,6 +365,18 @@ CREATE TYPE public.playing_status AS ENUM (
 
 
 ALTER TYPE public.playing_status OWNER TO postgres;
+
+--
+-- Name: tour_flag; Type: TYPE; Schema: public; Owner: postgres
+--
+
+CREATE TYPE public.tour_flag AS ENUM (
+    'tour_series',
+    'tour_sub_series'
+);
+
+
+ALTER TYPE public.tour_flag OWNER TO postgres;
 
 --
 -- Name: user_role; Type: TYPE; Schema: public; Owner: postgres
@@ -1671,6 +1683,18 @@ ALTER SEQUENCE public.innings_id_seq OWNED BY public.innings.id;
 
 
 --
+-- Name: match_series_entries; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public.match_series_entries (
+    match_id integer NOT NULL,
+    series_id integer NOT NULL
+);
+
+
+ALTER TABLE public.match_series_entries OWNER TO postgres;
+
+--
 -- Name: match_squad_entries; Type: TABLE; Schema: public; Owner: postgres
 --
 
@@ -1697,7 +1721,7 @@ CREATE TABLE public.matches (
     team1_id integer,
     team2_id integer,
     is_male boolean NOT NULL,
-    series_id integer,
+    main_series_id integer,
     ground_id integer,
     current_status text,
     home_team_id integer,
@@ -1866,11 +1890,11 @@ CREATE TABLE public.series (
     playing_format public.playing_format NOT NULL,
     season text,
     tournament_id integer,
-    parent_series_id integer,
     start_date date,
     end_date date,
     winner_team_id integer,
-    final_status text
+    final_status text,
+    tour_flag public.tour_flag
 );
 
 
@@ -2267,6 +2291,14 @@ ALTER TABLE ONLY public.innings
 
 
 --
+-- Name: match_series_entries match_series_entries_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.match_series_entries
+    ADD CONSTRAINT match_series_entries_pkey PRIMARY KEY (match_id, series_id);
+
+
+--
 -- Name: match_squad_entries match_squads_player_id_match_id_key; Type: CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -2547,6 +2579,22 @@ ALTER TABLE ONLY public.innings
 
 
 --
+-- Name: match_series_entries match_series_entries_match_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.match_series_entries
+    ADD CONSTRAINT match_series_entries_match_id_fkey FOREIGN KEY (match_id) REFERENCES public.matches(id);
+
+
+--
+-- Name: match_series_entries match_series_entries_series_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.match_series_entries
+    ADD CONSTRAINT match_series_entries_series_id_fkey FOREIGN KEY (series_id) REFERENCES public.series(id);
+
+
+--
 -- Name: match_squad_entries match_squads_team_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -2615,7 +2663,7 @@ ALTER TABLE ONLY public.matches
 --
 
 ALTER TABLE ONLY public.matches
-    ADD CONSTRAINT matches_series_id_fkey FOREIGN KEY (series_id) REFERENCES public.series(id) ON UPDATE CASCADE ON DELETE CASCADE NOT VALID;
+    ADD CONSTRAINT matches_series_id_fkey FOREIGN KEY (main_series_id) REFERENCES public.series(id) ON UPDATE CASCADE ON DELETE CASCADE NOT VALID;
 
 
 --
@@ -2696,14 +2744,6 @@ ALTER TABLE ONLY public.player_team_entries
 
 ALTER TABLE ONLY public.player_team_entries
     ADD CONSTRAINT player_teams_team_id_fkey FOREIGN KEY (team_id) REFERENCES public.teams(id) ON UPDATE CASCADE ON DELETE CASCADE;
-
-
---
--- Name: series series_parent_series_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
---
-
-ALTER TABLE ONLY public.series
-    ADD CONSTRAINT series_parent_series_id_fkey FOREIGN KEY (parent_series_id) REFERENCES public.series(id) ON UPDATE CASCADE ON DELETE CASCADE NOT VALID;
 
 
 --

@@ -108,19 +108,19 @@ type Season struct {
 }
 
 type Series struct {
-	Id             pgtype.Int8   `json:"id"`
-	Name           pgtype.Text   `json:"name"`
-	IsMale         pgtype.Bool   `json:"is_male"`
-	PlayingLevel   pgtype.Text   `json:"playing_level"`
-	PlayingFormat  pgtype.Text   `json:"playing_format"`
-	Season         pgtype.Text   `json:"season"`
-	TeamsId        []pgtype.Int8 `json:"teams_id"`
-	TournamentId   pgtype.Int8   `json:"tournament_id"`
-	ParentSeriesId pgtype.Int8   `json:"parent_series_id"`
-	StartDate      pgtype.Date   `json:"start_date"`
-	EndDate        pgtype.Date   `json:"end_date"`
-	WinnerTeamId   pgtype.Int8   `json:"winner_team_id"`
-	FinalStatus    pgtype.Text   `json:"final_status"`
+	Id            pgtype.Int8   `json:"id"`
+	Name          pgtype.Text   `json:"name"`
+	IsMale        pgtype.Bool   `json:"is_male"`
+	PlayingLevel  pgtype.Text   `json:"playing_level"`
+	PlayingFormat pgtype.Text   `json:"playing_format"`
+	Season        pgtype.Text   `json:"season"`
+	TeamsId       []pgtype.Int8 `json:"teams_id"`
+	TournamentId  pgtype.Int8   `json:"tournament_id"`
+	TourFlag      pgtype.Text   `json:"tour_flag"`
+	StartDate     pgtype.Date   `json:"start_date"`
+	EndDate       pgtype.Date   `json:"end_date"`
+	WinnerTeamId  pgtype.Int8   `json:"winner_team_id"`
+	FinalStatus   pgtype.Text   `json:"final_status"`
 }
 
 type SeriesTeamEntries struct {
@@ -170,7 +170,8 @@ type Match struct {
 	Team1Id              pgtype.Int8        `json:"team1_id"`
 	Team2Id              pgtype.Int8        `json:"team2_id"`
 	IsMale               pgtype.Bool        `json:"is_male"`
-	SeriesId             pgtype.Int8        `json:"series_id"`
+	SeriesListId         []pgtype.Int8      `json:"series_list_id"`
+	MainSeriesId         pgtype.Int8        `json:"main_series_id"`
 	GroundId             pgtype.Int8        `json:"ground_id"`
 	IsNeutralVenue       pgtype.Bool        `json:"is_neutral_venue"`
 	CurrentStatus        pgtype.Text        `json:"current_status"`
@@ -196,6 +197,11 @@ type Match struct {
 	BallsMargin          pgtype.Int8        `json:"balls_remaining_after_win"` // successful chases
 	BallsPerOver         pgtype.Int8        `json:"balls_per_over"`
 	IsBBBDone            pgtype.Bool        `json:"is_bbb_done"`
+}
+
+type MatchSeriesEntry struct {
+	MatchId  pgtype.Int8 `json:"match_id"`
+	SeriesId pgtype.Int8 `json:"series_id"`
 }
 
 type PlayerTeamEntry struct {

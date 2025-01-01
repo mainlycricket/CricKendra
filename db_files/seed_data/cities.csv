@@ -1,0 +1,152 @@
+id,name,host_nation_id
+1,Potchefstroom,1
+2,Manchester,2
+3,Southampton,2
+4,Nottingham,2
+5,Bristol,2
+6,London,2
+7,Birmingham,2
+8,Nelson,8
+9,Bridgetown,3
+10,Auckland,8
+11,Jamaica,3
+12,Leeds,2
+13,Colombo,5
+14,Hambantota,5
+15,Hobart,7
+16,Perth,7
+17,Bloemfontein,1
+18,Port Elizabeth,1
+19,Centurion,1
+20,Johannesburg,1
+21,Cape Town,1
+22,Cardiff,2
+23,St Lucia,3
+24,North Sound,3
+25,Lucknow,11
+26,Mumbai,11
+27,Bengaluru,11
+28,Pune,11
+29,Ahmedabad,11
+30,Greater Noida,11
+31,Barbados,3
+32,Brisbane,7
+33,Antigua,3
+34,Dublin,4
+35,Chester-le-Street,2
+36,Hamilton,8
+37,Wellington,8
+38,Napier,8
+39,Christchurch,8
+40,Kingston,3
+41,Durban,1
+42,Guyana,3
+43,Delhi,11
+44,Bulawayo,13
+45,Chennai,11
+46,Mirpur,11
+47,Kandy,5
+48,Dominica,3
+49,Trinidad,3
+50,Benoni,1
+51,Dunedin,8
+52,Abu Dhabi,9
+53,Mount Maunganui,8
+54,Paarl,1
+55,East London,1
+56,Hyderabad,11
+57,Chandigarh,11
+58,Belfast,4
+59,Sydney,7
+60,Adelaide,7
+61,St Vincent,3
+62,Multan,10
+63,St Kitts,3
+64,Kimberley,1
+65,Cairns,7
+66,Canberra,7
+67,Melbourne,7
+68,Port of Spain,3
+69,Gros Islet,3
+70,Gqeberha,1
+71,Thiruvananthapuram,11
+72,St George's,3
+73,Sharjah,9
+74,Faridabad,11
+75,Lahore,10
+76,Fatullah,14
+77,Kochi,11
+78,Dharmasala,11
+79,Kolkata,11
+80,Ranchi,11
+81,Kanpur,11
+82,Indore,11
+83,Rajkot,11
+84,Visakhapatnam,11
+85,Cuttack,11
+86,Providence,3
+87,Karachi,10
+88,Edinburgh,12
+89,Al Amarat,17
+90,Glasgow,12
+91,Windhoek,3
+92,Grenada,3
+93,Jaipur,11
+94,Ayr,12
+95,Kuala Lumpur,18
+96,Bogra,14
+97,Taunton,2
+98,Nairobi,3
+99,Faisalabad,10
+100,Darwin,7
+101,Vadodara,11
+102,Chittagong,14
+103,Nagpur,11
+104,Bangalore,11
+105,Gwalior,11
+106,Harare,13
+107,Whangarei,8
+108,Dhaka,14
+109,Dharamsala,11
+110,Townsville,7
+111,Khulna,14
+112,Queenstown,8
+113,Dambulla,5
+114,Sylhet,14
+115,Kingstown,8
+116,Chattogram,14
+117,Guwahati,11
+118,Dehra Dun,11
+119,Canterbury,2
+120,Aberdeen,12
+121,Bready,12
+122,Dubai,9
+123,Rawalpindi,10
+124,Raipur,11
+125,Rotterdam,15
+126,Tarouba,3
+127,Doha,9
+128,Amstelveen,15
+129,Kirtipur,16
+130,The Hague,15
+131,Dundee,12
+132,King City,19
+133,Peshawar,10
+134,Margao,11
+135,Jamshedpur,11
+136,Sind,10
+137,Lincoln,8
+138,Deventer,15
+139,Hong Kong,20
+140,Chelmsford,2
+141,Utrecht,15
+142,Pearland,6
+143,Port Moresby,3
+144,Kathmandu,16
+145,Pietermaritzburg,1
+146,Lauderhill,6
+147,Toronto,19
+148,Pallekele ,5
+149,Galle,5
+150,sheikhupura,10
+151,Mombasa,3
