@@ -1268,7 +1268,7 @@ CREATE TABLE public.batting_scorecards (
     id integer NOT NULL,
     innings_id integer NOT NULL,
     batter_id integer NOT NULL,
-    batting_position integer NOT NULL,
+    batting_position integer,
     runs_scored integer DEFAULT 0,
     balls_faced integer DEFAULT 0,
     minutes_batted integer DEFAULT 0,
@@ -1358,14 +1358,15 @@ CREATE TABLE public.bowling_scorecards (
     id integer NOT NULL,
     innings_id integer NOT NULL,
     bowler_id integer NOT NULL,
-    bowling_position integer NOT NULL,
+    bowling_position integer,
     wickets_taken integer DEFAULT 0,
     runs_conceded integer DEFAULT 0,
     balls_bowled integer DEFAULT 0,
     fours_conceded integer DEFAULT 0,
     sixes_conceded integer DEFAULT 0,
     wides_conceded integer DEFAULT 0,
-    noballs_conceded integer DEFAULT 0
+    noballs_conceded integer DEFAULT 0,
+    maiden_overs integer DEFAULT 0
 );
 
 
@@ -1469,7 +1470,7 @@ ALTER SEQUENCE public.continents_id_seq OWNED BY public.continents.id;
 CREATE TABLE public.cricsheet_people (
     identifier text NOT NULL,
     name text NOT NULL,
-    unique_name text NOT NULL,
+    unique_name text,
     key_bcci text,
     key_bcci_2 text,
     key_bigbash text,
@@ -1536,7 +1537,8 @@ CREATE TABLE public.deliveries (
     commentary text,
     created_at timestamp with time zone,
     updated_at timestamp with time zone,
-    total_extras integer
+    total_extras integer,
+    innings_delivery_number integer NOT NULL
 );
 
 
@@ -1640,7 +1642,7 @@ ALTER SEQUENCE public.host_nations_id_seq OWNED BY public.host_nations.id;
 CREATE TABLE public.innings (
     id integer NOT NULL,
     match_id integer NOT NULL,
-    innings_number integer NOT NULL,
+    innings_number integer,
     batting_team_id integer NOT NULL,
     bowling_team_id integer NOT NULL,
     total_runs integer DEFAULT 0,
@@ -1654,7 +1656,7 @@ CREATE TABLE public.innings (
     is_super_over boolean DEFAULT false,
     innings_end public.innings_end,
     target_runs integer,
-    target_balls integer
+    max_overs double precision
 );
 
 

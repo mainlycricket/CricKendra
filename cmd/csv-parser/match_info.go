@@ -56,6 +56,21 @@ type TeamInfo struct {
 	Players map[string]string // map[playerName]cricsheetId
 }
 
+func (teamInfo TeamInfo) GetPlayersId() ([]int64, error) {
+	var playersId []int64
+
+	for playerName, cricsheetId := range teamInfo.Players {
+		playerKey := PlayerKey{CricsheetId: cricsheetId}
+		player, ok := PlayersCache.Get(playerKey)
+		if !ok {
+			return nil, fmt.Errorf("player %s not found in cache", playerName)
+		}
+		playersId = append(playersId, player.Id.Int64)
+	}
+
+	return playersId, nil
+}
+
 type MatchInfoResponse struct {
 	Match     models.Match
 	Team1Info TeamInfo
@@ -75,7 +90,7 @@ func extractMatchInfo(filePath, playingLevel, playingFormat string, isMale bool,
 	defer func() {
 		if mainError != nil {
 			channel <- MatchInfoResponse{
-				Err: fmt.Errorf(" %s: %v", matchCricsheetId, mainError),
+				Err: fmt.Errorf("%s: %v", matchCricsheetId, mainError),
 			}
 		} else {
 			channel <- MatchInfoResponse{
@@ -97,7 +112,7 @@ func extractMatchInfo(filePath, playingLevel, playingFormat string, isMale bool,
 
 	match.IsMale = pgtype.Bool{Bool: isMale, Valid: true}
 	match.CricsheetId = pgtype.Text{String: matchCricsheetId, Valid: true}
-	match.IsNeutralVenue = pgtype.Bool{Bool: true, Valid: true}
+	match.IsNeutralVenue = pgtype.Bool{Bool: false, Valid: true}
 	match.PlayingFormat = pgtype.Text{String: playingFormat, Valid: true}
 	match.PlayingLevel = pgtype.Text{String: playingLevel, Valid: true}
 	match.FinalResult = pgtype.Text{String: "winner_decided", Valid: true}
@@ -143,7 +158,7 @@ func extractMatchInfo(filePath, playingLevel, playingFormat string, isMale bool,
 		}
 
 		if row[1] == "neutral_venue" && row[2] == "true" {
-			match.IsNeutralVenue = pgtype.Bool{Bool: false, Valid: true}
+			match.IsNeutralVenue = pgtype.Bool{Bool: true, Valid: true}
 			continue
 		}
 
@@ -311,13 +326,13 @@ func extractMatchInfo(filePath, playingLevel, playingFormat string, isMale bool,
 			playerName, cricsheetId := row[3], row[4]
 
 			if _, ok := team1.Players[playerName]; ok {
-				if err := handlePlayer(cricsheetId, match.IsMale.Bool); err != nil {
+				if err := handlePlayer(cricsheetId, playerName, match.IsMale.Bool); err != nil {
 					mainError = err
 					return
 				}
 				team1.Players[playerName] = cricsheetId
 			} else if _, ok := team2.Players[playerName]; ok {
-				if err := handlePlayer(cricsheetId, match.IsMale.Bool); err != nil {
+				if err := handlePlayer(cricsheetId, playerName, match.IsMale.Bool); err != nil {
 					mainError = err
 					return
 				}
@@ -395,7 +410,7 @@ func extractMatchInfo(filePath, playingLevel, playingFormat string, isMale bool,
 	}
 }
 
-func handlePlayer(cricsheetId string, isMale bool) error {
+func handlePlayer(cricsheetId, playerName string, isMale bool) error {
 	cacheKey := PlayerKey{CricsheetId: cricsheetId}
 	_, exists := PlayersCache.Get(cacheKey)
 	if exists {
@@ -418,10 +433,9 @@ func handlePlayer(cricsheetId string, isMale bool) error {
 	var player responses.AllPlayers
 
 	if len(dbResponse.Players) == 0 {
-		cricsheetPeople, err := dbutils.ReadCricsheetPeopleById(context.Background(), DB_POOL, cricsheetId)
-
+		cricsheetPeople, err := handleCricsheetPeople(cricsheetId, playerName)
 		if err != nil {
-			return fmt.Errorf(`failed to read player with id %s from cricsheet_people: %v`, cricsheetId, err)
+			return fmt.Errorf(`failed to handle cricsheet people %s: %v`, cricsheetId, err)
 		}
 
 		newPlayer := models.Player{
@@ -453,16 +467,19 @@ func handlePlayer(cricsheetId string, isMale bool) error {
 
 func handleEvent(eventName, team1Name, team2Name string, match *models.Match) ([]pgtype.Int8, error) {
 	var res []pgtype.Int8
+	var tourFlag string
 
 	team1, hostNations := getTourInfo(eventName)
 	if team1 != "" {
+		tourFlag = "tour_series"
+
 		team2 := team2Name
 		if team1 != team1Name {
 			team2 = team1Name
 		}
 
 		subSeriesName := fmt.Sprintf("%s in %s %s series", team1, team2, match.PlayingFormat.String)
-		subSeriesId, err := handleSeries(subSeriesName, match)
+		subSeriesId, err := handleSeries(subSeriesName, "tour_sub_series", match)
 		if err != nil {
 			return nil, err
 		}
@@ -476,7 +493,7 @@ func handleEvent(eventName, team1Name, team2Name string, match *models.Match) ([
 		}
 	}
 
-	mainSeriesId, err := handleSeries(eventName, match)
+	mainSeriesId, err := handleSeries(eventName, tourFlag, match)
 	if err != nil {
 		return nil, err
 	}
@@ -485,12 +502,27 @@ func handleEvent(eventName, team1Name, team2Name string, match *models.Match) ([
 	return res, nil
 }
 
-func handleSeries(name string, match *models.Match) (pgtype.Int8, error) {
-	if renamedSeries, ok := renameData.Series[name]; ok {
+func handleSeries(name, tourFlag string, match *models.Match) (pgtype.Int8, error) {
+	if renamedSeries, ok := renameData.series[name]; ok {
 		name = renamedSeries
 	}
 
 	season, playingLevel, playingFormat, isMale := match.Season.String, match.PlayingLevel.String, match.PlayingFormat.String, match.IsMale.Bool
+
+	seriesSeasonKey := seriesSeasonKey{
+		playingFormat: playingFormat,
+		isMale:        isMale,
+		seriesName:    name,
+		season:        season,
+	}
+
+	if renamedSeason, ok := renameData.seriesSeasons[seriesSeasonKey]; ok {
+		if _, err := handleSeason(renamedSeason); err != nil {
+			return pgtype.Int8{}, err
+		}
+
+		season = renamedSeason
+	}
 
 	cacheKey := SeriesKey{
 		Name:          name,
@@ -538,7 +570,8 @@ func handleSeries(name string, match *models.Match) (pgtype.Int8, error) {
 		newSeries := models.Series{
 			Name:          pgtype.Text{String: name, Valid: true},
 			TeamsId:       []pgtype.Int8{match.Team1Id, match.Team2Id},
-			Season:        match.Season,
+			TourFlag:      pgtype.Text{String: tourFlag, Valid: tourFlag != ""},
+			Season:        pgtype.Text{String: season, Valid: true},
 			IsMale:        match.IsMale,
 			PlayingLevel:  match.PlayingLevel,
 			PlayingFormat: match.PlayingFormat,
@@ -689,11 +722,11 @@ func handleSeason(season string) (pgtype.Text, error) {
 }
 
 func handleVenue(venue, city string) (responses.AllGrounds, error) {
-	if renamedCity, ok := renameData.Cities[city]; ok {
+	if renamedCity, ok := renameData.cities[city]; ok {
 		city = renamedCity
 	}
 
-	if renamedVenue, ok := renameData.Grounds[venue]; ok {
+	if renamedVenue, ok := renameData.grounds[venue]; ok {
 		venue = renamedVenue
 	}
 
@@ -760,7 +793,7 @@ func handleCity(cityName string) (pgtype.Int8, error) {
 		return pgtype.Int8{}, nil
 	}
 
-	if renamedCity, ok := renameData.Cities[cityName]; ok {
+	if renamedCity, ok := renameData.cities[cityName]; ok {
 		cityName = renamedCity
 	}
 
@@ -848,6 +881,31 @@ func handleMatchOutcome(outcome string) pgtype.Text {
 	default:
 		return pgtype.Text{String: "winner_decided", Valid: true}
 	}
+}
+
+func handleCricsheetPeople(identifier, name string) (responses.CricsheetPeople, error) {
+	cricsheetPeopleLock.Lock()
+	defer cricsheetPeopleLock.Unlock()
+
+	var cricsheetPeople responses.CricsheetPeople
+
+	cricsheetPeople, err := dbutils.ReadCricsheetPeopleById(context.Background(), DB_POOL, identifier)
+	if err == nil {
+		return cricsheetPeople, nil
+	}
+
+	if err.Error() != "no rows in result set" {
+		return responses.CricsheetPeople{}, err
+	}
+
+	if err := dbutils.InsertCricsheetPeople(context.Background(), DB_POOL, identifier, name); err != nil {
+		return responses.CricsheetPeople{}, err
+	}
+
+	cricsheetPeople.Identifier = pgtype.Text{String: identifier, Valid: true}
+	cricsheetPeople.Name = pgtype.Text{String: name, Valid: true}
+
+	return cricsheetPeople, nil
 }
 
 func getTourInfo(eventName string) (string, []string) {

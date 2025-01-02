@@ -20,20 +20,20 @@ func insertBBB(filePath string, matchInfo *models.Match, team1Info, team2Info Te
 
 	defer func() {
 		if mainError != nil {
-			mainError = fmt.Errorf(`error while inserting BBB of %s: %v`, matchInfo.CricsheetId.String, mainError)
+			mainError = fmt.Errorf(`%s: %v`, matchInfo.CricsheetId.String, mainError)
 		}
 		channel <- mainError
 	}()
 
 	fp, err := os.Open(filePath)
 	if err != nil {
-		mainError = err
+		mainError = fmt.Errorf(`error while opening file: %v`, err)
 	}
 	defer fp.Close()
 
 	tx, err := DB_POOL.Begin(context.Background())
 	if err != nil {
-		mainError = err
+		mainError = fmt.Errorf(`error while beginning transaction: %v`, err)
 	}
 
 	defer func() {
@@ -47,15 +47,28 @@ func insertBBB(filePath string, matchInfo *models.Match, team1Info, team2Info Te
 	reader := csv.NewReader(fp)
 
 	if _, err := reader.Read(); err != nil {
-		mainError = err
+		mainError = fmt.Errorf(`error while reading headers: %v`, err)
 		return
 	}
 
-	var inningsCount int64
+	var inningsCount, deliveryNumber int64
+	var maidenOverData = struct{ bowlerId, runs, balls int64 }{}
 
 	innings := models.Innings{MatchId: matchInfo.Id}
 	var battingScorecardEntries BattingScorecardEntries
 	var bowlingScorecardEntries BowlingScorecardEntries
+
+	team1PlayersId, err := team1Info.GetPlayersId()
+	if err != nil {
+		mainError = fmt.Errorf(`error while getting team1 players id from cache: %v`, err)
+		return
+	}
+
+	team2PlayersId, err := team2Info.GetPlayersId()
+	if err != nil {
+		mainError = fmt.Errorf(`error while getting team2 players id from cache: %v`, err)
+		return
+	}
 
 	for {
 		row, err := reader.Read()
@@ -64,7 +77,7 @@ func insertBBB(filePath string, matchInfo *models.Match, team1Info, team2Info Te
 		}
 
 		if err != nil {
-			mainError = err
+			mainError = fmt.Errorf(`error while reading file: %v`, err)
 			return
 		}
 
@@ -72,7 +85,7 @@ func insertBBB(filePath string, matchInfo *models.Match, team1Info, team2Info Te
 
 		if inningsNum > inningsCount && inningsNum > 1 {
 			if err = wrapInnings(tx, innings, battingScorecardEntries, bowlingScorecardEntries); err != nil {
-				mainError = err
+				mainError = fmt.Errorf(`failed to wrap innings: %v`, err)
 				return
 			}
 			battingScorecardEntries = make(BattingScorecardEntries, 11)
@@ -97,36 +110,67 @@ func insertBBB(filePath string, matchInfo *models.Match, team1Info, team2Info Te
 
 			inningsId, err := dbutils.InsertInnings(context.Background(), tx, &innings)
 			if err != nil {
-				mainError = err
+				mainError = fmt.Errorf(`failed to insert innings: %v`, err)
 				return
+			}
+
+			if inningsNum == 2 && innings.BattingTeamId == matchInfo.MatchWinnerId && matchInfo.PlayingFormat.String != "Test" && matchInfo.PlayingFormat.String != "first_class" {
+				innings.InningsEnd = pgtype.Text{String: "target_reached", Valid: true}
+			}
+
+			if innings.BattingTeamId.Int64 == team1Info.Id {
+				battingScorecardEntries.EnsurePlayers(inningsId, team1PlayersId)
+				bowlingScorecardEntries.EnsurePlayers(inningsId, team2PlayersId)
+			} else {
+				bowlingScorecardEntries.EnsurePlayers(inningsId, team1PlayersId)
+				battingScorecardEntries.EnsurePlayers(inningsId, team2PlayersId)
 			}
 
 			innings.Id = pgtype.Int8{Int64: inningsId, Valid: true}
 			inningsCount++
+			deliveryNumber = 0
 		}
 
-		var delivery = models.Delivery{InningsId: innings.Id}
+		deliveryNumber++
+		var delivery = models.Delivery{
+			InningsId:             innings.Id,
+			InningsDeliveryNumber: pgtype.Int8{Int64: deliveryNumber, Valid: true},
+		}
 
 		ballNumber, _ := strconv.ParseFloat(row[5], 64)
 		delivery.BallNumber = pgtype.Float8{Float64: ballNumber, Valid: true}
+		delivery.OverNumber = pgtype.Int8{Int64: int64(ballNumber) + 1, Valid: true}
 
 		striker := getPlayerFromCache(&team1Info, &team2Info, row[8])
 		delivery.BatterId = striker.Id
 		delivery.IsBatterRHB = striker.IsRHB
-		battingScorecardEntries.EnsureEntry(innings.Id.Int64, striker.Id.Int64)
 
 		nonStriker := getPlayerFromCache(&team1Info, &team2Info, row[9])
 		delivery.NonStrikerId = nonStriker.Id
 		delivery.IsNonStrikerRHB = nonStriker.IsRHB
-		battingScorecardEntries.EnsureEntry(innings.Id.Int64, nonStriker.Id.Int64)
 
 		bowler := getPlayerFromCache(&team1Info, &team2Info, row[10])
 		delivery.BowlerId = bowler.Id
 		delivery.BowlingStyle = bowler.PrimaryBowlingStyle
-		bowlingScorecardEntries.EnsureEntry(innings.Id.Int64, bowler.Id.Int64)
+
+		if bowler.Id.Int64 != maidenOverData.bowlerId {
+			maidenOverData.runs = 0
+			maidenOverData.balls = 0
+			maidenOverData.bowlerId = bowler.Id.Int64
+		}
 
 		batterRuns, _ := strconv.ParseInt(row[11], 10, 64)
 		delivery.BatterRuns = pgtype.Int8{Int64: batterRuns, Valid: true}
+		if batterRuns == 4 {
+			delivery.IsFour = pgtype.Bool{Bool: true, Valid: true}
+			delivery.IsSix = pgtype.Bool{Bool: false, Valid: true}
+		} else if batterRuns == 6 {
+			delivery.IsSix = pgtype.Bool{Bool: true, Valid: true}
+			delivery.IsFour = pgtype.Bool{Bool: false, Valid: true}
+		} else {
+			delivery.IsSix = pgtype.Bool{Bool: false, Valid: true}
+			delivery.IsFour = pgtype.Bool{Bool: false, Valid: true}
+		}
 
 		extras, _ := strconv.ParseInt(row[12], 10, 64)
 		delivery.TotalExtras = pgtype.Int8{Int64: extras, Valid: true}
@@ -152,6 +196,21 @@ func insertBBB(filePath string, matchInfo *models.Match, team1Info, team2Info Te
 		innings.Penalty.Int64 += penalty
 
 		totalRuns, bowlerRuns := batterRuns+extras, batterRuns+wides+noballs
+		maidenOverData.runs += bowlerRuns
+
+		if wides == 0 && noballs == 0 {
+			maidenOverData.balls++
+
+			// if last ball
+			if int64(ballNumber-float64(delivery.OverNumber.Int64-1))*10 == matchInfo.BallsPerOver.Int64 {
+				if maidenOverData.balls == matchInfo.BallsPerOver.Int64 && maidenOverData.runs == 0 {
+					bowlingScorecardEntries.AddBowlerMaiden(bowler.Id.Int64)
+				}
+
+				maidenOverData.runs = 0
+				maidenOverData.balls = 0
+			}
+		}
 
 		delivery.TotalRuns = pgtype.Int8{Int64: totalRuns, Valid: true}
 		delivery.BowlerRuns = pgtype.Int8{Int64: bowlerRuns, Valid: true}
@@ -166,50 +225,78 @@ func insertBBB(filePath string, matchInfo *models.Match, team1Info, team2Info Te
 		isBowlerWicket := models.IsBowlerDismissal(row[18]) || models.IsBowlerDismissal(row[20])
 		bowlingScorecardEntries.UpdateBowlerEntry(bowler.Id.Int64, bowlerRuns, batterRuns, wides, noballs, isBowlerWicket)
 
-		var player1DismissedId, player2DismissedId int64
-		var player1DismissalType, player2DismissalType string
-
 		if row[18] != "" {
-			player1DismissalType = row[18]
-			dismissedPlayer1 := getPlayerFromCache(&team1Info, &team2Info, row[19])
-			player1DismissedId = dismissedPlayer1.Id.Int64
+			dismissalType, dismissedPlayerName := row[18], row[19]
+			dismissedPlayer := getPlayerFromCache(&team1Info, &team2Info, dismissedPlayerName)
 
-			innings.TotalWkts.Int64++
-			battingScorecardEntries.EnsureEntry(innings.Id.Int64, player1DismissedId)
+			delivery.Player1DismissalType = pgtype.Text{String: dismissalType, Valid: true}
+			delivery.Player1DismissedId = dismissedPlayer.Id
 		}
 
 		if row[20] != "" {
-			player2DismissalType = row[20]
-			dismissedPlayer2 := getPlayerFromCache(&team1Info, &team2Info, row[21])
-			player2DismissedId = dismissedPlayer2.Id.Int64
+			dismissalType, dismissedPlayerName := row[20], row[21]
+			dismissedPlayer := getPlayerFromCache(&team1Info, &team2Info, dismissedPlayerName)
 
-			innings.TotalWkts.Int64++
-			battingScorecardEntries.EnsureEntry(innings.Id.Int64, player2DismissedId)
+			delivery.Player2DismissalType = pgtype.Text{String: dismissalType, Valid: true}
+			delivery.Player2DismissedId = dismissedPlayer.Id
 		}
 
 		deliveryId, err := dbutils.InsertDelivery(context.Background(), tx, &delivery)
 		if err != nil {
-			mainError = err
+			mainError = fmt.Errorf(`error while inserting delivery: %v`, err)
 			return
 		}
 
-		if player1DismissalType != "" {
-			battingScorecardEntries.AddDismissalEntry(player1DismissedId, bowler.Id.Int64, deliveryId, player1DismissalType)
+		if delivery.Player1DismissalType.String != "" {
+			battingScorecardEntries.AddDismissalEntry(delivery.Player1DismissedId.Int64, bowler.Id.Int64, deliveryId, delivery.Player1DismissalType.String)
+
+			if models.IsTeamDismissal(delivery.Player1DismissalType.String) {
+				innings.TotalWkts.Int64++
+			}
 		}
 
-		if player2DismissalType != "" {
-			battingScorecardEntries.AddDismissalEntry(player2DismissedId, bowler.Id.Int64, deliveryId, player2DismissalType)
+		if delivery.Player2DismissalType.String != "" {
+			battingScorecardEntries.AddDismissalEntry(delivery.Player2DismissedId.Int64, bowler.Id.Int64, deliveryId, delivery.Player2DismissalType.String)
+
+			if models.IsTeamDismissal(delivery.Player2DismissalType.String) {
+				innings.TotalWkts.Int64++
+			}
 		}
 	}
 
 	if err = wrapInnings(tx, innings, battingScorecardEntries, bowlingScorecardEntries); err != nil {
-		mainError = err
+		mainError = fmt.Errorf(`failed to wrap innings: %v`, err)
 		return
 	}
 
-	matchInfo.IsBBBDone = pgtype.Bool{Bool: true, Valid: true}
-	if err = dbutils.UpdateMatch(context.Background(), tx, matchInfo); err != nil {
-		mainError = err
+	if innings.InningsNumber.Int64 == 1 {
+		innings.SetDefaultScore()
+		innings.BattingTeamId.Int64, innings.BowlingTeamId.Int64 = innings.BowlingTeamId.Int64, innings.BattingTeamId.Int64
+		inningsId, err := dbutils.InsertInnings(context.Background(), tx, &innings)
+		if err != nil {
+			mainError = fmt.Errorf(`failed to insert innings: %v`, err)
+			return
+		}
+		innings.Id = pgtype.Int8{Int64: inningsId, Valid: true}
+
+		battingScorecardEntries = make(BattingScorecardEntries, 11)
+		bowlingScorecardEntries = make(BowlingScorecardEntries, 11)
+		if innings.BattingTeamId.Int64 == team1Info.Id {
+			battingScorecardEntries.EnsurePlayers(inningsId, team1PlayersId)
+			bowlingScorecardEntries.EnsurePlayers(inningsId, team2PlayersId)
+		} else {
+			battingScorecardEntries.EnsurePlayers(inningsId, team2PlayersId)
+			bowlingScorecardEntries.EnsurePlayers(inningsId, team1PlayersId)
+		}
+
+		if err := wrapInnings(tx, innings, battingScorecardEntries, bowlingScorecardEntries); err != nil {
+			mainError = fmt.Errorf(`failed to wrap innings: %v`, err)
+			return
+		}
+	}
+
+	if err = dbutils.SetMatchBBBDone(context.Background(), tx, matchInfo.Id.Int64); err != nil {
+		mainError = fmt.Errorf(`error while setting bbb done: %v`, err)
 		return
 	}
 }
@@ -228,8 +315,12 @@ func getPlayerFromCache(team1Info, team2Info *TeamInfo, playerName string) respo
 }
 
 func wrapInnings(tx pgx.Tx, innings models.Innings, battingScorecardEntries BattingScorecardEntries, bowlingScorecardEntries BowlingScorecardEntries) error {
+	if innings.TotalWkts.Int64 == 10 {
+		innings.InningsEnd = pgtype.Text{String: "all_out", Valid: true}
+	}
+
 	if err := dbutils.UpdateInnings(context.Background(), tx, &innings); err != nil {
-		return err
+		return fmt.Errorf(`failed to update innings: %v`, err)
 	}
 
 	for batterId, entry := range battingScorecardEntries {
@@ -238,9 +329,9 @@ func wrapInnings(tx pgx.Tx, innings models.Innings, battingScorecardEntries Batt
 		}
 	}
 
-	for _, entry := range bowlingScorecardEntries {
+	for bowlerId, entry := range bowlingScorecardEntries {
 		if _, err := dbutils.InsertBowlingScorecardEntry(context.Background(), tx, &entry); err != nil {
-			return err
+			return fmt.Errorf(`failed to insert bowling scorecard entry of player %d: %v`, bowlerId, err)
 		}
 	}
 

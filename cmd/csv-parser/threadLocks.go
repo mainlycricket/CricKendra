@@ -41,3 +41,4 @@ var SeasonLock sync.Mutex
 var HostNationLock sync.Mutex
 var GroundLock sync.Mutex
 var CityLock sync.Mutex
+var cricsheetPeopleLock sync.Mutex
