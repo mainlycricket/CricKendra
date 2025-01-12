@@ -43,17 +43,17 @@ const team_numbers_query string = `
 	) AS win_loss_ratio,
 	COUNT(
 	    CASE
-	        WHEN matches.final_result = 'drawn' THEN 1
+	        WHEN matches.final_result = 'draw' THEN 1
 	    END
 	) AS matches_drawn,
 	COUNT(
 	    CASE
-	        WHEN matches.final_result = 'tied' THEN 1
+	        WHEN matches.final_result = 'tie' THEN 1
 	    END
 	) AS matches_tied,
 	COUNT(
 	    CASE
-	        WHEN matches.final_result = 'no_result' THEN 1
+	        WHEN matches.final_result = 'no result' THEN 1
 	    END
 	) AS matches_no_result,
 	COUNT(innings.id) AS innings_count,
@@ -167,17 +167,17 @@ func Query_Overall_Team_Players(params *url.Values) (string, []any, int, error) 
 	    ) AS win_loss_ratio,
 		COUNT(
 		    CASE
-		        WHEN matches.final_result = 'drawn' THEN 1
+		        WHEN matches.final_result = 'draw' THEN 1
 		    END
 		) AS matches_drawn,
 		COUNT(
 		    CASE
-		        WHEN matches.final_result = 'tied' THEN 1
+		        WHEN matches.final_result = 'tie' THEN 1
 		    END
 		) AS matches_tied,
 		COUNT(
 		    CASE
-		        WHEN matches.final_result = 'no_result' THEN 1
+		        WHEN matches.final_result = 'no result' THEN 1
 		    END
 		) AS matches_no_result,
 	    COUNT(innings.id) AS innings_count,

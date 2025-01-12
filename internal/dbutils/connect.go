@@ -44,16 +44,6 @@ func RegisterDataTypes(ctx context.Context, conn *pgx.Conn) error {
 		"career_stats",
 		"dismissal_type",
 		"innings_end",
-		"batting_scorecard_record",
-		"batting_scorecard_record[]",
-		"bowling_scorecard_record",
-		"bowling_scorecard_record[]",
-		"innings_scorecard_record",
-		"innings_scorecard_record[]",
-		"team_innings_short_info",
-		"team_innings_short_info[]",
-		"match_short_info",
-		"match_short_info[]",
 	}
 
 	for _, typeName := range dataTypeNames {

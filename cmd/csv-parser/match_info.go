@@ -5,10 +5,10 @@ import (
 	"encoding/csv"
 	"fmt"
 	"io"
-	"net/url"
 	"os"
 	"path/filepath"
 	"regexp"
+	"slices"
 	"strconv"
 	"strings"
 	"time"
@@ -16,93 +16,97 @@ import (
 	"github.com/jackc/pgx/v5/pgtype"
 	"github.com/mainlycricket/CricKendra/internal/dbutils"
 	"github.com/mainlycricket/CricKendra/internal/models"
-	"github.com/mainlycricket/CricKendra/internal/responses"
 )
 
-/*
-balls_per_over: done
-bowl_out: done
-city: excluded
-event: pending
-date: done
-eliminator: done
-gender: done
-match_number: done
-match_referee: excluded
-method: done
-neutral_venue: done
-outcome: done
-player_of_match: done
-registry: pending
-reserve_umpire: excluded
-season: done
-team: done
-toss_decision: done
-toss_uncontested: done
-toss_winner: done
-tv_umpire: excluded
-umpire: excluded
-venue: done
-winner: done
-winner_innings: done
-winner_runs: done
-winner_wickets: done
-*/
-
-type TeamInfo struct {
-	Id      int64
-	Name    string
-	Players map[string]string // map[playerName]cricsheetId
+type teamInfo struct {
+	id      int64
+	name    string
+	players map[string]string // map[playerName]cricsheetId
 }
 
-type MatchInfoResponse struct {
-	Match     models.Match
-	Team1Info TeamInfo
-	Team2Info TeamInfo
-	Err       error
+func newTeamInfo() *teamInfo {
+	teamInfo := teamInfo{}
+	teamInfo.players = make(map[string]string, 11)
+	return &teamInfo
 }
 
-func extractMatchInfo(filePath, playingLevel, playingFormat string, isMale bool, channel chan<- MatchInfoResponse) {
-	var match models.Match
-	var team1, team2 TeamInfo
-	var venue, city, eventName string
-	var potmNames []string
-	var mainError error
+type matchInfo struct {
+	infoFilePath string
+	match        *models.Match
+	team1Info    *teamInfo
+	team2Info    *teamInfo
+}
 
-	matchCricsheetId := strings.TrimSuffix(filepath.Base(filePath), "_info.csv")
+type matchInfoInput struct {
+	filePath, cricsheetId              string
+	playingFormat, playingLevel        string
+	balls_per_over                     int64
+	team1Name, team2Name               string
+	is_male                            bool
+	season                             string
+	dates                              []time.Time
+	event_match_number                 int64
+	eventName                          string
+	groundName, cityName               string
+	is_neutral_venue                   bool
+	toss_winner_name                   string
+	is_toss_decision_bat               bool
+	player_of_match_names              []string
+	match_winner_name                  string
+	is_won_by_innings, is_won_by_runs  bool
+	outcome                            string // no result, draw, tie (default: winner decided)
+	special_method                     string // D/L, VJD, Awarded, 1st innings score, Lost fewer wickets
+	bowl_out_winner, super_over_winner string
+	win_margin                         int64
+	team1Players, team2Players         map[string]string // name -> cricsheet_id
+}
+
+func newInfoInput(filePath, playingFormat string) *matchInfoInput {
+	var infoInput matchInfoInput
+
+	infoInput.dates = make([]time.Time, 0, 1)
+	infoInput.team1Players = make(map[string]string, 11)
+	infoInput.team2Players = make(map[string]string, 11)
+	infoInput.player_of_match_names = make([]string, 0, 1)
+
+	infoInput.filePath = filePath
+	infoInput.cricsheetId = strings.TrimSuffix(filepath.Base(filePath), "_info.csv")
+	infoInput.playingFormat = playingFormat
+	infoInput.playingLevel = "international"
+	if !slices.Contains([]string{"Test", "ODI", "T20I"}, playingFormat) {
+		infoInput.playingFormat = "domestic"
+	}
+
+	infoInput.is_neutral_venue = false
+	infoInput.is_won_by_innings = false
+	infoInput.outcome = "winner decided"
+
+	return &infoInput
+}
+
+func parseMatchInfoFile(filePath, playingFormat string, channel chan<- info_parse_response) {
+	var mainErr error
+	infoInput := newInfoInput(filePath, playingFormat)
 
 	defer func() {
-		if mainError != nil {
-			channel <- MatchInfoResponse{
-				Err: fmt.Errorf(" %s: %v", matchCricsheetId, mainError),
-			}
+		response := info_parse_response{}
+		if mainErr != nil {
+			response.err = fmt.Errorf(`%s: %v`, infoInput.cricsheetId, mainErr)
 		} else {
-			channel <- MatchInfoResponse{
-				Match:     match,
-				Team1Info: team1,
-				Team2Info: team2,
-			}
+			response.infoInput = infoInput
 		}
+		channel <- response
 	}()
-
-	team1.Players, team2.Players = make(map[string]string, 11), make(map[string]string, 11)
 
 	fp, err := os.Open(filePath)
 	if err != nil {
-		mainError = err
+		mainErr = fmt.Errorf(`error while opening file: %v`, err)
 		return
 	}
 	defer fp.Close()
 
-	match.IsMale = pgtype.Bool{Bool: isMale, Valid: true}
-	match.CricsheetId = pgtype.Text{String: matchCricsheetId, Valid: true}
-	match.IsNeutralVenue = pgtype.Bool{Bool: true, Valid: true}
-	match.PlayingFormat = pgtype.Text{String: playingFormat, Valid: true}
-	match.PlayingLevel = pgtype.Text{String: playingLevel, Valid: true}
-	match.FinalResult = pgtype.Text{String: "winner_decided", Valid: true}
-
 	reader := csv.NewReader(fp)
-	reader.FieldsPerRecord = -1
+	reader.FieldsPerRecord = -1 // to have variable number of records per row
 
 	for {
 		row, err := reader.Read()
@@ -112,7 +116,7 @@ func extractMatchInfo(filePath, playingLevel, playingFormat string, isMale bool,
 		}
 
 		if err != nil {
-			mainError = err
+			mainErr = fmt.Errorf(`error while reading file: %v`, err)
 			return
 		}
 
@@ -121,832 +125,507 @@ func extractMatchInfo(filePath, playingLevel, playingFormat string, isMale bool,
 		}
 
 		if row[1] == "balls_per_over" {
-			balls_per_over, err := strconv.ParseInt(row[2], 10, 64)
-			if err != nil {
-				mainError = err
-				return
-			}
-
-			match.BallsPerOver = pgtype.Int8{Int64: balls_per_over, Valid: true}
-			continue
-		}
-
-		if row[1] == "method" {
-			match.OutcomeSpecialMethod = pgtype.Text{String: row[2], Valid: true}
-			continue
-		}
-
-		if row[1] == "outcome" {
-			match.FinalResult = handleMatchOutcome(row[2])
-			continue
-		}
-
-		if row[1] == "neutral_venue" && row[2] == "true" {
-			match.IsNeutralVenue = pgtype.Bool{Bool: false, Valid: true}
-			continue
-		}
-
-		if row[1] == "match_number" {
-			match_number, err := strconv.ParseInt(row[2], 10, 64)
-			if err != nil {
-				mainError = err
-				return
-			}
-
-			match.EventMatchNumber = pgtype.Int8{Int64: match_number, Valid: true}
-			continue
-		}
-
-		if row[1] == "season" {
-			match.Season, err = handleSeason(row[2])
-			if err != nil {
-				mainError = err
-				return
-			}
+			infoInput.balls_per_over, _ = strconv.ParseInt(row[2], 10, 64)
 			continue
 		}
 
 		if row[1] == "team" {
-			teamName := row[2]
-
-			teamField, err := handleTeam(teamName, playingLevel, match.IsMale.Bool)
-			if err != nil {
-				mainError = err
-				return
-			}
-
-			if match.Team1Id.Valid {
-				match.Team2Id = teamField
-				team2.Id, team2.Name = teamField.Int64, teamName
+			if infoInput.team1Name == "" {
+				infoInput.team1Name = row[2]
 			} else {
-				match.Team1Id = teamField
-				team1.Id, team1.Name = teamField.Int64, teamName
+				infoInput.team2Name = row[2]
 			}
+			continue
+		}
+
+		if row[1] == "gender" {
+			infoInput.is_male = row[2] == "male"
+			continue
+		}
+
+		if row[1] == "season" {
+			infoInput.season = row[2]
 			continue
 		}
 
 		if row[1] == "date" {
-			date, err := time.Parse("2006/01/02", row[2])
-			if err != nil {
-				mainError = err
-				return
-			}
-
-			match.StartDate = pgtype.Date{Time: date, Valid: true}
-			match.EndDate = pgtype.Date{Time: date, Valid: true}
-
-			if playingFormat == "Test" || playingFormat == "first_class" {
-				end_date := date.AddDate(0, 0, 5)
-				match.EndDate = pgtype.Date{Time: end_date, Valid: true}
-			}
-
+			date, _ := time.Parse("2006/01/02", row[2])
+			infoInput.dates = append(infoInput.dates, date)
 			continue
 		}
 
-		if row[1] == "bowl_out" {
-			teamField, err := handleTeam(row[2], playingLevel, match.IsMale.Bool)
-			if err != nil {
-				mainError = err
-				return
-			}
-
-			match.BowlOutWinnerId = teamField
+		if row[1] == "event" {
+			infoInput.eventName = row[2]
 			continue
 		}
 
-		if row[1] == "eliminator" {
-			teamField, err := handleTeam(row[2], playingLevel, match.IsMale.Bool)
-			if err != nil {
-				mainError = err
-				return
-			}
-
-			match.SuperOverWinnerId = teamField
+		if row[1] == "match_number" {
+			infoInput.event_match_number, _ = strconv.ParseInt(row[2], 10, 64)
 			continue
 		}
 
-		if row[1] == "winner" {
-			teamField, err := handleTeam(row[2], playingLevel, match.IsMale.Bool)
-			if err != nil {
-				mainError = err
-				return
-			}
-
-			match.MatchWinnerId = teamField
-
-			if teamField.Int64 == match.Team1Id.Int64 {
-				match.MatchLoserId = match.Team2Id
-			} else {
-				match.MatchLoserId = match.Team1Id
-			}
-
+		if row[1] == "venue" {
+			infoInput.groundName = row[2]
 			continue
 		}
 
-		if row[1] == "winner_innings" {
-			if row[2] == "1" {
-				match.IsWonByInnings = pgtype.Bool{Bool: true, Valid: true}
-			} else {
-				match.IsWonByInnings = pgtype.Bool{Bool: false, Valid: true}
-			}
+		if row[1] == "city" {
+			infoInput.cityName = row[2]
 			continue
 		}
 
-		if row[1] == "winner_runs" || row[1] == "winner_wickets" {
-			margin, err := strconv.ParseInt(row[2], 10, 64)
-			if err != nil {
-				mainError = err
-				return
-			}
-
-			match.WinMargin = pgtype.Int8{Int64: margin, Valid: true}
-
-			if row[1] == "winner_runs" {
-				match.IsWonByRuns = pgtype.Bool{Bool: true, Valid: true}
-			} else {
-				match.IsWonByRuns = pgtype.Bool{Bool: false, Valid: true}
-			}
+		if row[1] == "neutral_venue" {
+			infoInput.is_neutral_venue = row[2] == "true"
 			continue
 		}
 
 		if row[1] == "toss_winner" {
-			teamField, err := handleTeam(row[2], playingLevel, match.IsMale.Bool)
-			if err != nil {
-				mainError = err
-				return
-			}
-
-			match.TossWinnerId = teamField
-
-			if teamField.Int64 == match.Team1Id.Int64 {
-				match.TossLoserId = match.Team2Id
-			} else {
-				match.TossLoserId = match.Team1Id
-			}
-
+			infoInput.toss_winner_name = row[2]
 			continue
 		}
 
-		if row[1] == "toss_decision" {
-			if row[2] == "bat" {
-				match.IsTossDecisionBat = pgtype.Bool{Bool: true, Valid: true}
-			} else if row[2] == "field" {
-				match.IsTossDecisionBat = pgtype.Bool{Bool: false, Valid: true}
-			}
+		if row[1] == "toss_decison" {
+			infoInput.is_toss_decision_bat = row[2] == "bat"
+			continue
+		}
+
+		if row[1] == "player_of_match" {
+			infoInput.player_of_match_names = append(infoInput.player_of_match_names, row[2])
+			continue
+		}
+
+		if row[1] == "winner" {
+			infoInput.match_winner_name = row[2]
+			continue
+		}
+
+		if row[1] == "winner_runs" {
+			infoInput.is_won_by_runs = true
+			infoInput.win_margin, _ = strconv.ParseInt(row[2], 10, 64)
+			continue
+		}
+
+		if row[1] == "winner_wickets" {
+			infoInput.is_won_by_runs = false
+			infoInput.win_margin, _ = strconv.ParseInt(row[2], 10, 64)
+			continue
+		}
+
+		if row[1] == "winner_innings" && row[2] == "1" {
+			infoInput.is_won_by_innings = false
+			continue
+		}
+
+		if row[1] == "method" {
+			infoInput.special_method = row[2]
+			continue
+		}
+
+		if row[1] == "outcome" {
+			infoInput.outcome = row[2]
+			continue
+		}
+
+		if row[1] == "bowl_out" {
+			infoInput.bowl_out_winner = row[2]
+			continue
+		}
+
+		if row[1] == "eliminator" {
+			infoInput.super_over_winner = row[2]
 			continue
 		}
 
 		if row[1] == "player" || row[1] == "players" {
-			playerName := row[3]
-			if row[2] == team1.Name {
-				team1.Players[playerName] = ""
+			if row[2] == infoInput.team1Name {
+				infoInput.team1Players[row[3]] = ""
 			} else {
-				team2.Players[playerName] = ""
+				infoInput.team2Players[row[3]] = ""
 			}
 			continue
 		}
 
 		if row[1] == "registry" && row[2] == "people" {
-			playerName, cricsheetId := row[3], row[4]
-
-			if _, ok := team1.Players[playerName]; ok {
-				if err := handlePlayer(cricsheetId, match.IsMale.Bool); err != nil {
-					mainError = err
-					return
-				}
-				team1.Players[playerName] = cricsheetId
-			} else if _, ok := team2.Players[playerName]; ok {
-				if err := handlePlayer(cricsheetId, match.IsMale.Bool); err != nil {
-					mainError = err
-					return
-				}
-				team2.Players[playerName] = cricsheetId
+			playerName, playerId := row[3], row[4]
+			if _, ok := infoInput.team1Players[playerName]; ok {
+				infoInput.team1Players[playerName] = playerId
+			} else if _, ok := infoInput.team2Players[playerName]; ok {
+				infoInput.team2Players[playerName] = playerId
 			}
 			continue
 		}
+	}
+}
 
-		if row[1] == "event" {
-			eventName = row[2]
-			continue
-		}
-
-		if row[1] == "venue" {
-			venue = row[2]
-			continue
-		}
-
-		if row[1] == "city" {
-			city = row[2]
-			continue
-		}
-
-		if row[1] == "player_of_match" {
-			potmNames = append(potmNames, row[2])
-			continue
-		}
+func (input *matchInfoInput) initalizeMatch(channel chan<- match_init_response) {
+	var mainError error
+	output := &matchInfo{
+		infoFilePath: input.filePath,
+		match:        &models.Match{},
+		team1Info:    &teamInfo{},
+		team2Info:    &teamInfo{},
 	}
 
-	ground, err := handleVenue(venue, city)
-	if err != nil {
-		mainError = fmt.Errorf(`error while handling venue: %v`, err)
+	defer func() {
+		var response match_init_response
+		if mainError != nil {
+			response.err = fmt.Errorf("%s: %v", input.cricsheetId, mainError)
+		} else {
+			response.matchInfo = output
+		}
+		channel <- response
+	}()
+
+	// NOTE: ORDER IS CRUCIAL
+
+	// season
+	if err := cachedSeasons.loadOrStore(seasonKey{season: input.season}); err != nil {
+		mainError = fmt.Errorf(`error while handling season: %v`, err)
 		return
 	}
 
-	match.GroundId = ground.Id
-	if !match.IsNeutralVenue.Bool {
-		if ground.HostNationName.String == team1.Name {
-			match.HomeTeamId = pgtype.Int8{Int64: team1.Id, Valid: true}
-			match.AwayTeamId = pgtype.Int8{Int64: team2.Id, Valid: true}
-		} else if ground.HostNationName.String == team2.Name {
-			match.HomeTeamId = pgtype.Int8{Int64: team2.Id, Valid: true}
-			match.AwayTeamId = pgtype.Int8{Int64: team1.Id, Valid: true}
-		}
+	// teams
+	if err := output.setMatchTeams(input, true); err != nil {
+		mainError = fmt.Errorf(`error while setting team1: %d`, err)
+		return
 	}
-
-	match.SeriesId, err = handleEvent(eventName, &match)
-	if err != nil {
-		mainError = fmt.Errorf(`error while handling event: %v`, err)
+	if err := output.setMatchTeams(input, false); err != nil {
+		mainError = fmt.Errorf(`error while setting team2: %d`, err)
 		return
 	}
 
-	matchId, err := dbutils.UpsertCricsheetMatch(context.Background(), DB_POOL, &match)
+	// venue
+	if err := output.setVenueDetails(input); err != nil {
+		mainError = fmt.Errorf(`error while setting venue details: %v`, err)
+		return
+	}
+
+	// event
+	if err := output.setMatchSeries(input); err != nil {
+		mainError = fmt.Errorf(`error while setting match series: %v`, err)
+		return
+	}
+
+	// players
+	if err := output.ensurePlayers(input, true); err != nil {
+		mainError = fmt.Errorf(`failed to ensure team 1 players: %v`, err)
+		return
+	}
+	if err := output.ensurePlayers(input, false); err != nil {
+		mainError = fmt.Errorf(`failed to ensure team 2 players: %v`, err)
+		return
+	}
+
+	match := output.match
+
+	// match winner & loser
+	if input.match_winner_name == output.team1Info.name {
+		match.MatchWinnerId, match.MatchLoserId = match.Team1Id, match.Team2Id
+	} else if input.match_winner_name == output.team2Info.name {
+		match.MatchWinnerId, match.MatchLoserId = match.Team2Id, match.Team1Id
+	}
+
+	// toss winner & loser
+	if input.toss_winner_name == output.team1Info.name {
+		match.TossWinnerId, match.TossLoserId = match.Team1Id, match.Team2Id
+	} else if input.toss_winner_name == output.team2Info.name {
+		match.TossWinnerId, match.TossLoserId = match.Team2Id, match.Team1Id
+	}
+
+	// bowl out winner
+	if input.bowl_out_winner == output.team1Info.name {
+		match.BowlOutWinnerId = match.Team1Id
+	} else if input.bowl_out_winner == output.team2Info.name {
+		match.BowlOutWinnerId = match.Team2Id
+	}
+
+	// super over winner
+	if input.super_over_winner == output.team1Info.name {
+		match.SuperOverWinnerId = match.Team1Id
+	} else if input.super_over_winner == output.team2Info.name {
+		match.SuperOverWinnerId = match.Team2Id
+	}
+
+	match.CricsheetId = pgtype.Text{String: input.cricsheetId, Valid: true}
+	match.EventMatchNumber = pgtype.Int8{Int64: input.event_match_number, Valid: input.event_match_number > 0}
+	match.StartDate = pgtype.Date{Time: input.dates[0], Valid: true}
+	match.EndDate = pgtype.Date{Time: input.dates[len(input.dates)-1], Valid: true}
+	match.IsMale = pgtype.Bool{Bool: input.is_male, Valid: true}
+	match.IsNeutralVenue = pgtype.Bool{Bool: input.is_neutral_venue, Valid: true}
+	match.FinalResult = pgtype.Text{String: input.outcome, Valid: input.outcome != ""}
+	match.PlayingLevel = pgtype.Text{String: input.playingLevel, Valid: true}
+	match.PlayingFormat = pgtype.Text{String: input.playingFormat, Valid: true}
+	match.Season = pgtype.Text{String: input.season, Valid: true}
+	match.OutcomeSpecialMethod = pgtype.Text{String: input.special_method, Valid: input.special_method != ""}
+	match.IsTossDecisionBat = pgtype.Bool{Bool: input.is_toss_decision_bat, Valid: true}
+	match.IsWonByInnings = pgtype.Bool{Bool: input.is_won_by_innings, Valid: input.match_winner_name != ""}
+	match.IsWonByRuns = pgtype.Bool{Bool: input.is_won_by_runs, Valid: input.match_winner_name != ""}
+	match.WinMargin = pgtype.Int8{Int64: input.win_margin, Valid: input.match_winner_name != ""}
+	match.BallsPerOver = pgtype.Int8{Int64: input.balls_per_over, Valid: true}
+	match.IsBBBDone = pgtype.Bool{Bool: false, Valid: true}
+
+	matchId, err := dbutils.UpsertCricsheetMatch(context.Background(), DB_POOL, match)
 	if err != nil {
-		mainError = err
+		mainError = fmt.Errorf(`failed to upsert cricsheet match: %v`, err)
 		return
 	}
 
 	match.Id = pgtype.Int8{Int64: matchId, Valid: true}
 
-	if err = insertSquadEntries(team1, match.Id.Int64, match.SeriesId.Int64); err != nil {
-		mainError = fmt.Errorf(`error while handling squad entries of team1: %v`, err)
+	if err := output.upsertSquadEntries(true); err != nil {
+		mainError = fmt.Errorf(`failed to upsert team1 squads: %v`, err)
 		return
 	}
 
-	if err = insertSquadEntries(team2, match.Id.Int64, match.SeriesId.Int64); err != nil {
-		mainError = fmt.Errorf(`error while handling squad entries of team2: %v`, err)
+	if err := output.upsertSquadEntries(false); err != nil {
+		mainError = fmt.Errorf(`failed to upsert team2 squads: %v`, err)
 		return
 	}
 
-	if err = insertPotmEntries(potmNames, team1, team2, match.Id.Int64); err != nil {
-		mainError = fmt.Errorf(`error while inserting POTM entries: %v`, err)
-		return
-	}
+	output.match = match
 }
 
-func handlePlayer(cricsheetId string, isMale bool) error {
-	cacheKey := PlayerKey{CricsheetId: cricsheetId}
-	_, exists := PlayersCache.Get(cacheKey)
-	if exists {
-		return nil
+func (matchInfo *matchInfo) setMatchTeams(input *matchInfoInput, isTeam1 bool) error {
+	teamKey := teamKey{name: input.team2Name, is_male: input.is_male, playing_level: input.playingLevel}
+	if isTeam1 {
+		teamKey.name = input.team1Name
 	}
 
-	filters := url.Values{
-		"cricsheet_id": []string{cricsheetId},
-		"__limit":      []string{"1"},
-	}
-
-	PlayerLock.Lock()
-	defer PlayerLock.Unlock()
-
-	dbResponse, err := dbutils.ReadPlayers(context.Background(), DB_POOL, filters)
-	if err != nil {
-		return fmt.Errorf(`error while reading reading players: %v`, err)
-	}
-
-	var player responses.AllPlayers
-
-	if len(dbResponse.Players) == 0 {
-		cricsheetPeople, err := dbutils.ReadCricsheetPeopleById(context.Background(), DB_POOL, cricsheetId)
-
-		if err != nil {
-			return fmt.Errorf(`failed to read player with id %s from cricsheet_people: %v`, cricsheetId, err)
-		}
-
-		newPlayer := models.Player{
-			Name:        cricsheetPeople.Name,
-			FullName:    cricsheetPeople.UniqueName,
-			CricsheetId: cricsheetPeople.Identifier,
-			CricbuzzId:  cricsheetPeople.CricbuzzId,
-			CricinfoId:  cricsheetPeople.CricinfoId,
-			IsMale:      pgtype.Bool{Bool: isMale, Valid: true},
-		}
-
-		playerId, err := dbutils.InsertPlayer(context.Background(), DB_POOL, &newPlayer)
-		if err != nil {
-			return fmt.Errorf(`error while inserting player: %v`, err)
-		}
-
-		player = responses.AllPlayers{
-			Id:     pgtype.Int8{Int64: playerId, Valid: true},
-			Name:   newPlayer.Name,
-			IsMale: pgtype.Bool{Bool: isMale, Valid: true},
-		}
-	} else {
-		player = dbResponse.Players[0]
-	}
-
-	PlayersCache.Set(cacheKey, player)
-	return nil
-}
-
-func handleEvent(eventName string, match *models.Match) (pgtype.Int8, error) {
-	hostNations := getTourHostNations(eventName)
-	for _, hostNation := range hostNations {
-		_, err := handleHostNation(hostNation)
-		if err != nil {
-			return pgtype.Int8{}, err
-		}
-	}
-
-	seriesId, err := handleSeries(eventName, match)
-	if err != nil {
-		return pgtype.Int8{}, err
-	}
-
-	return seriesId, nil
-}
-
-func handleSeries(name string, match *models.Match) (pgtype.Int8, error) {
-	season, playingLevel, playingFormat, isMale := match.Season.String, match.PlayingLevel.String, match.PlayingFormat.String, match.IsMale.Bool
-
-	cacheKey := SeriesKey{
-		Name:          name,
-		Season:        season,
-		PlayingLevel:  playingLevel,
-		PlayingFormat: playingFormat,
-		IsMale:        isMale,
-	}
-
-	seriesId, ok := SeriesCache.Get(cacheKey)
-	defer func() (pgtype.Int8, error) {
-		if err := dbutils.UpsertSeriesTeamEntries(context.Background(), DB_POOL, seriesId, []pgtype.Int8{match.Team1Id, match.Team2Id}); err != nil {
-			err = fmt.Errorf(`failed to upsert series team entries: %v`, err)
-			return pgtype.Int8{}, err
-		}
-		return pgtype.Int8{Int64: seriesId, Valid: true}, nil
-	}()
-
-	if ok {
-		return pgtype.Int8{Int64: seriesId, Valid: true}, nil
-	}
-
-	filters := url.Values{
-		"name":           []string{name},
-		"season":         []string{season},
-		"playing_level":  []string{playingLevel},
-		"playing_format": []string{playingFormat},
-		"is_male":        []string{"true"},
-		"__limit":        []string{"1"},
-	}
-
-	if !isMale {
-		filters["is_male"][0] = "false"
-	}
-
-	SeriesLock.Lock()
-	defer SeriesLock.Unlock()
-
-	dbResponse, err := dbutils.ReadSeries(context.Background(), DB_POOL, filters)
-	if err != nil {
-		return pgtype.Int8{}, err
-	}
-
-	if len(dbResponse.Series) == 0 {
-		newSeries := models.Series{
-			Name:          pgtype.Text{String: name, Valid: true},
-			TeamsId:       []pgtype.Int8{match.Team1Id, match.Team2Id},
-			Season:        match.Season,
-			IsMale:        match.IsMale,
-			PlayingLevel:  match.PlayingLevel,
-			PlayingFormat: match.PlayingFormat,
-		}
-
-		newSeries.TournamentId, err = handleTournament(name, playingLevel, playingFormat, isMale)
-		if err != nil {
-			return pgtype.Int8{}, err
-		}
-
-		seriesId, err = dbutils.InsertSeries(context.Background(), DB_POOL, &newSeries)
-		if err != nil {
-			return pgtype.Int8{}, err
-		}
-	} else {
-		seriesId = dbResponse.Series[0].Id.Int64
-		if err := dbutils.UpsertSeriesTeamEntries(context.Background(), DB_POOL, seriesId, []pgtype.Int8{match.Team1Id, match.Team2Id}); err != nil {
-			err = fmt.Errorf(`failed to upsert series team entries: %v`, err)
-			return pgtype.Int8{}, err
-		}
-	}
-
-	SeriesCache.Set(cacheKey, seriesId)
-	return pgtype.Int8{Int64: seriesId, Valid: true}, nil
-}
-
-func handleTournament(tournamentName, playingLevel, playingFormat string, isMale bool) (pgtype.Int8, error) {
-	cacheKey := TournamentKey{
-		Name:          tournamentName,
-		IsMale:        isMale,
-		PlayingLevel:  playingLevel,
-		PlayingFormat: playingFormat,
-	}
-
-	tournamentId, exists := TournamentsCache.Get(cacheKey)
-	if exists {
-		return pgtype.Int8{Int64: tournamentId, Valid: true}, nil
-	}
-
-	filters := url.Values{
-		"name":           []string{tournamentName},
-		"playing_level":  []string{playingLevel},
-		"playing_format": []string{playingFormat},
-		"is_male":        []string{"true"},
-		"__limit":        []string{"0"},
-	}
-
-	if !isMale {
-		filters["is_male"][0] = "false"
-	}
-
-	TournamentLock.Lock()
-	defer TournamentLock.Unlock()
-
-	dbResponse, err := dbutils.ReadTournaments(context.Background(), DB_POOL, filters)
-	if err != nil {
-		return pgtype.Int8{}, err
-	}
-
-	if len(dbResponse.Tournaments) == 0 {
-		return pgtype.Int8{}, nil
-	}
-
-	tournamentId = dbResponse.Tournaments[0].Id.Int64
-	TournamentsCache.Set(cacheKey, tournamentId)
-	return pgtype.Int8{Int64: tournamentId, Valid: true}, nil
-}
-
-func handleTeam(teamName, playingLevel string, isMale bool) (pgtype.Int8, error) {
-	cacheKey := TeamKey{TeamName: teamName, IsMale: isMale, PlayingLevel: playingLevel}
-	teamId, exists := TeamsCache.Get(cacheKey)
-	if exists {
-		return pgtype.Int8{Int64: teamId, Valid: true}, nil
-	}
-
-	filters := url.Values{
-		"name":          []string{teamName},
-		"playing_level": []string{playingLevel},
-		"is_male":       []string{"true"},
-		"__limit":       []string{"1"},
-	}
-
-	if !isMale {
-		filters["is_male"][0] = "false"
-	}
-
-	TeamLock.Lock()
-	defer TeamLock.Unlock()
-
-	dbResponse, err := dbutils.ReadTeams(context.Background(), DB_POOL, filters)
-	if err != nil {
-		return pgtype.Int8{}, err
-	}
-
-	if len(dbResponse.Teams) == 0 {
-		newTeam := models.Team{
-			Name:         pgtype.Text{String: teamName, Valid: true},
-			PlayingLevel: pgtype.Text{String: playingLevel, Valid: true},
-			IsMale:       pgtype.Bool{Bool: isMale, Valid: true},
-			ShortName:    pgtype.Text{String: defaultTeamShortName(teamName), Valid: true},
-		}
-
-		teamId, err = dbutils.InsertTeam(context.Background(), DB_POOL, &newTeam)
-		if err != nil {
-			return pgtype.Int8{}, err
-		}
-	} else {
-		teamId = dbResponse.Teams[0].Id.Int64
-	}
-
-	TeamsCache.Set(cacheKey, teamId)
-	teamField := pgtype.Int8{Int64: teamId, Valid: true}
-
-	return teamField, nil
-}
-
-func handleSeason(season string) (pgtype.Text, error) {
-	seasonExists, _ := SeasonsCache.Get(season)
-	if seasonExists {
-		return pgtype.Text{String: season, Valid: true}, nil
-	}
-
-	filters := url.Values{"season": []string{season}, "__limit": []string{"1"}}
-
-	SeasonLock.Lock()
-	defer SeasonLock.Unlock()
-
-	dbResponse, err := dbutils.ReadSeasons(context.Background(), DB_POOL, filters)
-	if err != nil {
-		return pgtype.Text{}, err
-	}
-
-	if len(dbResponse.Seasons) == 0 {
-		newSeason := models.Season{Season: pgtype.Text{String: season, Valid: true}}
-		err := dbutils.InsertSeason(context.Background(), DB_POOL, &newSeason)
-		if err != nil {
-			return pgtype.Text{}, err
-		}
-	}
-
-	SeasonsCache.Set(season, true)
-	return pgtype.Text{String: season, Valid: true}, nil
-}
-
-func handleVenue(venue, city string) (responses.AllGrounds, error) {
-	cacheKey := GroundKey{Venue: venue, City: city}
-	ground, exists := GroundsCache.Get(cacheKey)
-	if exists {
-		return ground, nil
-	}
-
-	cityId, err := handleCity(city)
-	if err != nil {
-		return responses.AllGrounds{}, fmt.Errorf(`error while handling city: %v`, err)
-	}
-
-	filters := url.Values{
-		"name":    []string{venue},
-		"__limit": []string{"1"},
-	}
-
-	if cityId.Valid {
-		filters["city_id"] = []string{strconv.FormatInt(cityId.Int64, 10)}
-	}
-
-	GroundLock.Lock()
-	defer GroundLock.Unlock()
-
-	dbResponse, err := dbutils.ReadGrounds(context.Background(), DB_POOL, filters)
-	if err != nil {
-		return responses.AllGrounds{}, fmt.Errorf(`error while reading grounds: %v`, err)
-	}
-
-	if len(dbResponse.Grounds) == 0 {
-		newGround := models.Ground{
-			Name:   pgtype.Text{String: venue, Valid: true},
-			CityId: cityId,
-		}
-
-		groundId, err := dbutils.InsertGround(context.Background(), DB_POOL, &newGround)
-		if err != nil {
-			return responses.AllGrounds{}, fmt.Errorf(`error while inserting ground: %v`, err)
-		}
-
-		ground = responses.AllGrounds{
-			Id:     pgtype.Int8{Int64: groundId, Valid: true},
-			Name:   newGround.Name,
-			CityId: newGround.CityId,
-		}
-	} else {
-		ground = dbResponse.Grounds[0]
-	}
-
-	GroundsCache.Set(cacheKey, ground)
-
-	return ground, nil
-}
-
-func handleCity(cityName string) (pgtype.Int8, error) {
-	if cityName == "" {
-		return pgtype.Int8{}, nil
-	}
-
-	cityId, exists := CitiesCache.Get(cityName)
-	if exists {
-		return pgtype.Int8{Int64: cityId, Valid: true}, nil
-	}
-
-	filters := url.Values{
-		"name":    []string{cityName},
-		"__limit": []string{"1"},
-	}
-
-	CityLock.Lock()
-	defer CityLock.Unlock()
-
-	dbResponse, err := dbutils.ReadCities(context.Background(), DB_POOL, filters)
-	if err != nil {
-		return pgtype.Int8{}, fmt.Errorf(`error while reading cities: %v`, err)
-	}
-
-	if len(dbResponse.Cities) == 0 {
-		newCity := models.City{
-			Name: pgtype.Text{String: cityName, Valid: true},
-		}
-
-		cityId, err = dbutils.InsertCity(context.Background(), DB_POOL, &newCity)
-		if err != nil {
-			return pgtype.Int8{}, fmt.Errorf(`error while inserting city: %v`, err)
-		}
-	} else {
-		cityId = dbResponse.Cities[0].Id.Int64
-	}
-
-	CitiesCache.Set(cityName, cityId)
-	return pgtype.Int8{Int64: cityId, Valid: true}, nil
-}
-
-func handleHostNation(hostNationName string) (pgtype.Int8, error) {
-	hostNationId, exists := HostNationCache.Get(hostNationName)
-	if exists {
-		return pgtype.Int8{Int64: hostNationId, Valid: true}, nil
-	}
-
-	filters := url.Values{
-		"name":    []string{hostNationName},
-		"__limit": []string{"1"},
-	}
-
-	HostNationLock.Lock()
-	defer HostNationLock.Unlock()
-
-	dbResponse, err := dbutils.ReadHostNations(context.Background(), DB_POOL, filters)
-	if err != nil {
-		return pgtype.Int8{}, err
-	}
-
-	if len(dbResponse.HostNations) == 0 {
-		newHostNation := models.HostNation{
-			Name: pgtype.Text{String: hostNationName, Valid: true},
-		}
-
-		hostNationId, err = dbutils.InsertHostNation(context.Background(), DB_POOL, &newHostNation)
-		if err != nil {
-			return pgtype.Int8{}, err
-		}
-	} else {
-		hostNationId = dbResponse.HostNations[0].Id.Int64
-	}
-
-	HostNationCache.Set(hostNationName, hostNationId)
-	hostNationField := pgtype.Int8{Int64: hostNationId, Valid: true}
-
-	return hostNationField, nil
-}
-
-func handleMatchOutcome(outcome string) pgtype.Text {
-	switch outcome {
-	case "draw":
-		return pgtype.Text{String: "drawn", Valid: true}
-	case "tie":
-		return pgtype.Text{String: "tied", Valid: true}
-	case "no result":
-		return pgtype.Text{String: "no_result", Valid: true}
-	default:
-		return pgtype.Text{String: "winner_decided", Valid: true}
-	}
-}
-
-func getTourHostNations(eventName string) []string {
-	pattern := `^([A-Za-z\s]+) tour of ([A-Za-z\s]+(?: and [A-Za-z\s]+)*)$`
-	re := regexp.MustCompile(pattern)
-	matches := re.FindStringSubmatch(eventName)
-	if len(matches) == 3 {
-		hostNations := matches[2]
-		hostNationList := regexp.MustCompile(`\s+and\s+`).Split(hostNations, -1)
-		return hostNationList
-	}
-	return nil
-}
-
-func defaultTeamShortName(teamName string) string {
-	words := strings.Split(teamName, " ")
-	if len(words) == 1 {
-		return strings.ToUpper(teamName[:3])
-	}
-
-	var shortName string
-
-	for _, word := range words {
-		shortName += strings.ToUpper(string(word[0]))
-	}
-
-	return shortName
-}
-
-func handleSeriesSquadId(teamInfo TeamInfo, seriesId int64) (pgtype.Int8, error) {
-	cacheKey := SeriesSquadKey{TeamId: teamInfo.Id, SeriesId: seriesId}
-
-	squadId, exists := SeriesSquadCache.Get(cacheKey)
-	if exists {
-		return pgtype.Int8{Int64: squadId, Valid: true}, nil
-	}
-
-	filters := url.Values{
-		"team_id":   []string{strconv.FormatInt(teamInfo.Id, 10)},
-		"series_id": []string{strconv.FormatInt(seriesId, 10)},
-		"__limit":   []string{"1"},
-	}
-
-	SeriesSquadLock.Lock()
-	defer SeriesSquadLock.Unlock()
-
-	dbResponse, err := dbutils.ReadSeriesSquads(context.Background(), DB_POOL, filters)
-	if err != nil {
-		return pgtype.Int8{}, err
-	}
-
-	if len(dbResponse.Squads) == 0 {
-		squadLabel := fmt.Sprintf(`%s squad`, teamInfo.Name)
-
-		newSeriesSquad := models.SeriesSquad{
-			SeriesId:   pgtype.Int8{Int64: seriesId, Valid: true},
-			TeamId:     pgtype.Int8{Int64: teamInfo.Id, Valid: true},
-			SquadLabel: pgtype.Text{String: squadLabel, Valid: true},
-		}
-
-		squadId, err = dbutils.InsertSeriesSquad(context.Background(), DB_POOL, &newSeriesSquad)
-		if err != nil {
-			return pgtype.Int8{}, err
-		}
-	} else {
-		squadId = dbResponse.Squads[0].Id.Int64
-	}
-
-	SeriesSquadCache.Set(cacheKey, squadId)
-	return pgtype.Int8{Int64: squadId, Valid: true}, nil
-}
-
-func insertSquadEntries(teamInfo TeamInfo, matchId, seriesId int64) error {
-	squadId, err := handleSeriesSquadId(teamInfo, seriesId)
+	teamId, err := cachedTeams.loadOrStore(teamKey)
 	if err != nil {
 		return err
 	}
 
-	for playerName, cricsheetId := range teamInfo.Players {
-		player, ok := PlayersCache.Get(PlayerKey{CricsheetId: cricsheetId})
-		if !ok {
-			return fmt.Errorf(`player %s not found in cache`, playerName)
-		}
+	teamInfo := &teamInfo{id: teamId.Int64, name: teamKey.name}
 
-		playerTeamEntry := models.PlayerTeamEntry{
-			PlayerId: player.Id,
-			TeamId:   pgtype.Int8{Int64: teamInfo.Id, Valid: true},
-		}
+	if isTeam1 {
+		matchInfo.match.Team1Id = teamId
+		teamInfo.players = input.team1Players
+		matchInfo.team1Info = teamInfo
+	} else {
+		matchInfo.match.Team2Id = teamId
+		teamInfo.players = input.team2Players
+		matchInfo.team2Info = teamInfo
+	}
 
-		if err := dbutils.UpsertPlayerTeamEntry(context.Background(), DB_POOL, &playerTeamEntry); err != nil {
-			return fmt.Errorf(`failed to upsert team entry of player %s: %v`, playerName, err)
-		}
+	return nil
+}
 
-		matchSquadEntry := models.MatchSquad{
-			PlayerId:      player.Id,
-			TeamId:        pgtype.Int8{Int64: teamInfo.Id, Valid: true},
-			MatchId:       pgtype.Int8{Int64: matchId, Valid: true},
-			PlayingStatus: pgtype.Text{String: "playing_xi", Valid: true},
-		}
+func (matchInfo *matchInfo) setVenueDetails(input *matchInfoInput) error {
+	renameKey := venue{groundName: input.groundName, cityName: input.cityName}
+	if renameData, ok := renamedVenues[renameKey]; ok {
+		input.groundName = renameData.groundName
+		input.cityName = renameData.cityName
+	}
 
-		if err := dbutils.UpsertMatchSquadEntry(context.Background(), DB_POOL, &matchSquadEntry); err != nil {
-			return fmt.Errorf(`error while match squad upsertion of %s: %v`, playerName, err)
-		}
+	cityId, err := cachedCities.loadOrStore(cityKey{name: input.cityName})
+	if err != nil {
+		return fmt.Errorf(`error while loading city %s: %v`, input.cityName, err)
+	}
 
-		seriesSquadEntry := models.SeriesSquadEntry{
-			PlayerId: player.Id,
-			SquadId:  squadId,
-		}
+	ground, err := cachedGrounds.loadOrStore(groundKey{name: input.groundName, city_id: cityId.Int64})
+	if err != nil {
+		return fmt.Errorf(`error while loading ground %s: %v`, input.groundName, err)
+	}
 
-		if err := dbutils.UpsertSeriesSquadEntry(context.Background(), DB_POOL, &seriesSquadEntry); err != nil {
-			return fmt.Errorf(`error while series squad upsertion of %s: %v`, playerName, err)
+	matchInfo.match.GroundId = ground.Id
+
+	if !input.is_neutral_venue {
+		if ground.HostNationName.String == matchInfo.team1Info.name {
+			matchInfo.match.HomeTeamId = matchInfo.match.Team1Id
+			matchInfo.match.AwayTeamId = matchInfo.match.Team2Id
+		} else if ground.HostNationName.String == matchInfo.team2Info.name {
+			matchInfo.match.HomeTeamId = matchInfo.match.Team2Id
+			matchInfo.match.AwayTeamId = matchInfo.match.Team1Id
 		}
 	}
 
 	return nil
 }
 
-func insertPotmEntries(potmNames []string, team1, team2 TeamInfo, matchId int64) error {
-	for _, potmName := range potmNames {
-		var cacheKey PlayerKey
+func (matchInfo *matchInfo) setMatchSeries(input *matchInfoInput) error {
+	seriesKey := seriesKey{
+		name:           input.eventName,
+		is_male:        input.is_male,
+		playing_format: input.playingFormat,
+		playing_level:  input.playingLevel,
+	}
 
-		if cricsheetId, ok := team1.Players[potmName]; ok {
-			cacheKey.CricsheetId = cricsheetId
-		} else if cricsheetId, ok := team2.Players[potmName]; ok {
-			cacheKey.CricsheetId = cricsheetId
-		} else {
-			return fmt.Errorf(`player %s not found in either team`, potmName)
+	if renamedSeries, ok := renamedSeriesNames[seriesKey]; ok {
+		seriesKey.name = renamedSeries
+	}
+
+	seriesKey.season = input.season
+	if renamedSeason, ok := renamedSeriesSeaons[seriesKey]; ok {
+		seriesKey.season = renamedSeason
+	}
+
+	// check if tour
+	touringTeam, hostNations := getTourInfo(seriesKey.name)
+	if touringTeam != "" {
+		for _, hostNation := range hostNations {
+			if _, err := cachedHostNations.loadOrStore(hostNationKey{name: hostNation}); err != nil {
+				return fmt.Errorf(`failed to load host nation %s: %v`, hostNation, err)
+			}
 		}
 
-		player, ok := PlayersCache.Get(cacheKey)
-		if !ok {
-			return fmt.Errorf(`player %s not found in PlayersCache`, potmName)
+		hostTeam := input.team1Name
+		if touringTeam == input.team1Name {
+			hostTeam = input.team2Name
 		}
 
-		awardEntry := models.PlayerAwardEntry{
-			PlayerId:  player.Id,
-			MatchId:   pgtype.Int8{Int64: matchId, Valid: true},
-			AwardType: pgtype.Text{String: "player_of_the_match", Valid: true},
+		subSeriesKey := seriesKey
+		subSeriesKey.name = fmt.Sprintf("%s in %s %s series", touringTeam, hostTeam, input.playingFormat)
+
+		subSeriesId, err := cachedSeries.loadOrStore(subSeriesKey, 1, 2, "tour_series")
+		if err != nil {
+			return fmt.Errorf(`failed to load tour series: %v`, err)
 		}
 
-		if err := dbutils.InsertPlayerAwardEntry(context.Background(), DB_POOL, &awardEntry); err != nil {
-			return fmt.Errorf(`db error %v`, err)
+		matchInfo.match.SeriesListId = append(matchInfo.match.SeriesListId, subSeriesId)
+	}
+
+	var tourFlag string
+	if len(matchInfo.match.SeriesListId) > 0 {
+		tourFlag = "tour_sub_series"
+	}
+
+	mainSeriesId, err := cachedSeries.loadOrStore(seriesKey, 1, 2, tourFlag)
+	if err != nil {
+		return fmt.Errorf(`failed to load main series: %v`, err)
+	}
+
+	matchInfo.match.MainSeriesId = mainSeriesId
+	matchInfo.match.SeriesListId = append(matchInfo.match.SeriesListId, matchInfo.match.MainSeriesId)
+
+	return nil
+}
+
+func (matchInfo *matchInfo) ensurePlayers(input *matchInfoInput, isTeam1 bool) error {
+	teamId, players := matchInfo.team2Info.id, matchInfo.team2Info.players
+	if isTeam1 {
+		teamId, players = matchInfo.team1Info.id, matchInfo.team1Info.players
+	}
+
+	for name, cricsheetId := range players {
+		if cricsheetId == "" {
+			return fmt.Errorf(`no cricsheet id found for player %s: `, name)
+		}
+
+		key := playerKey{cricsheet_id: cricsheetId}
+		if _, err := cachedPlayers.loadOrStore(key, name, input.is_male, teamId); err != nil {
+			return fmt.Errorf(`failed to load player %s: %v`, name, err)
+		}
+	}
+
+	if isTeam1 {
+		matchInfo.team1Info.players = players
+	} else {
+		matchInfo.team2Info.players = players
+	}
+
+	return nil
+}
+
+func (matchInfo *matchInfo) upsertSquadEntries(isTeam1 bool) error {
+	teamInfo := matchInfo.team2Info
+	if isTeam1 {
+		teamInfo = matchInfo.team1Info
+	}
+
+	playersId, err := teamInfo.getPlayersId()
+	if err != nil {
+		return err
+	}
+
+	seriesSquadKey := seriesSquadKey{team_id: teamInfo.id}
+
+	for _, playerId := range playersId {
+		matchSquadEntry := &models.MatchSquad{
+			MatchId:       matchInfo.match.Id,
+			PlayerId:      pgtype.Int8{Int64: playerId, Valid: true},
+			TeamId:        pgtype.Int8{Int64: teamInfo.id, Valid: true},
+			PlayingStatus: pgtype.Text{String: "playing_xi", Valid: true},
+		}
+
+		if err := dbutils.UpsertMatchSquadEntry(context.Background(), DB_POOL, matchSquadEntry); err != nil {
+			return fmt.Errorf(`failed to upsert match squad entry of player %d: %v`, playerId, err)
+		}
+
+		for _, seriesId := range matchInfo.match.SeriesListId {
+			seriesSquadKey.series_id = seriesId.Int64
+			seriesSquadId, err := cachedSeriesSquads.loadOrStore(seriesSquadKey, teamInfo.name)
+			if err != nil {
+				return fmt.Errorf(`error while loading series %d squad: %v`, seriesId.Int64, err)
+			}
+
+			seriesSquadEntry := &models.SeriesSquadEntry{
+				PlayerId: pgtype.Int8{Int64: playerId, Valid: true},
+				SquadId:  seriesSquadId,
+			}
+
+			if err := dbutils.UpsertSeriesSquadEntry(context.Background(), DB_POOL, seriesSquadEntry); err != nil {
+				return fmt.Errorf(`failed to upsert series %d squad entry for player %d: %v`, seriesId.Int64, playerId, err)
+			}
 		}
 	}
 
 	return nil
+}
+
+func (matchInfo *matchInfo) insertPotmEntries(input *matchInfoInput) error {
+	potmEntries := make([]models.PlayerAwardEntry, 0, 1)
+
+	for _, potmName := range input.player_of_match_names {
+		cricsheetId, ok := matchInfo.team1Info.players[potmName]
+		if !ok {
+			if cricsheetId, ok = matchInfo.team2Info.players[potmName]; !ok {
+				return fmt.Errorf(`player of the match %s not found in either team info`, potmName)
+			}
+		}
+
+		playerValue, _ := cachedPlayers.get(playerKey{cricsheet_id: cricsheetId})
+		player := playerValue.data
+
+		potmEntry := models.PlayerAwardEntry{
+			MatchId:   matchInfo.match.Id,
+			PlayerId:  player.Id,
+			AwardType: pgtype.Text{String: "player_of_the_match", Valid: true},
+		}
+
+		potmEntries = append(potmEntries, potmEntry)
+	}
+
+	if err := dbutils.UpsertMatchAwardEntries(context.Background(), DB_POOL, potmEntries); err != nil {
+		return fmt.Errorf(`failed to upsert potm entries: %v`, err)
+	}
+
+	return nil
+}
+
+func (teamInfo *teamInfo) getPlayersId() ([]int64, error) {
+	playersId := make([]int64, 0, 11)
+
+	for playerName, cricsheetId := range teamInfo.players {
+		playerValue, ok := cachedPlayers.get(playerKey{cricsheet_id: cricsheetId})
+		if !ok {
+			return nil, fmt.Errorf("player %s not found in cache", playerName)
+		}
+		playersId = append(playersId, playerValue.data.Id.Int64)
+	}
+
+	return playersId, nil
+}
+
+func getTourInfo(eventName string) (string, []string) {
+	pattern := `^([A-Za-z\s]+) tour of ([A-Za-z\s]+(?: and [A-Za-z\s]+)*)$`
+	re := regexp.MustCompile(pattern)
+	matches := re.FindStringSubmatch(eventName)
+	if len(matches) == 3 {
+		teamName := matches[1]
+		hostNations := matches[2]
+		hostNationList := regexp.MustCompile(`\s+and\s+`).Split(hostNations, -1)
+		return teamName, hostNationList
+	}
+	return "", nil
 }

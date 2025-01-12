@@ -2,8 +2,8 @@
 -- PostgreSQL database dump
 --
 
--- Dumped from database version 16.4 (Ubuntu 16.4-1.pgdg22.04+2)
--- Dumped by pg_dump version 17.0 (Ubuntu 17.0-1.pgdg22.04+1)
+-- Dumped from database version 16.6 (Ubuntu 16.6-1.pgdg22.04+1)
+-- Dumped by pg_dump version 17.2 (Ubuntu 17.2-1.pgdg22.04+1)
 
 SET statement_timeout = 0;
 SET lock_timeout = 0;
@@ -47,74 +47,6 @@ CREATE TYPE public.article_status AS ENUM (
 ALTER TYPE public.article_status OWNER TO postgres;
 
 --
--- Name: dismissal_type; Type: TYPE; Schema: public; Owner: postgres
---
-
-CREATE TYPE public.dismissal_type AS ENUM (
-    'caught',
-    'bowled',
-    'lbw',
-    'run out',
-    'stumped',
-    'hit wicket',
-    'handled the ball',
-    'obstructing the field',
-    'timed out',
-    'retired hurt',
-    'hit the ball twice',
-    'caught and bowled',
-    'retired out',
-    'retired not out'
-);
-
-
-ALTER TYPE public.dismissal_type OWNER TO postgres;
-
---
--- Name: batting_scorecard_record; Type: TYPE; Schema: public; Owner: postgres
---
-
-CREATE TYPE public.batting_scorecard_record AS (
-	batter_id integer,
-	batter_name text,
-	batting_position integer,
-	runs_scored integer,
-	balls_faced integer,
-	fours_scored integer,
-	sixes_scored integer,
-	dismissed_by_id integer,
-	dismissed_by_name text,
-	fielder1_id integer,
-	fielder1_name text,
-	fielder2_id integer,
-	fielder2_name text,
-	dismissal_type public.dismissal_type
-);
-
-
-ALTER TYPE public.batting_scorecard_record OWNER TO postgres;
-
---
--- Name: bowling_scorecard_record; Type: TYPE; Schema: public; Owner: postgres
---
-
-CREATE TYPE public.bowling_scorecard_record AS (
-	bowler_id integer,
-	bowler_name text,
-	bowling_position text,
-	wickets_taken integer,
-	runs_conceded integer,
-	balls_bowled integer,
-	fours_conceded integer,
-	sixes_conceded integer,
-	wides_conceded integer,
-	noballs_conceded integer
-);
-
-
-ALTER TYPE public.bowling_scorecard_record OWNER TO postgres;
-
---
 -- Name: bowling_style; Type: TYPE; Schema: public; Owner: postgres
 --
 
@@ -138,7 +70,7 @@ CREATE TYPE public.career_stats AS (
 	matches_played integer,
 	innings_batted integer,
 	runs_scored integer,
-	batting_dismissals integer,
+	not_outs integer,
 	balls_faced integer,
 	fours_scored integer,
 	sixes_scored integer,
@@ -165,6 +97,30 @@ CREATE TYPE public.career_stats AS (
 ALTER TYPE public.career_stats OWNER TO postgres;
 
 --
+-- Name: dismissal_type; Type: TYPE; Schema: public; Owner: postgres
+--
+
+CREATE TYPE public.dismissal_type AS ENUM (
+    'caught',
+    'bowled',
+    'lbw',
+    'run out',
+    'stumped',
+    'hit wicket',
+    'handled the ball',
+    'obstructing the field',
+    'timed out',
+    'retired hurt',
+    'hit the ball twice',
+    'caught and bowled',
+    'retired out',
+    'retired not out'
+);
+
+
+ALTER TYPE public.dismissal_type OWNER TO postgres;
+
+--
 -- Name: innings_end; Type: TYPE; Schema: public; Owner: postgres
 --
 
@@ -180,106 +136,19 @@ CREATE TYPE public.innings_end AS ENUM (
 ALTER TYPE public.innings_end OWNER TO postgres;
 
 --
--- Name: innings_scorecard_record; Type: TYPE; Schema: public; Owner: postgres
---
-
-CREATE TYPE public.innings_scorecard_record AS (
-	innings_number integer,
-	batting_team_id integer,
-	batting_team_name text,
-	bowling_team_id integer,
-	bowling_team_name text,
-	total_runs integer,
-	total_balls integer,
-	total_wickets integer,
-	byes integer,
-	leg_byes integer,
-	wides integer,
-	noballs integer,
-	penalty integer,
-	is_super_over boolean,
-	innings_end public.innings_end,
-	target_runs integer,
-	target_balls integer,
-	batting_scorecard_entries public.batting_scorecard_record[],
-	bowling_scorecard_entries public.bowling_scorecard_record[]
-);
-
-
-ALTER TYPE public.innings_scorecard_record OWNER TO postgres;
-
---
 -- Name: match_final_result; Type: TYPE; Schema: public; Owner: postgres
 --
 
 CREATE TYPE public.match_final_result AS ENUM (
-    'winner_decided',
-    'tied',
-    'drawn',
-    'no_result',
+    'winner decided',
+    'tie',
+    'draw',
+    'no result',
     'abandoned'
 );
 
 
 ALTER TYPE public.match_final_result OWNER TO postgres;
-
---
--- Name: team_innings_short_info; Type: TYPE; Schema: public; Owner: postgres
---
-
-CREATE TYPE public.team_innings_short_info AS (
-	innings_number integer,
-	batting_team_id integer,
-	total_runs integer,
-	total_balls integer,
-	total_wickets integer,
-	innings_end text,
-	target_runs integer,
-	target_balls integer
-);
-
-
-ALTER TYPE public.team_innings_short_info OWNER TO postgres;
-
---
--- Name: match_short_info; Type: TYPE; Schema: public; Owner: postgres
---
-
-CREATE TYPE public.match_short_info AS (
-	id integer,
-	playing_level text,
-	playing_format text,
-	match_type text,
-	cricsheet_id text,
-	balls_per_over integer,
-	event_match_number text,
-	start_date date,
-	end_date date,
-	start_time time without time zone,
-	is_day_night boolean,
-	ground_id integer,
-	ground_name text,
-	team1_id integer,
-	team1_name text,
-	team1_image_url text,
-	team2_id integer,
-	team2_name text,
-	team2_image_url text,
-	current_status text,
-	final_result text,
-	outcome_special_method text,
-	match_winner_team_id integer,
-	bowl_out_winner_id integer,
-	super_over_winner_id integer,
-	is_won_by_innings boolean,
-	is_won_by_runs boolean,
-	win_margin text,
-	balls_remaining_after_win integer,
-	innings public.team_innings_short_info[]
-);
-
-
-ALTER TYPE public.match_short_info OWNER TO postgres;
 
 --
 -- Name: match_type; Type: TYPE; Schema: public; Owner: postgres
@@ -333,7 +202,7 @@ CREATE TYPE public.playing_format AS ENUM (
     'T20I',
     'first_class',
     'list_a',
-    't20'
+    'T20'
 );
 
 
@@ -367,6 +236,18 @@ CREATE TYPE public.playing_status AS ENUM (
 ALTER TYPE public.playing_status OWNER TO postgres;
 
 --
+-- Name: tour_flag; Type: TYPE; Schema: public; Owner: postgres
+--
+
+CREATE TYPE public.tour_flag AS ENUM (
+    'tour_series',
+    'tour_sub_series'
+);
+
+
+ALTER TYPE public.tour_flag OWNER TO postgres;
+
+--
 -- Name: user_role; Type: TYPE; Schema: public; Owner: postgres
 --
 
@@ -381,869 +262,6 @@ CREATE TYPE public.user_role AS ENUM (
 
 ALTER TYPE public.user_role OWNER TO postgres;
 
---
--- Name: get_batting_scorecard_entries(integer); Type: FUNCTION; Schema: public; Owner: postgres
---
-
-CREATE FUNCTION public.get_batting_scorecard_entries(p_innings_id integer) RETURNS public.batting_scorecard_record[]
-    LANGUAGE plpgsql
-    AS $$
-BEGIN
-    RETURN ARRAY(
-         SELECT ROW(
-            bs.batter_id,
-            p.name,
-			bs.batting_position,
-            bs.runs_scored,
-            bs.balls_faced,
-            bs.fours_scored,
-            bs.sixes_scored,
-			bs.dismissed_by_id,
-			p2.name,
-			bs.fielder1_id,
-			p3.name,
-			bs.fielder2_id,
-			p4.name,
-            bs.dismissal_type
-        )::batting_scorecard_record
-        FROM batting_scorecards bs
-        LEFT JOIN players p ON p.id = bs.batter_id
-		LEFT JOIN players p2 ON p2.id = bs.dismissed_by_id
-		LEFT JOIN players p3 ON p3.id = bs.fielder1_id
-		LEFT JOIN players p4 ON p4.id = bs.fielder2_id
-        WHERE bs.innings_id = p_innings_id
-    );
-END;
-$$;
-
-
-ALTER FUNCTION public.get_batting_scorecard_entries(p_innings_id integer) OWNER TO postgres;
-
---
--- Name: get_bowling_scorecard_entries(integer); Type: FUNCTION; Schema: public; Owner: postgres
---
-
-CREATE FUNCTION public.get_bowling_scorecard_entries(p_innings_id integer) RETURNS public.bowling_scorecard_record[]
-    LANGUAGE plpgsql
-    AS $$
-BEGIN
-    RETURN ARRAY(
-         SELECT ROW(
-            bs.bowler_id,
-            p.name,
-			bs.bowling_position,
-            bs.wickets_taken,
-			bs.runs_conceded,
-            bs.balls_bowled,
-            bs.fours_conceded,
-            bs.sixes_conceded,
-			bs.wides_conceded,
-			bs.noballs_conceded
-        )::bowling_scorecard_record
-        FROM bowling_scorecards bs
-        LEFT JOIN players p ON p.id = bs.bowler_id
-        WHERE bs.innings_id = p_innings_id
-    );
-END;
-$$;
-
-
-ALTER FUNCTION public.get_bowling_scorecard_entries(p_innings_id integer) OWNER TO postgres;
-
---
--- Name: get_innings_scorecard_entries(integer); Type: FUNCTION; Schema: public; Owner: postgres
---
-
-CREATE FUNCTION public.get_innings_scorecard_entries(p_match_id integer) RETURNS public.innings_scorecard_record[]
-    LANGUAGE plpgsql
-    AS $$
-BEGIN
-    RETURN ARRAY(
-         SELECT ROW(
-            innings.innings_number,
-			innings.batting_team_id,
-			t1.name,
-			innings.bowling_team_id,
-			t2.name,
-			innings.total_runs,
-			innings.total_balls,
-			innings.total_wickets,
-			innings.byes,
-			innings.leg_byes,
-			innings.wides,
-			innings.noballs,
-			innings.penalty,
-			innings.is_super_over,
-			innings.innings_end,
-			innings.target_runs,
-			innings.target_balls,
-			get_batting_scorecard_entries(innings.id),
-			get_bowling_scorecard_entries(innings.id)
-        )::innings_scorecard_record
-        FROM innings
-		LEFT JOIN teams t1 on t1.id = innings.batting_team_id
-		LEFT JOIN teams t2 on t2.id = innings.bowling_team_id
-        WHERE innings.match_id = p_match_id
-    );
-END;
-$$;
-
-
-ALTER FUNCTION public.get_innings_scorecard_entries(p_match_id integer) OWNER TO postgres;
-
---
--- Name: get_match_innings(integer); Type: FUNCTION; Schema: public; Owner: postgres
---
-
-CREATE FUNCTION public.get_match_innings(p_match_id integer) RETURNS public.team_innings_short_info[]
-    LANGUAGE sql
-    AS $$
-    SELECT ARRAY_AGG(
-        ROW(
-            innings_number, 
-            batting_team_id, 
-            total_runs, 
-            total_balls, 
-            total_wickets, 
-            innings_end, 
-            target_runs, 
-            target_balls
-        )::team_innings_short_info
-    )
-    FROM innings
-    WHERE match_id = p_match_id;
-$$;
-
-
-ALTER FUNCTION public.get_match_innings(p_match_id integer) OWNER TO postgres;
-
---
--- Name: get_player_profile_by_id(integer); Type: FUNCTION; Schema: public; Owner: postgres
---
-
-CREATE FUNCTION public.get_player_profile_by_id(player_id integer) RETURNS TABLE(id integer, name text, full_name text, playing_role text, nationality text, is_male boolean, date_of_birth date, image_url text, biography text, is_rhb boolean, bowling_styles public.bowling_style[], primary_bowling_style public.bowling_style, teams_represented jsonb, test_stats jsonb, odi_stats jsonb, t20i_stats jsonb, fc_stats jsonb, lista_stats jsonb, t20_stats jsonb, cricsheet_id text, cricinfo_id text, cricbuzz_id text)
-    LANGUAGE plpgsql
-    AS $$
- BEGIN RETURN QUERY
-SELECT p.id,
-    p.name,
-	p.full_name,
-    p.playing_role,
-    p.nationality,
-    p.is_male,
-    p.date_of_birth,
-    p.image_url,
-    p.biography,
-	p.is_rhb,
-    p.bowling_styles,
-    p.primary_bowling_style,
-    COALESCE(
-        jsonb_agg(jsonb_build_object('id', t.id, 'name', t.name)) FILTER (
-            WHERE t.id IS NOT NULL
-        ),
-        '[]'
-    ) AS teams_represented,
-    jsonb_build_object(
-        'matches_played',
-        (p.test_stats).matches_played,
-        'innings_batted',
-        (p.test_stats).innings_batted,
-        'runs_scored',
-        (p.test_stats).runs_scored,
-        'batting_dismissals',
-        (p.test_stats).batting_dismissals,
-        'balls_faced',
-        (p.test_stats).balls_faced,
-        'fours_scored',
-        (p.test_stats).fours_scored,
-        'sixes_scored',
-        (p.test_stats).sixes_scored,
-        'centuries_scored',
-        (p.test_stats).centuries_scored,
-        'fifties_scored',
-        (p.test_stats).fifties_scored,
-        'highest_score',
-        (p.test_stats).highest_score,
-        'is_highest_not_out',
-        (p.test_stats).is_highest_not_out,
-        'innings_bowled',
-        (p.test_stats).innings_bowled,
-        'wickets_taken',
-        (p.test_stats).wickets_taken,
-        'runs_conceded',
-        (p.test_stats).runs_conceded,
-        'balls_bowled',
-        (p.test_stats).balls_bowled,
-        'fours_conceded',
-        (p.test_stats).fours_conceded,
-        'sixes_conceded',
-        (p.test_stats).sixes_conceded,
-        'four_wkt_hauls',
-        (p.test_stats).four_wkt_hauls,
-        'five_wkt_hauls',
-        (p.test_stats).five_wkt_hauls,
-        'ten_wkt_hauls',
-        (p.test_stats).ten_wkt_hauls,
-        'best_inn_fig_runs',
-        (p.test_stats).best_inn_fig_runs,
-        'best_inn_fig_wkts',
-        (p.test_stats).best_inn_fig_wkts,
-        'best_match_fig_runs',
-        (p.test_stats).best_match_fig_runs,
-        'best_match_fig_wkts',
-        (p.test_stats).best_match_fig_wkts,
-        'debut_match',
-        jsonb_build_object(
-            'id',
-            test_dm.id,
-            'team1',
-            test_dm_team1.name,
-            'team2',
-            test_dm_team2.name,
-            'date',
-            test_dm.start_date,
-            'ground',
-            test_dm_ground.name
-        ),
-        'last_match',
-        jsonb_build_object(
-            'id',
-            test_lm.id,
-            'team1',
-            test_lm_team1.id,
-            'team2',
-            test_lm_team2.id,
-            'date',
-            test_lm.start_date,
-            'ground',
-            test_lm.ground_id
-        )
-    ) AS test_stats,
-    jsonb_build_object(
-        'matches_played',
-        (p.odi_stats).matches_played,
-        'innings_batted',
-        (p.odi_stats).innings_batted,
-        'runs_scored',
-        (p.odi_stats).runs_scored,
-        'batting_dismissals',
-        (p.odi_stats).batting_dismissals,
-        'balls_faced',
-        (p.odi_stats).balls_faced,
-        'fours_scored',
-        (p.odi_stats).fours_scored,
-        'sixes_scored',
-        (p.odi_stats).sixes_scored,
-        'centuries_scored',
-        (p.odi_stats).centuries_scored,
-        'fifties_scored',
-        (p.odi_stats).fifties_scored,
-        'highest_score',
-        (p.odi_stats).highest_score,
-        'is_highest_not_out',
-        (p.odi_stats).is_highest_not_out,
-        'innings_bowled',
-        (p.odi_stats).innings_bowled,
-        'wickets_taken',
-        (p.odi_stats).wickets_taken,
-        'runs_conceded',
-        (p.odi_stats).runs_conceded,
-        'balls_bowled',
-        (p.odi_stats).balls_bowled,
-        'fours_conceded',
-        (p.odi_stats).fours_conceded,
-        'sixes_conceded',
-        (p.odi_stats).sixes_conceded,
-        'four_wkt_hauls',
-        (p.odi_stats).four_wkt_hauls,
-        'five_wkt_hauls',
-        (p.odi_stats).five_wkt_hauls,
-        'ten_wkt_hauls',
-        (p.odi_stats).ten_wkt_hauls,
-        'best_inn_fig_runs',
-        (p.odi_stats).best_inn_fig_runs,
-        'best_inn_fig_wkts',
-        (p.odi_stats).best_inn_fig_wkts,
-        'best_match_fig_runs',
-        (p.odi_stats).best_match_fig_runs,
-        'best_match_fig_wkts',
-        (p.odi_stats).best_match_fig_wkts,
-        'debut_match',
-        jsonb_build_object(
-            'id',
-            odi_dm.id,
-            'team1',
-            odi_dm_team1.name,
-            'team2',
-            odi_dm_team2.name,
-            'date',
-            odi_dm.start_date,
-            'ground',
-            odi_dm.ground_id
-        ),
-        'last_match',
-        jsonb_build_object(
-            'id',
-            odi_lm.id,
-            'team1',
-            odi_lm_team1.id,
-            'team2',
-            odi_lm_team2.id,
-            'date',
-            odi_lm.start_date,
-            'ground',
-            odi_lm.ground_id
-        )
-    ) AS odi_stats,
-    jsonb_build_object(
-        'matches_played',
-        (p.t20i_stats).matches_played,
-        'innings_batted',
-        (p.t20i_stats).innings_batted,
-        'runs_scored',
-        (p.t20i_stats).runs_scored,
-        'batting_dismissals',
-        (p.t20i_stats).batting_dismissals,
-        'balls_faced',
-        (p.t20i_stats).balls_faced,
-        'fours_scored',
-        (p.t20i_stats).fours_scored,
-        'sixes_scored',
-        (p.t20i_stats).sixes_scored,
-        'centuries_scored',
-        (p.t20i_stats).centuries_scored,
-        'fifties_scored',
-        (p.t20i_stats).fifties_scored,
-        'highest_score',
-        (p.t20i_stats).highest_score,
-        'is_highest_not_out',
-        (p.t20i_stats).is_highest_not_out,
-        'innings_bowled',
-        (p.t20i_stats).innings_bowled,
-        'wickets_taken',
-        (p.t20i_stats).wickets_taken,
-        'runs_conceded',
-        (p.t20i_stats).runs_conceded,
-        'balls_bowled',
-        (p.t20i_stats).balls_bowled,
-        'fours_conceded',
-        (p.t20i_stats).fours_conceded,
-        'sixes_conceded',
-        (p.t20i_stats).sixes_conceded,
-        'four_wkt_hauls',
-        (p.t20i_stats).four_wkt_hauls,
-        'five_wkt_hauls',
-        (p.t20i_stats).five_wkt_hauls,
-        'ten_wkt_hauls',
-        (p.t20i_stats).ten_wkt_hauls,
-        'best_inn_fig_runs',
-        (p.t20i_stats).best_inn_fig_runs,
-        'best_inn_fig_wkts',
-        (p.t20i_stats).best_inn_fig_wkts,
-        'best_match_fig_runs',
-        (p.t20i_stats).best_match_fig_runs,
-        'best_match_fig_wkts',
-        (p.t20i_stats).best_match_fig_wkts,
-        'debut_match',
-        jsonb_build_object(
-            'id',
-            t20i_dm.id,
-            'team1',
-            t20i_dm_team1.name,
-            'team2',
-            t20i_dm_team2.name,
-            'date',
-            t20i_dm.start_date,
-            'ground',
-            t20i_dm.ground_id
-        ),
-        'last_match',
-        jsonb_build_object(
-            'id',
-            t20i_lm.id,
-            'team1',
-            t20i_lm_team1.id,
-            'team2',
-            t20i_lm_team2.id,
-            'date',
-            t20i_lm.start_date,
-            'ground',
-            t20i_lm.ground_id
-        )
-    ) AS t20i_stats,
-    jsonb_build_object(
-        'matches_played',
-        (p.fc_stats).matches_played,
-        'innings_batted',
-        (p.fc_stats).innings_batted,
-        'runs_scored',
-        (p.fc_stats).runs_scored,
-        'batting_dismissals',
-        (p.fc_stats).batting_dismissals,
-        'balls_faced',
-        (p.fc_stats).balls_faced,
-        'fours_scored',
-        (p.fc_stats).fours_scored,
-        'sixes_scored',
-        (p.fc_stats).sixes_scored,
-        'centuries_scored',
-        (p.fc_stats).centuries_scored,
-        'fifties_scored',
-        (p.fc_stats).fifties_scored,
-        'highest_score',
-        (p.fc_stats).highest_score,
-        'is_highest_not_out',
-        (p.fc_stats).is_highest_not_out,
-        'innings_bowled',
-        (p.fc_stats).innings_bowled,
-        'wickets_taken',
-        (p.fc_stats).wickets_taken,
-        'runs_conceded',
-        (p.fc_stats).runs_conceded,
-        'balls_bowled',
-        (p.fc_stats).balls_bowled,
-        'fours_conceded',
-        (p.fc_stats).fours_conceded,
-        'sixes_conceded',
-        (p.fc_stats).sixes_conceded,
-        'four_wkt_hauls',
-        (p.fc_stats).four_wkt_hauls,
-        'five_wkt_hauls',
-        (p.fc_stats).five_wkt_hauls,
-        'ten_wkt_hauls',
-        (p.fc_stats).ten_wkt_hauls,
-        'best_inn_fig_runs',
-        (p.fc_stats).best_inn_fig_runs,
-        'best_inn_fig_wkts',
-        (p.fc_stats).best_inn_fig_wkts,
-        'best_match_fig_runs',
-        (p.fc_stats).best_match_fig_runs,
-        'best_match_fig_wkts',
-        (p.fc_stats).best_match_fig_wkts,
-        'debut_match',
-        jsonb_build_object(
-            'id',
-            fc_dm.id,
-            'team1',
-            fc_dm_team1.name,
-            'team2',
-            fc_dm_team2.name,
-            'date',
-            fc_dm.start_date,
-            'ground',
-            fc_dm.ground_id
-        ),
-        'last_match',
-        jsonb_build_object(
-            'id',
-            fc_lm.id,
-            'team1',
-            fc_lm_team1.id,
-            'team2',
-            fc_lm_team2.id,
-            'date',
-            fc_lm.start_date,
-            'ground',
-            fc_lm.ground_id
-        )
-    ) AS fc_stats,
-    jsonb_build_object(
-        'matches_played',
-        (p.lista_stats).matches_played,
-        'innings_batted',
-        (p.lista_stats).innings_batted,
-        'runs_scored',
-        (p.lista_stats).runs_scored,
-        'batting_dismissals',
-        (p.lista_stats).batting_dismissals,
-        'balls_faced',
-        (p.lista_stats).balls_faced,
-        'fours_scored',
-        (p.lista_stats).fours_scored,
-        'sixes_scored',
-        (p.lista_stats).sixes_scored,
-        'centuries_scored',
-        (p.lista_stats).centuries_scored,
-        'fifties_scored',
-        (p.lista_stats).fifties_scored,
-        'highest_score',
-        (p.lista_stats).highest_score,
-        'is_highest_not_out',
-        (p.lista_stats).is_highest_not_out,
-        'innings_bowled',
-        (p.lista_stats).innings_bowled,
-        'wickets_taken',
-        (p.lista_stats).wickets_taken,
-        'runs_conceded',
-        (p.lista_stats).runs_conceded,
-        'balls_bowled',
-        (p.lista_stats).balls_bowled,
-        'fours_conceded',
-        (p.lista_stats).fours_conceded,
-        'sixes_conceded',
-        (p.lista_stats).sixes_conceded,
-        'four_wkt_hauls',
-        (p.lista_stats).four_wkt_hauls,
-        'five_wkt_hauls',
-        (p.lista_stats).five_wkt_hauls,
-        'ten_wkt_hauls',
-        (p.lista_stats).ten_wkt_hauls,
-        'best_inn_fig_runs',
-        (p.lista_stats).best_inn_fig_runs,
-        'best_inn_fig_wkts',
-        (p.lista_stats).best_inn_fig_wkts,
-        'best_match_fig_runs',
-        (p.lista_stats).best_match_fig_runs,
-        'best_match_fig_wkts',
-        (p.lista_stats).best_match_fig_wkts,
-        'debut_match',
-        jsonb_build_object(
-            'id',
-            lista_dm.id,
-            'team1',
-            lista_dm_team1.name,
-            'team2',
-            lista_dm_team2.name,
-            'date',
-            lista_dm.start_date,
-            'ground',
-            lista_dm.ground_id
-        ),
-        'last_match',
-        jsonb_build_object(
-            'id',
-            lista_lm.id,
-            'team1',
-            lista_lm_team1.id,
-            'team2',
-            lista_lm_team2.id,
-            'date',
-            lista_lm.start_date,
-            'ground',
-            lista_lm.ground_id
-        )
-    ) AS lista_stats,
-    jsonb_build_object(
-        'matches_played',
-        (p.t20_stats).matches_played,
-        'innings_batted',
-        (p.t20_stats).innings_batted,
-        'runs_scored',
-        (p.t20_stats).runs_scored,
-        'batting_dismissals',
-        (p.t20_stats).batting_dismissals,
-        'balls_faced',
-        (p.t20_stats).balls_faced,
-        'fours_scored',
-        (p.t20_stats).fours_scored,
-        'sixes_scored',
-        (p.t20_stats).sixes_scored,
-        'centuries_scored',
-        (p.t20_stats).centuries_scored,
-        'fifties_scored',
-        (p.t20_stats).fifties_scored,
-        'highest_score',
-        (p.t20_stats).highest_score,
-        'is_highest_not_out',
-        (p.t20_stats).is_highest_not_out,
-        'innings_bowled',
-        (p.t20_stats).innings_bowled,
-        'wickets_taken',
-        (p.t20_stats).wickets_taken,
-        'runs_conceded',
-        (p.t20_stats).runs_conceded,
-        'balls_bowled',
-        (p.t20_stats).balls_bowled,
-        'fours_conceded',
-        (p.t20_stats).fours_conceded,
-        'sixes_conceded',
-        (p.t20_stats).sixes_conceded,
-        'four_wkt_hauls',
-        (p.t20_stats).four_wkt_hauls,
-        'five_wkt_hauls',
-        (p.t20_stats).five_wkt_hauls,
-        'ten_wkt_hauls',
-        (p.t20_stats).ten_wkt_hauls,
-        'best_inn_fig_runs',
-        (p.t20_stats).best_inn_fig_runs,
-        'best_inn_fig_wkts',
-        (p.t20_stats).best_inn_fig_wkts,
-        'best_match_fig_runs',
-        (p.t20_stats).best_match_fig_runs,
-        'best_match_fig_wkts',
-        (p.t20_stats).best_match_fig_wkts,
-        'debut_match',
-        jsonb_build_object(
-            'id',
-            t20_dm.id,
-            'team1',
-            t20_dm_team1.name,
-            'team2',
-            t20_dm_team2.name,
-            'date',
-            t20_dm.start_date,
-            'ground',
-            t20_dm.ground_id
-        ),
-        'last_match',
-        jsonb_build_object(
-            'id',
-            t20_lm.id,
-            'team1',
-            t20_lm_team1.id,
-            'team2',
-            t20_lm_team2.id,
-            'date',
-            t20_lm.start_date,
-            'ground',
-            t20_lm.ground_id
-        )
-    ) AS t20_stats,
-    p.cricsheet_id,
-    p.cricinfo_id,
-    p.cricbuzz_id
-FROM players p
-    LEFT JOIN LATERAL unnest(p.teams_represented_id) AS team_id ON true
-    LEFT JOIN teams t ON t.id = team_id
-    LEFT JOIN matches test_dm ON test_dm.id = (p.test_stats).debut_match_id
-    LEFT JOIN matches test_lm ON test_lm.id = (p.test_stats).last_match_id
-    LEFT JOIN matches odi_dm ON odi_dm.id = (p.odi_stats).debut_match_id
-    LEFT JOIN matches odi_lm ON odi_lm.id = (p.odi_stats).last_match_id
-    LEFT JOIN matches t20i_dm ON t20i_dm.id = (p.t20i_stats).debut_match_id
-    LEFT JOIN matches t20i_lm ON t20i_lm.id = (p.t20i_stats).last_match_id
-    LEFT JOIN matches fc_dm ON fc_dm.id = (p.fc_stats).debut_match_id
-    LEFT JOIN matches fc_lm ON fc_lm.id = (p.fc_stats).last_match_id
-    LEFT JOIN matches lista_dm ON lista_dm.id = (p.lista_stats).debut_match_id
-    LEFT JOIN matches lista_lm ON lista_lm.id = (p.lista_stats).last_match_id
-    LEFT JOIN matches t20_dm ON t20_dm.id = (p.t20_stats).debut_match_id
-    LEFT JOIN matches t20_lm ON t20_lm.id = (p.t20_stats).last_match_id
-    LEFT JOIN teams test_dm_team1 ON test_dm.team1_id = test_dm_team1.id
-    LEFT JOIN teams test_lm_team1 ON test_lm.team1_id = test_lm_team1.id
-    LEFT JOIN teams test_dm_team2 ON test_dm.team2_id = test_dm_team2.id
-    LEFT JOIN teams test_lm_team2 ON test_lm.team2_id = test_lm_team2.id
-    LEFT JOIN teams odi_dm_team1 ON odi_dm.team1_id = odi_dm_team1.id
-    LEFT JOIN teams odi_lm_team1 ON odi_lm.team1_id = odi_lm_team1.id
-    LEFT JOIN teams odi_dm_team2 ON odi_dm.team2_id = odi_dm_team2.id
-    LEFT JOIN teams odi_lm_team2 ON odi_lm.team2_id = odi_lm_team2.id
-    LEFT JOIN teams t20i_dm_team1 ON t20i_dm.team1_id = t20i_dm_team1.id
-    LEFT JOIN teams t20i_lm_team1 ON t20i_lm.team1_id = t20i_lm_team1.id
-    LEFT JOIN teams t20i_dm_team2 ON t20i_dm.team2_id = t20i_dm_team2.id
-    LEFT JOIN teams t20i_lm_team2 ON t20i_lm.team2_id = t20i_lm_team2.id
-    LEFT JOIN teams fc_dm_team1 ON fc_dm.team1_id = fc_dm_team1.id
-    LEFT JOIN teams fc_lm_team1 ON fc_lm.team1_id = fc_lm_team1.id
-    LEFT JOIN teams fc_dm_team2 ON fc_dm.team2_id = fc_dm_team2.id
-    LEFT JOIN teams fc_lm_team2 ON fc_lm.team2_id = fc_lm_team2.id
-    LEFT JOIN teams lista_dm_team1 ON lista_dm.team1_id = lista_dm_team1.id
-    LEFT JOIN teams lista_lm_team1 ON lista_lm.team1_id = lista_lm_team1.id
-    LEFT JOIN teams lista_dm_team2 ON lista_dm.team2_id = lista_dm_team2.id
-    LEFT JOIN teams lista_lm_team2 ON lista_lm.team2_id = lista_lm_team2.id
-    LEFT JOIN teams t20_dm_team1 ON t20_dm.team1_id = t20_dm_team1.id
-    LEFT JOIN teams t20_lm_team1 ON t20_lm.team1_id = t20_lm_team1.id
-    LEFT JOIN teams t20_dm_team2 ON t20_dm.team2_id = t20_dm_team2.id
-    LEFT JOIN teams t20_lm_team2 ON t20_lm.team2_id = t20_lm_team2.id
-    LEFT JOIN grounds test_dm_ground ON test_dm.ground_id = test_dm_ground.id
-    LEFT JOIN grounds odi_dm_ground ON odi_dm.ground_id = odi_dm_ground.id
-    LEFT JOIN grounds t20i_dm_ground ON t20i_dm.ground_id = t20i_dm_ground.id
-    LEFT JOIN grounds fc_dm_ground ON fc_dm.ground_id = fc_dm_ground.id
-    LEFT JOIN grounds lista_dm_ground ON lista_dm.ground_id = lista_dm_ground.id
-    LEFT JOIN grounds t20_dm_ground ON t20_dm.ground_id = t20_dm_ground.id
-    LEFT JOIN grounds test_lm_ground ON test_lm.ground_id = test_lm_ground.id
-    LEFT JOIN grounds odi_lm_ground ON odi_lm.ground_id = odi_lm_ground.id
-    LEFT JOIN grounds t20i_lm_ground ON t20i_lm.ground_id = t20i_lm_ground.id
-    LEFT JOIN grounds fc_lm_ground ON fc_lm.ground_id = fc_lm_ground.id
-    LEFT JOIN grounds lista_lm_ground ON lista_lm.ground_id = lista_lm_ground.id
-    LEFT JOIN grounds t20_lm_ground ON t20_lm.ground_id = t20_lm_ground.id
-WHERE p.id = player_id
-GROUP BY p.id,
-    test_dm.id,
-    test_dm_team1.id,
-    test_dm_team1.name,
-    test_dm_team2.id,
-    test_dm_team2.name,
-    test_dm_ground.id,
-    test_dm_ground.name,
-    test_lm.id,
-    test_lm_team1.id,
-    test_lm_team1.name,
-    test_lm_team2.id,
-    test_lm_team2.name,
-    test_lm_ground.id,
-    test_lm_ground.name,
-    odi_dm.id,
-    odi_dm_team1.id,
-    odi_dm_team1.name,
-    odi_dm_team2.id,
-    odi_dm_team2.name,
-    odi_dm_ground.id,
-    odi_dm_ground.name,
-    odi_lm.id,
-    odi_lm_team1.id,
-    odi_lm_team1.name,
-    odi_lm_team2.id,
-    odi_lm_team2.name,
-    odi_lm_ground.id,
-    odi_lm_ground.name,
-    t20i_dm.id,
-    t20i_dm_team1.id,
-    t20i_dm_team1.name,
-    t20i_dm_team2.id,
-    t20i_dm_team2.name,
-    t20i_dm_ground.id,
-    t20i_dm_ground.name,
-    t20i_lm.id,
-    t20i_lm_team1.id,
-    t20i_lm_team1.name,
-    t20i_lm_team2.id,
-    t20i_lm_team2.name,
-    t20i_lm_ground.id,
-    t20i_lm_ground.name,
-    fc_dm.id,
-    fc_dm_team1.id,
-    fc_dm_team1.name,
-    fc_dm_team2.id,
-    fc_dm_team2.name,
-    fc_dm_ground.id,
-    fc_dm_ground.name,
-    fc_lm.id,
-    fc_lm_team1.id,
-    fc_lm_team1.name,
-    fc_lm_team2.id,
-    fc_lm_team2.name,
-    fc_lm_ground.id,
-    fc_lm_ground.name,
-    lista_dm.id,
-    lista_dm_team1.id,
-    lista_dm_team1.name,
-    lista_dm_team2.id,
-    lista_dm_team2.name,
-    lista_dm_ground.id,
-    lista_dm_ground.name,
-    lista_lm.id,
-    lista_lm_team1.id,
-    lista_lm_team1.name,
-    lista_lm_team2.id,
-    lista_lm_team2.name,
-    lista_lm_ground.id,
-    lista_lm_ground.name,
-    t20_dm.id,
-    t20_dm_team1.id,
-    t20_dm_team1.name,
-    t20_dm_team2.id,
-    t20_dm_team2.name,
-    t20_dm_ground.id,
-    t20_dm_ground.name,
-    t20_lm.id,
-    t20_lm_team1.id,
-    t20_lm_team1.name,
-    t20_lm_team2.id,
-    t20_lm_team2.name,
-    t20_dm_ground.id,
-    t20_dm_ground.name;
-END;
-$$;
-
-
-ALTER FUNCTION public.get_player_profile_by_id(player_id integer) OWNER TO postgres;
-
---
--- Name: get_series_matches(integer); Type: FUNCTION; Schema: public; Owner: postgres
---
-
-CREATE FUNCTION public.get_series_matches(p_series_id integer) RETURNS public.match_short_info[]
-    LANGUAGE sql
-    AS $$
-    SELECT ARRAY_AGG(
-        ROW(
-            matches.id,
-            matches.playing_level,
-            matches.playing_format,
-            matches.match_type,
-            matches.cricsheet_id,
-            matches.balls_per_over,
-            matches.event_match_number,
-            matches.start_date,
-            matches.end_date,
-            matches.start_time,
-            matches.is_day_night,
-            matches.ground_id,
-            grounds.name,
-            matches.team1_id,
-            t1.name,
-            t1.image_url,
-            matches.team2_id,
-            t2.name,
-            t2.image_url,
-            matches.current_status,
-            matches.final_result,
-            matches.outcome_special_method,
-            matches.match_winner_team_id,
-            matches.bowl_out_winner_id,
-            matches.super_over_winner_id,
-            matches.is_won_by_innings,
-            matches.is_won_by_runs,
-            matches.win_margin,
-            matches.balls_remaining_after_win,
-            get_match_innings(matches.id)
-        )::match_short_info
-    )
-    FROM matches 
-    LEFT JOIN teams t1 ON matches.team1_id = t1.id 
-    LEFT JOIN teams t2 ON matches.team2_id = t2.id 
-    LEFT JOIN grounds ON grounds.id = matches.ground_id
-    WHERE matches.series_id = p_series_id;
-$$;
-
-
-ALTER FUNCTION public.get_series_matches(p_series_id integer) OWNER TO postgres;
-
---
--- Name: update_series_dates(); Type: FUNCTION; Schema: public; Owner: postgres
---
-
-CREATE FUNCTION public.update_series_dates() RETURNS trigger
-    LANGUAGE plpgsql
-    AS $$
-BEGIN
-    IF NEW.series_id IS NOT NULL THEN
-        -- Check if inserted/updated match start_date is earlier than series start_date
-        IF NEW.start_date < (SELECT start_date FROM series WHERE id = NEW.series_id) THEN
-            UPDATE series SET start_date = NEW.start_date WHERE id = NEW.series_id;
-        END IF;
-
-        -- Check if inserted/updated match end_date is later than series end_date
-        IF NEW.end_date > (SELECT end_date FROM series WHERE id = NEW.series_id) THEN
-            UPDATE series SET end_date = NEW.end_date WHERE id = NEW.series_id;
-        END IF;
-    END IF;
-    
-    -- For DELETE operation, consider if any match dates are affected for the series
-    IF OLD.series_id IS NOT NULL AND TG_OP = 'DELETE' THEN
-        -- Update start_date to the earliest match date in the series
-        UPDATE series
-        SET start_date = (
-            SELECT MIN(start_date) 
-            FROM matches 
-            WHERE series_id = OLD.series_id
-        )
-        WHERE id = OLD.series_id;
-        
-        -- Update end_date to the latest match date in the series
-        UPDATE series
-        SET end_date = (
-            SELECT MAX(end_date) 
-            FROM matches 
-            WHERE series_id = OLD.series_id
-        )
-        WHERE id = OLD.series_id;
-    END IF;
-
-    RETURN NEW;
-END;
-$$;
-
-
-ALTER FUNCTION public.update_series_dates() OWNER TO postgres;
-
 SET default_tablespace = '';
 
 SET default_table_access_method = heap;
@@ -1253,46 +271,24 @@ SET default_table_access_method = heap;
 --
 
 CREATE TABLE public.batting_scorecards (
-    id integer NOT NULL,
     innings_id integer NOT NULL,
     batter_id integer NOT NULL,
-    batting_position integer NOT NULL,
+    batting_position integer,
     runs_scored integer DEFAULT 0,
     balls_faced integer DEFAULT 0,
     minutes_batted integer DEFAULT 0,
     fours_scored integer DEFAULT 0,
     sixes_scored integer DEFAULT 0,
     dismissed_by_id integer,
-    dismissal_ball_id integer,
     fielder1_id integer,
     fielder2_id integer,
-    dismissal_type public.dismissal_type
+    dismissal_type public.dismissal_type,
+    has_batted boolean DEFAULT false,
+    dismissal_ball_number integer
 );
 
 
 ALTER TABLE public.batting_scorecards OWNER TO postgres;
-
---
--- Name: batting_scorecards_id_seq; Type: SEQUENCE; Schema: public; Owner: postgres
---
-
-CREATE SEQUENCE public.batting_scorecards_id_seq
-    AS integer
-    START WITH 1
-    INCREMENT BY 1
-    NO MINVALUE
-    NO MAXVALUE
-    CACHE 1;
-
-
-ALTER SEQUENCE public.batting_scorecards_id_seq OWNER TO postgres;
-
---
--- Name: batting_scorecards_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: postgres
---
-
-ALTER SEQUENCE public.batting_scorecards_id_seq OWNED BY public.batting_scorecards.id;
-
 
 --
 -- Name: blog_articles; Type: TABLE; Schema: public; Owner: postgres
@@ -1343,43 +339,21 @@ ALTER SEQUENCE public.blog_articles_id_seq OWNED BY public.blog_articles.id;
 --
 
 CREATE TABLE public.bowling_scorecards (
-    id integer NOT NULL,
     innings_id integer NOT NULL,
     bowler_id integer NOT NULL,
-    bowling_position integer NOT NULL,
+    bowling_position integer,
     wickets_taken integer DEFAULT 0,
     runs_conceded integer DEFAULT 0,
     balls_bowled integer DEFAULT 0,
     fours_conceded integer DEFAULT 0,
     sixes_conceded integer DEFAULT 0,
     wides_conceded integer DEFAULT 0,
-    noballs_conceded integer DEFAULT 0
+    noballs_conceded integer DEFAULT 0,
+    maiden_overs integer DEFAULT 0
 );
 
 
 ALTER TABLE public.bowling_scorecards OWNER TO postgres;
-
---
--- Name: bowling_scorecards_id_seq; Type: SEQUENCE; Schema: public; Owner: postgres
---
-
-CREATE SEQUENCE public.bowling_scorecards_id_seq
-    AS integer
-    START WITH 1
-    INCREMENT BY 1
-    NO MINVALUE
-    NO MAXVALUE
-    CACHE 1;
-
-
-ALTER SEQUENCE public.bowling_scorecards_id_seq OWNER TO postgres;
-
---
--- Name: bowling_scorecards_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: postgres
---
-
-ALTER SEQUENCE public.bowling_scorecards_id_seq OWNED BY public.bowling_scorecards.id;
-
 
 --
 -- Name: cities; Type: TABLE; Schema: public; Owner: postgres
@@ -1457,7 +431,7 @@ ALTER SEQUENCE public.continents_id_seq OWNED BY public.continents.id;
 CREATE TABLE public.cricsheet_people (
     identifier text NOT NULL,
     name text NOT NULL,
-    unique_name text NOT NULL,
+    unique_name text,
     key_bcci text,
     key_bcci_2 text,
     key_bigbash text,
@@ -1486,8 +460,7 @@ ALTER TABLE public.cricsheet_people OWNER TO postgres;
 --
 
 CREATE TABLE public.deliveries (
-    id bigint NOT NULL,
-    innings_id integer,
+    innings_id integer NOT NULL,
     ball_number double precision,
     over_number integer,
     batter_id integer,
@@ -1524,32 +497,12 @@ CREATE TABLE public.deliveries (
     commentary text,
     created_at timestamp with time zone,
     updated_at timestamp with time zone,
-    total_extras integer
+    total_extras integer,
+    innings_delivery_number integer NOT NULL
 );
 
 
 ALTER TABLE public.deliveries OWNER TO postgres;
-
---
--- Name: deliveries_id_seq; Type: SEQUENCE; Schema: public; Owner: postgres
---
-
-CREATE SEQUENCE public.deliveries_id_seq
-    START WITH 1
-    INCREMENT BY 1
-    NO MINVALUE
-    NO MAXVALUE
-    CACHE 1;
-
-
-ALTER SEQUENCE public.deliveries_id_seq OWNER TO postgres;
-
---
--- Name: deliveries_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: postgres
---
-
-ALTER SEQUENCE public.deliveries_id_seq OWNED BY public.deliveries.id;
-
 
 --
 -- Name: grounds; Type: TABLE; Schema: public; Owner: postgres
@@ -1628,7 +581,7 @@ ALTER SEQUENCE public.host_nations_id_seq OWNED BY public.host_nations.id;
 CREATE TABLE public.innings (
     id integer NOT NULL,
     match_id integer NOT NULL,
-    innings_number integer NOT NULL,
+    innings_number integer,
     batting_team_id integer NOT NULL,
     bowling_team_id integer NOT NULL,
     total_runs integer DEFAULT 0,
@@ -1642,7 +595,7 @@ CREATE TABLE public.innings (
     is_super_over boolean DEFAULT false,
     innings_end public.innings_end,
     target_runs integer,
-    target_balls integer
+    max_overs double precision
 );
 
 
@@ -1671,12 +624,24 @@ ALTER SEQUENCE public.innings_id_seq OWNED BY public.innings.id;
 
 
 --
+-- Name: match_series_entries; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public.match_series_entries (
+    match_id integer NOT NULL,
+    series_id integer NOT NULL
+);
+
+
+ALTER TABLE public.match_series_entries OWNER TO postgres;
+
+--
 -- Name: match_squad_entries; Type: TABLE; Schema: public; Owner: postgres
 --
 
 CREATE TABLE public.match_squad_entries (
-    player_id integer,
-    match_id integer,
+    player_id integer NOT NULL,
+    match_id integer NOT NULL,
     is_captain boolean,
     is_wk boolean,
     is_debut boolean,
@@ -1697,7 +662,7 @@ CREATE TABLE public.matches (
     team1_id integer,
     team2_id integer,
     is_male boolean NOT NULL,
-    series_id integer,
+    main_series_id integer,
     ground_id integer,
     current_status text,
     home_team_id integer,
@@ -1761,9 +726,9 @@ ALTER SEQUENCE public.matches_id_seq OWNED BY public.matches.id;
 
 CREATE TABLE public.player_awards (
     player_id integer NOT NULL,
-    match_id integer,
+    match_id integer NOT NULL,
     series_id integer,
-    award_type public.player_award
+    award_type public.player_award NOT NULL
 );
 
 
@@ -1866,11 +831,11 @@ CREATE TABLE public.series (
     playing_format public.playing_format NOT NULL,
     season text,
     tournament_id integer,
-    parent_series_id integer,
     start_date date,
     end_date date,
     winner_team_id integer,
-    final_status text
+    final_status text,
+    tour_flag public.tour_flag
 );
 
 
@@ -2075,24 +1040,10 @@ ALTER SEQUENCE public.users_id_seq OWNED BY public.users.id;
 
 
 --
--- Name: batting_scorecards id; Type: DEFAULT; Schema: public; Owner: postgres
---
-
-ALTER TABLE ONLY public.batting_scorecards ALTER COLUMN id SET DEFAULT nextval('public.batting_scorecards_id_seq'::regclass);
-
-
---
 -- Name: blog_articles id; Type: DEFAULT; Schema: public; Owner: postgres
 --
 
 ALTER TABLE ONLY public.blog_articles ALTER COLUMN id SET DEFAULT nextval('public.blog_articles_id_seq'::regclass);
-
-
---
--- Name: bowling_scorecards id; Type: DEFAULT; Schema: public; Owner: postgres
---
-
-ALTER TABLE ONLY public.bowling_scorecards ALTER COLUMN id SET DEFAULT nextval('public.bowling_scorecards_id_seq'::regclass);
 
 
 --
@@ -2107,13 +1058,6 @@ ALTER TABLE ONLY public.cities ALTER COLUMN id SET DEFAULT nextval('public.citie
 --
 
 ALTER TABLE ONLY public.continents ALTER COLUMN id SET DEFAULT nextval('public.continents_id_seq'::regclass);
-
-
---
--- Name: deliveries id; Type: DEFAULT; Schema: public; Owner: postgres
---
-
-ALTER TABLE ONLY public.deliveries ALTER COLUMN id SET DEFAULT nextval('public.deliveries_id_seq'::regclass);
 
 
 --
@@ -2191,7 +1135,7 @@ ALTER TABLE ONLY public.users ALTER COLUMN id SET DEFAULT nextval('public.users_
 --
 
 ALTER TABLE ONLY public.batting_scorecards
-    ADD CONSTRAINT batting_scorecards_pkey PRIMARY KEY (id);
+    ADD CONSTRAINT batting_scorecards_pkey PRIMARY KEY (innings_id, batter_id);
 
 
 --
@@ -2207,7 +1151,7 @@ ALTER TABLE ONLY public.blog_articles
 --
 
 ALTER TABLE ONLY public.bowling_scorecards
-    ADD CONSTRAINT bowling_scorecards_pkey PRIMARY KEY (id);
+    ADD CONSTRAINT bowling_scorecards_pkey PRIMARY KEY (innings_id, bowler_id);
 
 
 --
@@ -2239,7 +1183,7 @@ ALTER TABLE ONLY public.cricsheet_people
 --
 
 ALTER TABLE ONLY public.deliveries
-    ADD CONSTRAINT deliveries_pkey PRIMARY KEY (id);
+    ADD CONSTRAINT deliveries_pkey PRIMARY KEY (innings_id, innings_delivery_number);
 
 
 --
@@ -2259,11 +1203,35 @@ ALTER TABLE ONLY public.host_nations
 
 
 --
+-- Name: innings innings_match_id_innings_number_key; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.innings
+    ADD CONSTRAINT innings_match_id_innings_number_key UNIQUE (match_id, innings_number);
+
+
+--
 -- Name: innings innings_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
 --
 
 ALTER TABLE ONLY public.innings
     ADD CONSTRAINT innings_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: match_series_entries match_series_entries_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.match_series_entries
+    ADD CONSTRAINT match_series_entries_pkey PRIMARY KEY (match_id, series_id);
+
+
+--
+-- Name: match_squad_entries match_squad_entries_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.match_squad_entries
+    ADD CONSTRAINT match_squad_entries_pkey PRIMARY KEY (player_id, match_id);
 
 
 --
@@ -2288,6 +1256,22 @@ ALTER TABLE ONLY public.matches
 
 ALTER TABLE ONLY public.matches
     ADD CONSTRAINT matches_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: player_awards player_awards_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.player_awards
+    ADD CONSTRAINT player_awards_pkey PRIMARY KEY (player_id, match_id, award_type);
+
+
+--
+-- Name: player_team_entries player_team_entries_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.player_team_entries
+    ADD CONSTRAINT player_team_entries_pkey PRIMARY KEY (player_id, team_id);
 
 
 --
@@ -2323,6 +1307,14 @@ ALTER TABLE ONLY public.series
 
 
 --
+-- Name: series_squad_entries series_squad_entries_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.series_squad_entries
+    ADD CONSTRAINT series_squad_entries_pkey PRIMARY KEY (squad_id, player_id);
+
+
+--
 -- Name: series_squad_entries series_squad_entries_player_id_squad_id_key; Type: CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -2336,6 +1328,14 @@ ALTER TABLE ONLY public.series_squad_entries
 
 ALTER TABLE ONLY public.series_squads
     ADD CONSTRAINT series_squads_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: series_team_entries series_team_entries_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.series_team_entries
+    ADD CONSTRAINT series_team_entries_pkey PRIMARY KEY (series_id, team_id);
 
 
 --
@@ -2384,6 +1384,14 @@ ALTER TABLE ONLY public.users
 
 ALTER TABLE ONLY public.batting_scorecards
     ADD CONSTRAINT batting_scorecards_batter_id_fkey FOREIGN KEY (batter_id) REFERENCES public.players(id) ON UPDATE CASCADE ON DELETE CASCADE NOT VALID;
+
+
+--
+-- Name: batting_scorecards batting_scorecards_dismissal_ball_number_innings_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.batting_scorecards
+    ADD CONSTRAINT batting_scorecards_dismissal_ball_number_innings_id_fkey FOREIGN KEY (dismissal_ball_number, innings_id) REFERENCES public.deliveries(innings_delivery_number, innings_id) NOT VALID;
 
 
 --
@@ -2547,6 +1555,22 @@ ALTER TABLE ONLY public.innings
 
 
 --
+-- Name: match_series_entries match_series_entries_match_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.match_series_entries
+    ADD CONSTRAINT match_series_entries_match_id_fkey FOREIGN KEY (match_id) REFERENCES public.matches(id);
+
+
+--
+-- Name: match_series_entries match_series_entries_series_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.match_series_entries
+    ADD CONSTRAINT match_series_entries_series_id_fkey FOREIGN KEY (series_id) REFERENCES public.series(id);
+
+
+--
 -- Name: match_squad_entries match_squads_team_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -2615,7 +1639,7 @@ ALTER TABLE ONLY public.matches
 --
 
 ALTER TABLE ONLY public.matches
-    ADD CONSTRAINT matches_series_id_fkey FOREIGN KEY (series_id) REFERENCES public.series(id) ON UPDATE CASCADE ON DELETE CASCADE NOT VALID;
+    ADD CONSTRAINT matches_series_id_fkey FOREIGN KEY (main_series_id) REFERENCES public.series(id) ON UPDATE CASCADE ON DELETE CASCADE NOT VALID;
 
 
 --
@@ -2699,11 +1723,11 @@ ALTER TABLE ONLY public.player_team_entries
 
 
 --
--- Name: series series_parent_series_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+-- Name: players players_cricsheet_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
 --
 
-ALTER TABLE ONLY public.series
-    ADD CONSTRAINT series_parent_series_id_fkey FOREIGN KEY (parent_series_id) REFERENCES public.series(id) ON UPDATE CASCADE ON DELETE CASCADE NOT VALID;
+ALTER TABLE ONLY public.players
+    ADD CONSTRAINT players_cricsheet_id_fkey FOREIGN KEY (cricsheet_id) REFERENCES public.cricsheet_people(identifier) NOT VALID;
 
 
 --

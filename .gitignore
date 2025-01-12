@@ -2,3 +2,4 @@
 /db_files/full_db.sql
 /bin/*
 !/bin/.gitkeep
+secret_vars.sh

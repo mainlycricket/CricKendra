@@ -12,6 +12,25 @@ import (
 	"github.com/mainlycricket/CricKendra/pkg/pgxutils"
 )
 
+func UpsertMatchSquadEntries(ctx context.Context, db DB_Exec, entries []models.MatchSquad) error {
+	query := `
+		INSERT INTO match_squad_entries 
+			(player_id, match_id, team_id, is_captain, is_vice_captain, is_wk, is_debut, playing_status) 
+			VALUES($1, $2, $3, $4, $5, $6, $7, $8)
+		ON CONFLICT(player_id, match_id)
+		DO UPDATE SET 
+			team_id = $3, is_captain = $4, is_vice_captain = $5, is_wk = $6, is_debut = $7, playing_status = $8
+	`
+
+	batch := &pgx.Batch{}
+	for _, entry := range entries {
+		batch.Queue(query, &entry.PlayerId, &entry.MatchId, &entry.TeamId, &entry.IsCaptain, &entry.IsViceCaptain, &entry.IsWk, &entry.IsDebut, &entry.PlayingStatus)
+	}
+
+	batchResults := db.SendBatch(ctx, batch)
+	return batchResults.Close()
+}
+
 func UpsertMatchSquadEntry(ctx context.Context, db DB_Exec, entry *models.MatchSquad) error {
 	query := `
 	INSERT INTO match_squad_entries (player_id, match_id, team_id, is_captain, is_vice_captain, is_wk, is_debut, playing_status) VALUES($1, $2, $3, $4, $5, $6, $7, $8)
@@ -97,6 +116,25 @@ func InsertSeriesSquadEntry(ctx context.Context, db DB_Exec, entry *models.Serie
 	}
 
 	return nil
+}
+
+func UpsertSeriesSquadEntries(ctx context.Context, db DB_Exec, entries []models.SeriesSquadEntry) error {
+	query := `
+		INSERT INTO series_squad_entries 
+			(squad_id, player_id, is_captain, is_vice_captain, is_wk, playing_status)
+			VALUES($1, $2, $3, $4, $5, $6) 
+		ON CONFLICT(squad_id, player_id) 
+		DO UPDATE SET 
+			is_captain = $3, is_vice_captain = $4, is_wk = $5, playing_status = $6
+	`
+
+	batch := &pgx.Batch{}
+	for _, entry := range entries {
+		batch.Queue(query, &entry.SquadId, &entry.PlayerId, &entry.IsCaptain, &entry.IsViceCaptain, &entry.IsWk, &entry.PlayingStatus)
+	}
+
+	batchResults := db.SendBatch(ctx, batch)
+	return batchResults.Close()
 }
 
 func UpsertSeriesSquadEntry(ctx context.Context, db DB_Exec, entry *models.SeriesSquadEntry) error {

@@ -10,6 +10,7 @@
 ### DB Notes
 
 #### 1. Player
+
     - Player has stats in two categories: db & unavailable
     - DB stats will be always computed from database scorecards (not set manually)
     - Unavailable Stats can be manually set by admin

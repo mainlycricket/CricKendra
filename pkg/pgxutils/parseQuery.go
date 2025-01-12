@@ -113,6 +113,7 @@ func ParseQuery[T any](input QueryInfoInput) (QueryInfoOutput, error) {
 	/* Pagination Clause */
 	skip, limit := GetPaginationParams(&input.UrlQuery)
 	res.PaginationClause = fmt.Sprintf(`OFFSET %d ROWS FETCH FIRST %d ROWS ONLY`, skip, (limit + 1))
+	res.RecordsCount = limit
 
 	return res, nil
 }
