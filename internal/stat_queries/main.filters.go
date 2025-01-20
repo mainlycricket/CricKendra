@@ -53,6 +53,9 @@ func (sqlWhere *sqlWhere) applyMatchFilters(params *url.Values, stats_type int) 
 
 	sqlWhere.matchQuery.primaryTeam(params, stats_type, sqlWhere.inningsFilters)
 	sqlWhere.matchQuery.oppositionTeam(params, stats_type, sqlWhere.inningsFilters)
+	sqlWhere.matchQuery.homeAwayTeam(params, stats_type, sqlWhere.inningsFilters)
+	sqlWhere.matchQuery.tossResult(params, stats_type, sqlWhere.inningsFilters)
+	sqlWhere.matchQuery.batFieldFirst(params, stats_type, sqlWhere.inningsFilters)
 
 	sqlWhere.matchQuery.continent(params)
 	sqlWhere.matchQuery.hostNation(params)
@@ -65,6 +68,10 @@ func (sqlWhere *sqlWhere) applyMatchFilters(params *url.Values, stats_type int) 
 }
 
 func (sqlWhere *sqlWhere) applyFilters(params *url.Values, stats_type int) {
+	if params == nil || len(*params) == 0 {
+		return
+	}
+
 	sqlWhere.applyMatchFilters(params, stats_type)
 }
 

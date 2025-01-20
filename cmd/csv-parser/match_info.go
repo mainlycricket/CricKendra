@@ -184,7 +184,7 @@ func parseMatchInfoFile(filePath, playingFormat string, channel chan<- info_pars
 			continue
 		}
 
-		if row[1] == "toss_decison" {
+		if row[1] == "toss_decision" {
 			infoInput.is_toss_decision_bat = row[2] == "bat"
 			continue
 		}

@@ -89,7 +89,7 @@ reset-db: drop-db create-db
 
 .PHONY: sync-db-stats
 sync-db-stats: 
-	psql -h $(DB_HOST) -U $(DB_USER) -d $(DB_NAME) -f ./db_files/stat_queries/sync_player_db_stats.sql
+	psql -h $(DB_HOST) -U $(DB_USER) -d $(DB_NAME) -f ./db_files/sync_player_db_stats.sql
 
 .PHONY: test-postman
 test-postman:

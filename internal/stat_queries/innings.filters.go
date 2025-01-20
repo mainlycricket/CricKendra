@@ -24,3 +24,48 @@ func (filters *inningsFilters) setBowlingTeams(placeholderString string) {
 		filters.conditions = append(filters.conditions, condition)
 	}
 }
+
+func (filters *inningsFilters) setHomeAway(isHomeTeam, isBattingTeam bool) {
+	matchField, inningsField := "matches.away_team_id", "innings.bowling_team_id"
+
+	if isHomeTeam {
+		matchField = "matches.home_team_id"
+	}
+
+	if isBattingTeam {
+		inningsField = "innings.batting_team_id"
+	}
+
+	condition := fmt.Sprintf(`%s = %s`, matchField, inningsField)
+	filters.conditions = append(filters.conditions, condition)
+}
+
+func (filters *inningsFilters) setTossResult(isTossWon, isBattingTeam bool) {
+	matchField, inningsField := "matches.toss_loser_team_id", "innings.bowling_team_id"
+
+	if isTossWon {
+		matchField = "matches.toss_winner_team_id"
+	}
+
+	if isBattingTeam {
+		inningsField = "innings.batting_team_id"
+	}
+
+	condition := fmt.Sprintf(`%s = %s`, matchField, inningsField)
+	filters.conditions = append(filters.conditions, condition)
+}
+
+func (filters *inningsFilters) setBatFieldFirst(isBatFirst, isBattingTeam bool) {
+	inningsField := "innings.bowling_team_id"
+	if isBattingTeam {
+		inningsField = "innings.batting_team_id"
+	}
+
+	condition := fmt.Sprintf(`(
+			(matches.toss_winner_team_id = %s AND matches.is_toss_decision_bat = %v)
+			OR
+			(matches.toss_loser_team_id = %s AND matches.is_toss_decision_bat = %v)
+	)`, inningsField, isBatFirst, inningsField, !isBatFirst)
+
+	filters.conditions = append(filters.conditions, condition)
+}

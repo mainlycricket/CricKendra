@@ -26,6 +26,7 @@ func newMatchQuery() *matchQuery {
 	matchQuery.fields = []string{
 		"matches.id", "matches.start_date", "matches.season",
 		"matches.team1_id", "matches.team2_id",
+		"matches.home_team_id", "matches.away_team_id", "matches.is_neutral_venue",
 		"matches.toss_winner_team_id", "matches.toss_loser_team_id", "matches.is_toss_decision_bat",
 		"matches.match_winner_team_id", "matches.match_loser_team_id",
 		"matches.final_result",
@@ -44,6 +45,7 @@ Max Start Date
 Season
 Primary Team
 Opposition Team
+Home Team, Away Team, Neutral
 Continent
 Host Nation
 Ground
@@ -118,10 +120,7 @@ func (mq *matchQuery) primaryTeam(params *url.Values, statsType int, inningsFilt
 		case bowling_stats:
 			inningsFilters.setBowlingTeams(placeholderString)
 		case team_stats:
-			team_total_for := "batting_team_id"
-			if params.Get("team_total_for") == "bowling" {
-				team_total_for = "bowling_team_id"
-			}
+			team_total_for, _ := teamTotalForAgainst(params.Get("team_total_for"))
 			if team_total_for == "batting_team_id" {
 				inningsFilters.setBattingTeams(placeholderString)
 			} else {
@@ -151,14 +150,130 @@ func (mq *matchQuery) oppositionTeam(params *url.Values, statsType int, inningsF
 		case bowling_stats:
 			inningsFilters.setBattingTeams(placeholderString)
 		case team_stats:
-			team_total_for := "batting_team_id"
-			if params.Get("team_total_for") == "bowling" {
-				team_total_for = "bowling_team_id"
-			}
+			team_total_for, _ := teamTotalForAgainst(params.Get("team_total_for"))
 			if team_total_for == "batting_team_id" {
 				inningsFilters.setBowlingTeams(placeholderString)
 			} else {
 				inningsFilters.setBattingTeams(placeholderString)
+			}
+		}
+	}
+}
+
+func (mq *matchQuery) homeAwayTeam(params *url.Values, statsType int, inningsFilters *inningsFilters) {
+	var isHome, isAway, isNeutral bool
+	for _, value := range (*params)["home_or_away"] {
+		switch value {
+		case "home":
+			isHome = true
+		case "away":
+			isAway = true
+		case "neutral":
+			isNeutral = true
+		}
+	}
+
+	var team_total_for string
+	if statsType == team_stats {
+		team_total_for, _ = teamTotalForAgainst(params.Get("team_total_for"))
+	}
+
+	if isHome {
+		switch statsType {
+		case batting_stats:
+			inningsFilters.setHomeAway(true, true)
+		case bowling_stats:
+			inningsFilters.setHomeAway(true, false)
+		case team_stats:
+			if team_total_for == "batting_team_id" {
+				inningsFilters.setHomeAway(true, true)
+			} else {
+				inningsFilters.setHomeAway(true, false)
+			}
+		}
+	}
+
+	if isAway {
+		switch statsType {
+		case batting_stats:
+			inningsFilters.setHomeAway(false, true)
+		case bowling_stats:
+			inningsFilters.setHomeAway(false, false)
+		case team_stats:
+			if team_total_for == "batting_team_id" {
+				inningsFilters.setHomeAway(false, true)
+			} else {
+				inningsFilters.setHomeAway(false, false)
+			}
+		}
+	}
+
+	if isNeutral {
+		mq.conditions = append(mq.conditions, "matches.is_neutral_venue = TRUE")
+	}
+}
+
+func (mq *matchQuery) tossResult(params *url.Values, statsType int, inningsFilters *inningsFilters) {
+	switch params.Get("toss_result") {
+	case "won":
+		switch statsType {
+		case batting_stats:
+			inningsFilters.setTossResult(true, true)
+		case bowling_stats:
+			inningsFilters.setTossResult(true, false)
+		case team_stats:
+			team_total_for, _ := teamTotalForAgainst(params.Get("team_total_for"))
+			if team_total_for == "batting_team_id" {
+				inningsFilters.setTossResult(true, true)
+			} else {
+				inningsFilters.setTossResult(true, false)
+			}
+		}
+	case "lost":
+		switch statsType {
+		case batting_stats:
+			inningsFilters.setTossResult(false, true)
+		case bowling_stats:
+			inningsFilters.setTossResult(false, false)
+		case team_stats:
+			team_total_for, _ := teamTotalForAgainst(params.Get("team_total_for"))
+			if team_total_for == "batting_team_id" {
+				inningsFilters.setTossResult(false, true)
+			} else {
+				inningsFilters.setTossResult(false, false)
+			}
+		}
+	}
+}
+
+func (mq *matchQuery) batFieldFirst(params *url.Values, statsType int, inningsFilters *inningsFilters) {
+	switch params.Get("bat_field_first") {
+	case "bat":
+		switch statsType {
+		case batting_stats:
+			inningsFilters.setBatFieldFirst(true, true)
+		case bowling_stats:
+			inningsFilters.setBatFieldFirst(true, false)
+		case team_stats:
+			team_total_for, _ := teamTotalForAgainst(params.Get("team_total_for"))
+			if team_total_for == "batting_team_id" {
+				inningsFilters.setBatFieldFirst(true, true)
+			} else {
+				inningsFilters.setBatFieldFirst(true, false)
+			}
+		}
+	case "field":
+		switch statsType {
+		case batting_stats:
+			inningsFilters.setBatFieldFirst(false, true)
+		case bowling_stats:
+			inningsFilters.setBatFieldFirst(false, false)
+		case team_stats:
+			team_total_for, _ := teamTotalForAgainst(params.Get("team_total_for"))
+			if team_total_for == "batting_team_id" {
+				inningsFilters.setBatFieldFirst(false, true)
+			} else {
+				inningsFilters.setBatFieldFirst(false, false)
 			}
 		}
 	}

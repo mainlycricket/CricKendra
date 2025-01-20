@@ -15,11 +15,7 @@ func Query_Overall_Team_Teams(params *url.Values) (string, []any, int, error) {
 	matchQuery := sqlWhere.matchQuery.prepareQuery()
 	inningsCondition := prefixJoin(sqlWhere.inningsFilters.conditions, "WHERE", " AND ")
 
-	team_total_for := "batting_team_id"
-	if params.Get("team_total_for") == "bowling" {
-		team_total_for = "bowling_team_id"
-	}
-
+	team_total_for, _ := teamTotalForAgainst(params.Get("team_total_for"))
 	team_numbers_query := getTeamNumbersQuery("innings." + team_total_for)
 
 	skip, limit := pgxutils.GetPaginationParams(params)
@@ -55,11 +51,7 @@ func Query_Overall_Team_Players(params *url.Values) (string, []any, int, error) 
 	matchQuery := sqlWhere.matchQuery.prepareQuery()
 	inningsCondition := prefixJoin(sqlWhere.inningsFilters.conditions, "WHERE", " AND ")
 
-	team_total_for := "batting_team_id"
-	if params.Get("team_total_for") == "bowling" {
-		team_total_for = "bowling_team_id"
-	}
-
+	team_total_for, _ := teamTotalForAgainst(params.Get("team_total_for"))
 	team_numbers_query := getTeamNumbersQuery("mse.team_id")
 
 	skip, limit := pgxutils.GetPaginationParams(params)
@@ -101,12 +93,7 @@ func Query_Overall_Team_Matches(params *url.Values) (string, []any, int, error) 
 	matchQuery := sqlWhere.matchQuery.prepareQuery()
 	inningsCondition := prefixJoin(sqlWhere.inningsFilters.conditions, "WHERE", " AND ")
 
-	team_total_for, team_total_against := "batting_team_id", "bowling_team_id"
-	if params.Get("team_total_for") == "bowling" {
-		team_total_for = "bowling_team_id"
-		team_total_against = "batting_team_id"
-	}
-
+	team_total_for, team_total_against := teamTotalForAgainst(params.Get("team_total_for"))
 	team_numbers_query := getTeamNumbersQuery("innings." + team_total_for)
 
 	skip, limit := pgxutils.GetPaginationParams(params)
@@ -168,11 +155,7 @@ func Query_Overall_Team_Series(params *url.Values) (string, []any, int, error) {
 	matchQuery := sqlWhere.matchQuery.prepareQuery()
 	inningsCondition := prefixJoin(sqlWhere.inningsFilters.conditions, "WHERE", " AND ")
 
-	team_total_for := "batting_team_id"
-	if params.Get("team_total_for") == "bowling" {
-		team_total_for = "bowling_team_id"
-	}
-
+	team_total_for, _ := teamTotalForAgainst(params.Get("team_total_for"))
 	team_numbers_query := getTeamNumbersQuery("innings." + team_total_for)
 
 	skip, limit := pgxutils.GetPaginationParams(params)
@@ -221,11 +204,7 @@ func Query_Overall_Team_Tournaments(params *url.Values) (string, []any, int, err
 	matchQuery := sqlWhere.matchQuery.prepareQuery()
 	inningsCondition := prefixJoin(sqlWhere.inningsFilters.conditions, "WHERE", " AND ")
 
-	team_total_for := "batting_team_id"
-	if params.Get("team_total_for") == "bowling" {
-		team_total_for = "bowling_team_id"
-	}
-
+	team_total_for, _ := teamTotalForAgainst(params.Get("team_total_for"))
 	team_numbers_query := getTeamNumbersQuery("innings." + team_total_for)
 
 	skip, limit := pgxutils.GetPaginationParams(params)
@@ -272,11 +251,7 @@ func Query_Overall_Team_Grounds(params *url.Values) (string, []any, int, error) 
 	matchQuery := sqlWhere.matchQuery.prepareQuery()
 	inningsCondition := prefixJoin(sqlWhere.inningsFilters.conditions, "WHERE", " AND ")
 
-	team_total_for := "batting_team_id"
-	if params.Get("team_total_for") == "bowling" {
-		team_total_for = "bowling_team_id"
-	}
-
+	team_total_for, _ := teamTotalForAgainst(params.Get("team_total_for"))
 	team_numbers_query := getTeamNumbersQuery("innings." + team_total_for)
 
 	skip, limit := pgxutils.GetPaginationParams(params)
@@ -325,11 +300,7 @@ func Query_Overall_Team_HostNations(params *url.Values) (string, []any, int, err
 	matchQuery := sqlWhere.matchQuery.prepareQuery()
 	inningsCondition := prefixJoin(sqlWhere.inningsFilters.conditions, "WHERE", " AND ")
 
-	team_total_for := "batting_team_id"
-	if params.Get("team_total_for") == "bowling" {
-		team_total_for = "bowling_team_id"
-	}
-
+	team_total_for, _ := teamTotalForAgainst(params.Get("team_total_for"))
 	team_numbers_query := getTeamNumbersQuery("innings." + team_total_for)
 
 	skip, limit := pgxutils.GetPaginationParams(params)
@@ -378,11 +349,7 @@ func Query_Overall_Team_Continents(params *url.Values) (string, []any, int, erro
 	matchQuery := sqlWhere.matchQuery.prepareQuery()
 	inningsCondition := prefixJoin(sqlWhere.inningsFilters.conditions, "WHERE", " AND ")
 
-	team_total_for := "batting_team_id"
-	if params.Get("team_total_for") == "bowling" {
-		team_total_for = "bowling_team_id"
-	}
-
+	team_total_for, _ := teamTotalForAgainst(params.Get("team_total_for"))
 	team_numbers_query := getTeamNumbersQuery("innings." + team_total_for)
 
 	skip, limit := pgxutils.GetPaginationParams(params)
@@ -432,11 +399,7 @@ func Query_Overall_Team_Years(params *url.Values) (string, []any, int, error) {
 	matchQuery := sqlWhere.matchQuery.prepareQuery()
 	inningsCondition := prefixJoin(sqlWhere.inningsFilters.conditions, "WHERE", " AND ")
 
-	team_total_for := "batting_team_id"
-	if params.Get("team_total_for") == "bowling" {
-		team_total_for = "bowling_team_id"
-	}
-
+	team_total_for, _ := teamTotalForAgainst(params.Get("team_total_for"))
 	team_numbers_query := getTeamNumbersQuery("innings." + team_total_for)
 
 	skip, limit := pgxutils.GetPaginationParams(params)
@@ -484,11 +447,7 @@ func Query_Overall_Team_Seasons(params *url.Values) (string, []any, int, error) 
 	matchQuery := sqlWhere.matchQuery.prepareQuery()
 	inningsCondition := prefixJoin(sqlWhere.inningsFilters.conditions, "WHERE", " AND ")
 
-	team_total_for := "batting_team_id"
-	if params.Get("team_total_for") == "bowling" {
-		team_total_for = "bowling_team_id"
-	}
-
+	team_total_for, _ := teamTotalForAgainst(params.Get("team_total_for"))
 	team_numbers_query := getTeamNumbersQuery("innings." + team_total_for)
 
 	skip, limit := pgxutils.GetPaginationParams(params)
@@ -532,11 +491,7 @@ func Query_Overall_Team_Decades(params *url.Values) (string, []any, int, error) 
 	matchQuery := sqlWhere.matchQuery.prepareQuery()
 	inningsCondition := prefixJoin(sqlWhere.inningsFilters.conditions, "WHERE", " AND ")
 
-	team_total_for := "batting_team_id"
-	if params.Get("team_total_for") == "bowling" {
-		team_total_for = "bowling_team_id"
-	}
-
+	team_total_for, _ := teamTotalForAgainst(params.Get("team_total_for"))
 	team_numbers_query := getTeamNumbersQuery("innings." + team_total_for)
 
 	skip, limit := pgxutils.GetPaginationParams(params)
@@ -584,11 +539,7 @@ func Query_Overall_Team_Aggregate(params *url.Values) (string, []any, error) {
 	matchQuery := sqlWhere.matchQuery.prepareQuery()
 	inningsCondition := prefixJoin(sqlWhere.inningsFilters.conditions, "WHERE", " AND ")
 
-	team_total_for := "batting_team_id"
-	if params.Get("team_total_for") == "bowling" {
-		team_total_for = "bowling_team_id"
-	}
-
+	team_total_for, _ := teamTotalForAgainst(params.Get("team_total_for"))
 	team_numbers_query := getTeamNumbersQuery("innings." + team_total_for)
 
 	query := fmt.Sprintf(`
@@ -628,10 +579,7 @@ func Query_Individual_Team_Innings(params *url.Values) (string, []any, int, erro
 	matchQuery := sqlWhere.matchQuery.prepareQuery()
 	inningsCondition := prefixJoin(sqlWhere.inningsFilters.conditions, "WHERE", " AND ")
 
-	team_total_for, team_total_against := "batting_team_id", "bowling_team_id"
-	if params.Get("team_total_for") == "bowling" {
-		team_total_for, team_total_against = "bowling_team_id", "batting_team_id"
-	}
+	team_total_for, team_total_against := teamTotalForAgainst(params.Get("team_total_for"))
 
 	skip, limit := pgxutils.GetPaginationParams(params)
 	pagination := fmt.Sprintf(`OFFSET %d ROWS FETCH FIRST %d ROWS ONLY`, skip, (limit + 1))
@@ -700,10 +648,7 @@ func Query_Individual_Team_Matches(params *url.Values) (string, []any, int, erro
 	matchQuery := sqlWhere.matchQuery.prepareQuery()
 	inningsCondition := prefixJoin(sqlWhere.inningsFilters.conditions, "WHERE", " AND ")
 
-	team_total_for, team_total_against := "batting_team_id", "bowling_team_id"
-	if params.Get("team_total_for") == "bowling" {
-		team_total_for, team_total_against = "bowling_team_id", "batting_team_id"
-	}
+	team_total_for, team_total_against := teamTotalForAgainst(params.Get("team_total_for"))
 
 	skip, limit := pgxutils.GetPaginationParams(params)
 	pagination := fmt.Sprintf(`OFFSET %d ROWS FETCH FIRST %d ROWS ONLY`, skip, (limit + 1))
@@ -772,11 +717,7 @@ func Query_Individual_Team_Series(params *url.Values) (string, []any, int, error
 	matchQuery := sqlWhere.matchQuery.prepareQuery()
 	inningsCondition := prefixJoin(sqlWhere.inningsFilters.conditions, "WHERE", " AND ")
 
-	team_total_for := "batting_team_id"
-	if params.Get("team_total_for") == "bowling" {
-		team_total_for = "bowling_team_id"
-	}
-
+	team_total_for, _ := teamTotalForAgainst(params.Get("team_total_for"))
 	team_numbers_query := getTeamNumbersQuery("innings." + team_total_for)
 
 	skip, limit := pgxutils.GetPaginationParams(params)
@@ -820,11 +761,7 @@ func Query_Individual_Team_Tournaments(params *url.Values) (string, []any, int, 
 	matchQuery := sqlWhere.matchQuery.prepareQuery()
 	inningsCondition := prefixJoin(sqlWhere.inningsFilters.conditions, "WHERE", " AND ")
 
-	team_total_for := "batting_team_id"
-	if params.Get("team_total_for") == "bowling" {
-		team_total_for = "bowling_team_id"
-	}
-
+	team_total_for, _ := teamTotalForAgainst(params.Get("team_total_for"))
 	team_numbers_query := getTeamNumbersQuery("innings." + team_total_for)
 
 	skip, limit := pgxutils.GetPaginationParams(params)
@@ -866,11 +803,7 @@ func Query_Individual_Team_Grounds(params *url.Values) (string, []any, int, erro
 	matchQuery := sqlWhere.matchQuery.prepareQuery()
 	inningsCondition := prefixJoin(sqlWhere.inningsFilters.conditions, "WHERE", " AND ")
 
-	team_total_for := "batting_team_id"
-	if params.Get("team_total_for") == "bowling" {
-		team_total_for = "bowling_team_id"
-	}
-
+	team_total_for, _ := teamTotalForAgainst(params.Get("team_total_for"))
 	team_numbers_query := getTeamNumbersQuery("innings." + team_total_for)
 
 	skip, limit := pgxutils.GetPaginationParams(params)
@@ -912,11 +845,7 @@ func Query_Individual_Team_HostNations(params *url.Values) (string, []any, int, 
 	matchQuery := sqlWhere.matchQuery.prepareQuery()
 	inningsCondition := prefixJoin(sqlWhere.inningsFilters.conditions, "WHERE", " AND ")
 
-	team_total_for := "batting_team_id"
-	if params.Get("team_total_for") == "bowling" {
-		team_total_for = "bowling_team_id"
-	}
-
+	team_total_for, _ := teamTotalForAgainst(params.Get("team_total_for"))
 	team_numbers_query := getTeamNumbersQuery("innings." + team_total_for)
 
 	skip, limit := pgxutils.GetPaginationParams(params)
@@ -957,11 +886,7 @@ func Query_Individual_Team_Years(params *url.Values) (string, []any, int, error)
 	matchQuery := sqlWhere.matchQuery.prepareQuery()
 	inningsCondition := prefixJoin(sqlWhere.inningsFilters.conditions, "WHERE", " AND ")
 
-	team_total_for := "batting_team_id"
-	if params.Get("team_total_for") == "bowling" {
-		team_total_for = "bowling_team_id"
-	}
-
+	team_total_for, _ := teamTotalForAgainst(params.Get("team_total_for"))
 	team_numbers_query := getTeamNumbersQuery("innings." + team_total_for)
 
 	skip, limit := pgxutils.GetPaginationParams(params)
@@ -998,11 +923,7 @@ func Query_Individual_Team_Seasons(params *url.Values) (string, []any, int, erro
 	matchQuery := sqlWhere.matchQuery.prepareQuery()
 	inningsCondition := prefixJoin(sqlWhere.inningsFilters.conditions, "WHERE", " AND ")
 
-	team_total_for := "batting_team_id"
-	if params.Get("team_total_for") == "bowling" {
-		team_total_for = "bowling_team_id"
-	}
-
+	team_total_for, _ := teamTotalForAgainst(params.Get("team_total_for"))
 	team_numbers_query := getTeamNumbersQuery("innings." + team_total_for)
 
 	skip, limit := pgxutils.GetPaginationParams(params)
@@ -1033,6 +954,14 @@ func Query_Individual_Team_Seasons(params *url.Values) (string, []any, int, erro
 }
 
 // helpers
+
+func teamTotalForAgainst(value string) (team_total_for, team_total_against string) {
+	team_total_for, team_total_against = "batting_team_id", "bowling_team_id"
+	if value == "bowling_team_id" {
+		team_total_for, team_total_against = "bowling_team_id", "batting_team_id"
+	}
+	return
+}
 
 func getTeamNumbersQuery(teamField string) string {
 	query := fmt.Sprintf(`
