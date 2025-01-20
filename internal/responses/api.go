@@ -7,6 +7,7 @@ import (
 	"log"
 	"net/http"
 
+	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgconn"
 )
 
@@ -20,7 +21,10 @@ func WriteJsonResponse(w http.ResponseWriter, response ApiResponse, status int) 
 	if err, ok := response.Data.(error); ok {
 		var pgErr *pgconn.PgError
 
-		if errors.As(err, &pgErr) {
+		if err.Error() == pgx.ErrNoRows.Error() {
+			status = http.StatusNotFound
+			response.Message = "no record found!"
+		} else if errors.As(err, &pgErr) {
 			var pgMessage string
 			status, pgMessage = handlePgErr(pgErr)
 			response.Message += fmt.Sprintf(`: %v`, pgMessage)

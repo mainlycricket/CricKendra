@@ -91,7 +91,7 @@ func Read_Overall_Team_Matches_Stats(ctx context.Context, db DB_Exec, queryMap u
 	matches, err := pgx.CollectRows(rows, func(row pgx.CollectableRow) (responses.Overall_Team_Matches_Group, error) {
 		var match responses.Overall_Team_Matches_Group
 
-		err := rows.Scan(&match.MatchId, &match.Team1Id, &match.Team1Name, &match.Team2Id, &match.Team2Name, &match.City, &match.Season, &match.StartDate, &match.TeamsCount, &match.MatchesPlayed, &match.MatchesWon, &match.MatchesLost, &match.WinLossRatio, &match.MatchesDrawn, &match.MatchesTied, &match.MatchesNoResult, &match.InningsCount, &match.TotalRuns, &match.TotalBalls, &match.TotalWickets, &match.Average, &match.ScoringRate, &match.HighestScore, &match.LowestScore)
+		err := rows.Scan(&match.MatchId, &match.Team1Id, &match.Team1Name, &match.Team2Id, &match.Team2Name, &match.GroundId, &match.CityName, &match.Season, &match.StartDate, &match.TeamsCount, &match.MatchesPlayed, &match.MatchesWon, &match.MatchesLost, &match.WinLossRatio, &match.MatchesDrawn, &match.MatchesTied, &match.MatchesNoResult, &match.InningsCount, &match.TotalRuns, &match.TotalBalls, &match.TotalWickets, &match.Average, &match.ScoringRate, &match.HighestScore, &match.LowestScore)
 
 		return match, err
 	})
@@ -101,6 +101,70 @@ func Read_Overall_Team_Matches_Stats(ctx context.Context, db DB_Exec, queryMap u
 		response.Next = true
 	} else {
 		response.Stats = matches
+		response.Next = false
+	}
+
+	return response, err
+}
+
+func Read_Overall_Team_Series_Stats(ctx context.Context, db DB_Exec, queryMap url.Values) (responses.StatsResponse[responses.Overall_Team_Series_Group], error) {
+	var response responses.StatsResponse[responses.Overall_Team_Series_Group]
+
+	query, args, limit, err := statqueries.Query_Overall_Team_Series(&queryMap)
+	if err != nil {
+		return response, err
+	}
+
+	rows, err := db.Query(ctx, query, args...)
+	if err != nil {
+		return response, err
+	}
+
+	seriesList, err := pgx.CollectRows(rows, func(row pgx.CollectableRow) (responses.Overall_Team_Series_Group, error) {
+		var series responses.Overall_Team_Series_Group
+
+		err := rows.Scan(&series.SeriesId, &series.SeriesName, &series.SeriesSeason, &series.TeamsCount, &series.MatchesPlayed, &series.MatchesWon, &series.MatchesLost, &series.WinLossRatio, &series.MatchesDrawn, &series.MatchesTied, &series.MatchesNoResult, &series.InningsCount, &series.TotalRuns, &series.TotalBalls, &series.TotalWickets, &series.Average, &series.ScoringRate, &series.HighestScore, &series.LowestScore)
+
+		return series, err
+	})
+
+	if len(seriesList) > limit {
+		response.Stats = seriesList[:limit]
+		response.Next = true
+	} else {
+		response.Stats = seriesList
+		response.Next = false
+	}
+
+	return response, err
+}
+
+func Read_Overall_Team_Tournaments_Stats(ctx context.Context, db DB_Exec, queryMap url.Values) (responses.StatsResponse[responses.Overall_Team_Tournament_Group], error) {
+	var response responses.StatsResponse[responses.Overall_Team_Tournament_Group]
+
+	query, args, limit, err := statqueries.Query_Overall_Team_Tournaments(&queryMap)
+	if err != nil {
+		return response, err
+	}
+
+	rows, err := db.Query(ctx, query, args...)
+	if err != nil {
+		return response, err
+	}
+
+	tournaments, err := pgx.CollectRows(rows, func(row pgx.CollectableRow) (responses.Overall_Team_Tournament_Group, error) {
+		var tournament responses.Overall_Team_Tournament_Group
+
+		err := rows.Scan(&tournament.TournamentId, &tournament.TournamentName, &tournament.TeamsCount, &tournament.MatchesPlayed, &tournament.MatchesWon, &tournament.MatchesLost, &tournament.WinLossRatio, &tournament.MatchesDrawn, &tournament.MatchesTied, &tournament.MatchesNoResult, &tournament.InningsCount, &tournament.TotalRuns, &tournament.TotalBalls, &tournament.TotalWickets, &tournament.Average, &tournament.ScoringRate, &tournament.HighestScore, &tournament.LowestScore)
+
+		return tournament, err
+	})
+
+	if len(tournaments) > limit {
+		response.Stats = tournaments[:limit]
+		response.Next = true
+	} else {
+		response.Stats = tournaments
 		response.Next = false
 	}
 
@@ -314,38 +378,6 @@ func Read_Overall_Team_Aggregate_Stats(ctx context.Context, db DB_Exec, queryMap
 
 // Function Names are in Read_Individual_Team_x_Stats format, x represents grouping
 
-func Read_Individual_Team_Matches_Stats(ctx context.Context, db DB_Exec, queryMap url.Values) (responses.StatsResponse[responses.Individual_Team_Matches_Group], error) {
-	var response responses.StatsResponse[responses.Individual_Team_Matches_Group]
-
-	query, args, limit, err := statqueries.Query_Individual_Team_Matches(&queryMap)
-	if err != nil {
-		return response, err
-	}
-
-	rows, err := db.Query(ctx, query, args...)
-	if err != nil {
-		return response, err
-	}
-
-	records, err := pgx.CollectRows(rows, func(row pgx.CollectableRow) (responses.Individual_Team_Matches_Group, error) {
-		var record responses.Individual_Team_Matches_Group
-
-		err := rows.Scan(&record.MatchId, &record.TeamId, &record.TeamName, &record.OppositionId, &record.OppositionName, &record.GroundId, &record.CityName, &record.StartDate, &record.FinalResult, &record.MatchWinnerId, &record.TossWinnerId, &record.IsTossDecisionBat, &record.WinMargin, &record.BallsMargin, &record.IsWonByRuns, &record.IsWonByInnings)
-
-		return record, err
-	})
-
-	if len(records) > limit {
-		response.Stats = records[:limit]
-		response.Next = true
-	} else {
-		response.Stats = records
-		response.Next = false
-	}
-
-	return response, err
-}
-
 func Read_Individual_Team_Innings_Stats(ctx context.Context, db DB_Exec, queryMap url.Values) (responses.StatsResponse[responses.Individual_Team_Innings_Group], error) {
 	var response responses.StatsResponse[responses.Individual_Team_Innings_Group]
 
@@ -363,6 +395,102 @@ func Read_Individual_Team_Innings_Stats(ctx context.Context, db DB_Exec, queryMa
 		var record responses.Individual_Team_Innings_Group
 
 		err := rows.Scan(&record.MatchId, &record.TeamId, &record.TeamName, &record.OppositionId, &record.OppositionName, &record.GroundId, &record.CityName, &record.StartDate, &record.FinalResult, &record.MatchWinnerId, &record.InningsId, &record.InningsNumber, &record.InningsEnd, &record.TotalRuns, &record.TotalWickets, &record.TotalOvers, &record.ScoringRate)
+
+		return record, err
+	})
+
+	if len(records) > limit {
+		response.Stats = records[:limit]
+		response.Next = true
+	} else {
+		response.Stats = records
+		response.Next = false
+	}
+
+	return response, err
+}
+
+func Read_Individual_Team_Matches_Stats(ctx context.Context, db DB_Exec, queryMap url.Values) (responses.StatsResponse[responses.Individual_Team_Matches_Group], error) {
+	var response responses.StatsResponse[responses.Individual_Team_Matches_Group]
+
+	query, args, limit, err := statqueries.Query_Individual_Team_Matches(&queryMap)
+	if err != nil {
+		return response, err
+	}
+
+	rows, err := db.Query(ctx, query, args...)
+	if err != nil {
+		return response, err
+	}
+
+	records, err := pgx.CollectRows(rows, func(row pgx.CollectableRow) (responses.Individual_Team_Matches_Group, error) {
+		var record responses.Individual_Team_Matches_Group
+
+		err := rows.Scan(&record.MatchId, &record.TeamId, &record.TeamName, &record.OppositionId, &record.OppositionName, &record.GroundId, &record.CityName, &record.StartDate, &record.FinalResult, &record.MatchWinnerId, &record.TossWinnerId, &record.InningsNumber, &record.WinMargin, &record.BallsMargin, &record.IsWonByRuns, &record.IsWonByInnings)
+
+		return record, err
+	})
+
+	if len(records) > limit {
+		response.Stats = records[:limit]
+		response.Next = true
+	} else {
+		response.Stats = records
+		response.Next = false
+	}
+
+	return response, err
+}
+
+func Read_Individual_Team_Series_Stats(ctx context.Context, db DB_Exec, queryMap url.Values) (responses.StatsResponse[responses.Individual_Team_Series_Group], error) {
+	var response responses.StatsResponse[responses.Individual_Team_Series_Group]
+
+	query, args, limit, err := statqueries.Query_Individual_Team_Series(&queryMap)
+	if err != nil {
+		return response, err
+	}
+
+	rows, err := db.Query(ctx, query, args...)
+	if err != nil {
+		return response, err
+	}
+
+	records, err := pgx.CollectRows(rows, func(row pgx.CollectableRow) (responses.Individual_Team_Series_Group, error) {
+		var record responses.Individual_Team_Series_Group
+
+		err := rows.Scan(&record.TeamId, &record.TeamName, &record.SeriesId, &record.SeriesName, &record.SeriesSeason, &record.MinStartDate, &record.MaxStartDate, &record.MatchesPlayed, &record.MatchesWon, &record.MatchesLost, &record.WinLossRatio, &record.MatchesDrawn, &record.MatchesTied, &record.MatchesNoResult, &record.InningsCount, &record.TotalRuns, &record.TotalBalls, &record.TotalWickets, &record.Average, &record.ScoringRate, &record.HighestScore, &record.LowestScore)
+
+		return record, err
+	})
+
+	if len(records) > limit {
+		response.Stats = records[:limit]
+		response.Next = true
+	} else {
+		response.Stats = records
+		response.Next = false
+	}
+
+	return response, err
+}
+
+func Read_Individual_Team_Tournaments_Stats(ctx context.Context, db DB_Exec, queryMap url.Values) (responses.StatsResponse[responses.Individual_Team_Tournaments_Group], error) {
+	var response responses.StatsResponse[responses.Individual_Team_Tournaments_Group]
+
+	query, args, limit, err := statqueries.Query_Individual_Team_Tournaments(&queryMap)
+	if err != nil {
+		return response, err
+	}
+
+	rows, err := db.Query(ctx, query, args...)
+	if err != nil {
+		return response, err
+	}
+
+	records, err := pgx.CollectRows(rows, func(row pgx.CollectableRow) (responses.Individual_Team_Tournaments_Group, error) {
+		var record responses.Individual_Team_Tournaments_Group
+
+		err := rows.Scan(&record.TeamId, &record.TeamName, &record.TournamentId, &record.TournamentName, &record.MinStartDate, &record.MaxStartDate, &record.MatchesPlayed, &record.MatchesWon, &record.MatchesLost, &record.WinLossRatio, &record.MatchesDrawn, &record.MatchesTied, &record.MatchesNoResult, &record.InningsCount, &record.TotalRuns, &record.TotalBalls, &record.TotalWickets, &record.Average, &record.ScoringRate, &record.HighestScore, &record.LowestScore)
 
 		return record, err
 	})

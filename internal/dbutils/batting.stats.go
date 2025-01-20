@@ -267,6 +267,70 @@ func Read_Overall_Batting_Continents_Stats(ctx context.Context, db DB_Exec, quer
 	return response, err
 }
 
+func Read_Overall_Batting_Series_Stats(ctx context.Context, db DB_Exec, queryMap url.Values) (responses.StatsResponse[responses.Overall_Batting_Series_Group], error) {
+	var response responses.StatsResponse[responses.Overall_Batting_Series_Group]
+
+	query, args, limit, err := statqueries.Query_Overall_Batting_Series(&queryMap)
+	if err != nil {
+		return response, err
+	}
+
+	rows, err := db.Query(ctx, query, args...)
+	if err != nil {
+		return response, err
+	}
+
+	seriesList, err := pgx.CollectRows(rows, func(row pgx.CollectableRow) (responses.Overall_Batting_Series_Group, error) {
+		var series responses.Overall_Batting_Series_Group
+
+		err := rows.Scan(&series.SeriesId, &series.SeriesName, &series.SeriesSeason, &series.PlayersCount, &series.MinDate, &series.MaxDate, &series.MatchesPlayed, &series.InningsBatted, &series.RunsScored, &series.BallsFaced, &series.NotOuts, &series.Average, &series.StrikeRate, &series.HighestScore, &series.HighestNotOutScore, &series.Centuries, &series.HalfCenturies, &series.FiftyPlusScores, &series.Ducks, &series.FoursScored, &series.SixesScored)
+
+		return series, err
+	})
+
+	if len(seriesList) > limit {
+		response.Stats = seriesList[:limit]
+		response.Next = true
+	} else {
+		response.Stats = seriesList
+		response.Next = false
+	}
+
+	return response, err
+}
+
+func Read_Overall_Batting_Tournaments_Stats(ctx context.Context, db DB_Exec, queryMap url.Values) (responses.StatsResponse[responses.Overall_Batting_Tournament_Group], error) {
+	var response responses.StatsResponse[responses.Overall_Batting_Tournament_Group]
+
+	query, args, limit, err := statqueries.Query_Overall_Batting_Tournaments(&queryMap)
+	if err != nil {
+		return response, err
+	}
+
+	rows, err := db.Query(ctx, query, args...)
+	if err != nil {
+		return response, err
+	}
+
+	tournaments, err := pgx.CollectRows(rows, func(row pgx.CollectableRow) (responses.Overall_Batting_Tournament_Group, error) {
+		var tournament responses.Overall_Batting_Tournament_Group
+
+		err := rows.Scan(&tournament.TournamentId, &tournament.TournamentName, &tournament.PlayersCount, &tournament.MinDate, &tournament.MaxDate, &tournament.MatchesPlayed, &tournament.InningsBatted, &tournament.RunsScored, &tournament.BallsFaced, &tournament.NotOuts, &tournament.Average, &tournament.StrikeRate, &tournament.HighestScore, &tournament.HighestNotOutScore, &tournament.Centuries, &tournament.HalfCenturies, &tournament.FiftyPlusScores, &tournament.Ducks, &tournament.FoursScored, &tournament.SixesScored)
+
+		return tournament, err
+	})
+
+	if len(tournaments) > limit {
+		response.Stats = tournaments[:limit]
+		response.Next = true
+	} else {
+		response.Stats = tournaments
+		response.Next = false
+	}
+
+	return response, err
+}
+
 func Read_Overall_Batting_Years_Stats(ctx context.Context, db DB_Exec, queryMap url.Values) (responses.StatsResponse[responses.Overall_Batting_Year_Group], error) {
 	var response responses.StatsResponse[responses.Overall_Batting_Year_Group]
 
@@ -363,6 +427,70 @@ func Read_Individual_Batting_Innings_Stats(ctx context.Context, db DB_Exec, quer
 		var record responses.Individual_Batting_Innings_Group
 
 		err := rows.Scan(&record.MatchId, &record.StartDate, &record.GroundId, &record.CityName, &record.InningsNumber, &record.BatterId, &record.BatterName, &record.BattingTeamId, &record.BattingTeamName, &record.BowlingTeamId, &record.BowlingTeamName, &record.RunsScored, &record.BallsFaced, &record.IsNotOut, &record.StrikeRate, &record.FoursScored, &record.SixesScored)
+
+		return record, err
+	})
+
+	if len(records) > limit {
+		response.Stats = records[:limit]
+		response.Next = true
+	} else {
+		response.Stats = records
+		response.Next = false
+	}
+
+	return response, err
+}
+
+func Read_Individual_Batting_Series_Stats(ctx context.Context, db DB_Exec, queryMap url.Values) (responses.StatsResponse[responses.Individual_Batting_Series_Group], error) {
+	var response responses.StatsResponse[responses.Individual_Batting_Series_Group]
+
+	query, args, limit, err := statqueries.Query_Individual_Batting_Series(&queryMap)
+	if err != nil {
+		return response, err
+	}
+
+	rows, err := db.Query(ctx, query, args...)
+	if err != nil {
+		return response, err
+	}
+
+	records, err := pgx.CollectRows(rows, func(row pgx.CollectableRow) (responses.Individual_Batting_Series_Group, error) {
+		var record responses.Individual_Batting_Series_Group
+
+		err := rows.Scan(&record.SeriesId, &record.SeriesName, &record.SeriesSeason, &record.BatterId, &record.BatterName, &record.TeamsRepresented, &record.MinDate, &record.MaxDate, &record.MatchesPlayed, &record.InningsBatted, &record.RunsScored, &record.BallsFaced, &record.NotOuts, &record.Average, &record.StrikeRate, &record.HighestScore, &record.HighestNotOutScore, &record.Centuries, &record.HalfCenturies, &record.FiftyPlusScores, &record.Ducks, &record.FoursScored, &record.SixesScored)
+
+		return record, err
+	})
+
+	if len(records) > limit {
+		response.Stats = records[:limit]
+		response.Next = true
+	} else {
+		response.Stats = records
+		response.Next = false
+	}
+
+	return response, err
+}
+
+func Read_Individual_Batting_Tournaments_Stats(ctx context.Context, db DB_Exec, queryMap url.Values) (responses.StatsResponse[responses.Individual_Batting_Tournaments_Group], error) {
+	var response responses.StatsResponse[responses.Individual_Batting_Tournaments_Group]
+
+	query, args, limit, err := statqueries.Query_Individual_Batting_Tournaments(&queryMap)
+	if err != nil {
+		return response, err
+	}
+
+	rows, err := db.Query(ctx, query, args...)
+	if err != nil {
+		return response, err
+	}
+
+	records, err := pgx.CollectRows(rows, func(row pgx.CollectableRow) (responses.Individual_Batting_Tournaments_Group, error) {
+		var record responses.Individual_Batting_Tournaments_Group
+
+		err := rows.Scan(&record.TournamentId, &record.TournamentName, &record.BatterId, &record.BatterName, &record.TeamsRepresented, &record.MinDate, &record.MaxDate, &record.MatchesPlayed, &record.InningsBatted, &record.RunsScored, &record.BallsFaced, &record.NotOuts, &record.Average, &record.StrikeRate, &record.HighestScore, &record.HighestNotOutScore, &record.Centuries, &record.HalfCenturies, &record.FiftyPlusScores, &record.Ducks, &record.FoursScored, &record.SixesScored)
 
 		return record, err
 	})

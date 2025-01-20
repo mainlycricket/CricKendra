@@ -19,11 +19,15 @@ func BowlingStatsRouter() *chi.Mux {
 	r.Get("/overall/grounds", Get_Overall_Bowling_Grounds_Stats)
 	r.Get("/overall/host-nations", Get_Overall_Bowling_HostNations_Stats)
 	r.Get("/overall/continents", Get_Overall_Bowling_Continents_Stats)
+	r.Get("/overall/series", Get_Overall_Bowling_Series_Stats)
+	r.Get("/overall/tournaments", Get_Overall_Bowling_Tournaments_Stats)
 	r.Get("/overall/years", Get_Overall_Bowling_Years_Stats)
 	r.Get("/overall/seasons", Get_Overall_Bowling_Seasons_Stats)
 	r.Get("/overall/aggregate", Get_Overall_Bowling_Aggregate_Stats)
 
 	r.Get("/individual/innings", Get_Individual_Bowling_Innings_Stats)
+	r.Get("/individual/series", Get_Individual_Bowling_Series_Stats)
+	r.Get("/individual/tournaments", Get_Individual_Bowling_Tournaments_Stats)
 	r.Get("/individual/grounds", Get_Individual_Bowling_Grounds_Stats)
 	r.Get("/individual/host-nations", Get_Individual_Bowling_HostNations_Stats)
 	r.Get("/individual/oppositions", Get_Individual_Bowling_Oppositions_Stats)
@@ -123,6 +127,28 @@ func Get_Overall_Bowling_Continents_Stats(w http.ResponseWriter, r *http.Request
 	responses.WriteJsonResponse(w, responses.ApiResponse{Success: true, Message: "fetched overall continents stats successfully", Data: response}, http.StatusOK)
 }
 
+func Get_Overall_Bowling_Series_Stats(w http.ResponseWriter, r *http.Request) {
+	response, err := dbutils.Read_Overall_Bowling_Series_Stats(r.Context(), DB_POOL, r.URL.Query())
+
+	if err != nil {
+		responses.WriteJsonResponse(w, responses.ApiResponse{Success: false, Message: "error while reading overall series stats", Data: err}, http.StatusBadRequest)
+		return
+	}
+
+	responses.WriteJsonResponse(w, responses.ApiResponse{Success: true, Message: "fetched overall series stats successfully", Data: response}, http.StatusOK)
+}
+
+func Get_Overall_Bowling_Tournaments_Stats(w http.ResponseWriter, r *http.Request) {
+	response, err := dbutils.Read_Overall_Bowling_Tournaments_Stats(r.Context(), DB_POOL, r.URL.Query())
+
+	if err != nil {
+		responses.WriteJsonResponse(w, responses.ApiResponse{Success: false, Message: "error while reading overall tournaments stats", Data: err}, http.StatusBadRequest)
+		return
+	}
+
+	responses.WriteJsonResponse(w, responses.ApiResponse{Success: true, Message: "fetched overall tournaments stats successfully", Data: response}, http.StatusOK)
+}
+
 func Get_Overall_Bowling_Years_Stats(w http.ResponseWriter, r *http.Request) {
 	response, err := dbutils.Read_Overall_Bowling_Years_Stats(r.Context(), DB_POOL, r.URL.Query())
 
@@ -167,6 +193,28 @@ func Get_Individual_Bowling_Innings_Stats(w http.ResponseWriter, r *http.Request
 	}
 
 	responses.WriteJsonResponse(w, responses.ApiResponse{Success: true, Message: "fetched bowler-innings stats successfully", Data: response}, http.StatusOK)
+}
+
+func Get_Individual_Bowling_Series_Stats(w http.ResponseWriter, r *http.Request) {
+	response, err := dbutils.Read_Individual_Bowling_Series_Stats(r.Context(), DB_POOL, r.URL.Query())
+
+	if err != nil {
+		responses.WriteJsonResponse(w, responses.ApiResponse{Success: false, Message: "error while reading bowler-series stats", Data: err}, http.StatusBadRequest)
+		return
+	}
+
+	responses.WriteJsonResponse(w, responses.ApiResponse{Success: true, Message: "fetched bowler-series stats successfully", Data: response}, http.StatusOK)
+}
+
+func Get_Individual_Bowling_Tournaments_Stats(w http.ResponseWriter, r *http.Request) {
+	response, err := dbutils.Read_Individual_Bowling_Tournaments_Stats(r.Context(), DB_POOL, r.URL.Query())
+
+	if err != nil {
+		responses.WriteJsonResponse(w, responses.ApiResponse{Success: false, Message: "error while reading bowler-tournaments stats", Data: err}, http.StatusBadRequest)
+		return
+	}
+
+	responses.WriteJsonResponse(w, responses.ApiResponse{Success: true, Message: "fetched bowler-tournaments stats successfully", Data: response}, http.StatusOK)
 }
 
 func Get_Individual_Bowling_Grounds_Stats(w http.ResponseWriter, r *http.Request) {

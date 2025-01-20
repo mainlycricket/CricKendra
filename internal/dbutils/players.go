@@ -117,9 +117,14 @@ func ReadPlayerById(ctx context.Context, db *pgxpool.Pool, id int) (responses.Si
 		FROM player_team_entries pte
 		LEFT JOIN teams ON pte.team_id = teams.id
 		WHERE pte.player_id = players.id
-	) AS teams_represented, 
-	 
-	db_test_stats, db_odi_stats, db_t20i_stats, db_fc_stats, db_lista_stats, db_t20_stats, cricsheet_id, cricinfo_id, cricbuzz_id 
+	) AS teams_represented,  
+	combine_career_stats(db_test_stats, unavailable_test_stats), 
+	combine_career_stats(db_odi_stats, unavailable_odi_stats),
+	combine_career_stats(db_t20i_stats, unavailable_t20i_stats),
+	combine_career_stats(db_fc_stats, unavailable_fc_stats),
+	combine_career_stats(db_lista_stats, unavailable_lista_stats),
+	combine_career_stats(db_t20_stats, unavailable_t20_stats),
+	cricsheet_id, cricinfo_id, cricbuzz_id 
 	
 	FROM players 
 	WHERE id = $1`

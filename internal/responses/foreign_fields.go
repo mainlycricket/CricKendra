@@ -7,20 +7,30 @@ type TeamAsForeignField struct {
 	Name pgtype.Text `json:"name"`
 }
 
-type MatchAsForeignField struct {
-	Id    pgtype.Int8 `json:"id"`
-	Team1 pgtype.Text `json:"team1"`
-	Team2 pgtype.Text `json:"team2"`
-	Date  pgtype.Date `json:"date"`
-	City  pgtype.Text `json:"city"`
-}
-
 type HostNationAsForeignField struct {
 	Id   pgtype.Int8 `json:"id"`
 	Name pgtype.Text `json:"name"`
 }
 
-type PlayerAsForeignField struct {
+type ContinentAsForeignField struct {
+	Id   pgtype.Int8 `json:"id"`
+	Name pgtype.Text `json:"name"`
+}
+
+type GroundAsForeignField struct {
+	Id             pgtype.Int8 `json:"id"`
+	Name           pgtype.Text `json:"name"`
+	CityName       pgtype.Text `json:"city_name"`
+	HostNationName pgtype.Text `json:"host_nation_name"`
+}
+
+type SeriesAsForeignField struct {
+	Id     pgtype.Int8 `json:"id"`
+	Name   pgtype.Text `json:"name"`
+	Season pgtype.Text `json:"season"`
+}
+
+type TournamentAsForeignField struct {
 	Id   pgtype.Int8 `json:"id"`
 	Name pgtype.Text `json:"name"`
 }

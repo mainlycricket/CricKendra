@@ -262,6 +262,161 @@ CREATE TYPE public.user_role AS ENUM (
 
 ALTER TYPE public.user_role OWNER TO postgres;
 
+--
+-- Name: combine_career_stats(public.career_stats, public.career_stats); Type: FUNCTION; Schema: public; Owner: postgres
+--
+
+CREATE FUNCTION public.combine_career_stats(stats1 public.career_stats, stats2 public.career_stats) RETURNS public.career_stats
+    LANGUAGE plpgsql
+    AS $$
+DECLARE combined career_stats;
+BEGIN -- Initialize the combined stats with regular addition for most fields
+combined.matches_played := COALESCE(
+    stats1.matches_played + stats2.matches_played,
+    stats1.matches_played,
+    stats2.matches_played
+);
+IF combined.matches_played IS NULL 
+	THEN RETURN NULL ;
+END IF;
+combined.innings_batted := COALESCE(
+    stats1.innings_batted + stats2.innings_batted,
+    stats1.innings_batted,
+    stats2.innings_batted
+);
+combined.runs_scored := COALESCE(
+    stats1.runs_scored + stats2.runs_scored,
+    stats1.runs_scored,
+    stats2.runs_scored
+);
+combined.not_outs := COALESCE(
+    stats1.not_outs + stats2.not_outs,
+    stats1.not_outs,
+    stats2.not_outs
+);
+combined.balls_faced := COALESCE(
+    stats1.balls_faced + stats2.balls_faced,
+    stats1.balls_faced,
+    stats2.balls_faced
+);
+combined.fours_scored := COALESCE(
+    stats1.fours_scored + stats2.fours_scored,
+    stats1.fours_scored,
+    stats2.fours_scored
+);
+combined.sixes_scored := COALESCE(
+    stats1.sixes_scored + stats2.sixes_scored,
+    stats1.sixes_scored,
+    stats2.sixes_scored
+);
+combined.centuries_scored := COALESCE(
+    stats1.centuries_scored + stats2.centuries_scored,
+    stats1.centuries_scored,
+    stats2.centuries_scored
+);
+combined.fifties_scored := COALESCE(
+    stats1.fifties_scored + stats2.fifties_scored,
+    stats1.fifties_scored,
+    stats2.fifties_scored
+);
+combined.innings_bowled := COALESCE(
+    stats1.innings_bowled + stats2.innings_bowled,
+    stats1.innings_bowled,
+    stats2.innings_bowled
+);
+combined.runs_conceded := COALESCE(
+    stats1.runs_conceded + stats2.runs_conceded,
+    stats1.runs_conceded,
+    stats2.runs_conceded
+);
+combined.wickets_taken := COALESCE(
+    stats1.wickets_taken + stats2.wickets_taken,
+    stats1.wickets_taken,
+    stats2.wickets_taken
+);
+combined.balls_bowled := COALESCE(
+    stats1.balls_bowled + stats2.balls_bowled,
+    stats1.balls_bowled,
+    stats2.balls_bowled
+);
+combined.fours_conceded := COALESCE(
+    stats1.fours_conceded + stats2.fours_conceded,
+    stats1.fours_conceded,
+    stats2.fours_conceded
+);
+combined.sixes_conceded := COALESCE(
+    stats1.sixes_conceded + stats2.sixes_conceded,
+    stats1.sixes_conceded,
+    stats2.sixes_conceded
+);
+combined.four_wkt_hauls := COALESCE(
+    stats1.four_wkt_hauls + stats2.four_wkt_hauls,
+    stats1.four_wkt_hauls,
+    stats2.four_wkt_hauls
+);
+combined.five_wkt_hauls := COALESCE(
+    stats1.five_wkt_hauls + stats2.five_wkt_hauls,
+    stats1.five_wkt_hauls,
+    stats2.five_wkt_hauls
+);
+combined.ten_wkt_hauls := COALESCE(
+    stats1.ten_wkt_hauls + stats2.ten_wkt_hauls,
+    stats1.ten_wkt_hauls,
+    stats2.ten_wkt_hauls
+);
+-- Handle highest score logic
+IF stats1.highest_score IS NULL
+AND stats2.is_highest_not_out IS NULL THEN combined.highest_score := NULL;
+combined.is_highest_not_out := NULL;
+ELSIF COALESCE(stats1.highest_score, 0) > COALESCE(stats2.highest_score, 0) THEN combined.highest_score := stats1.highest_score;
+combined.is_highest_not_out := stats1.is_highest_not_out;
+ELSIF COALESCE(stats1.highest_score, 0) < COALESCE(stats2.highest_score, 0) THEN combined.highest_score := stats2.highest_score;
+combined.is_highest_not_out := stats2.is_highest_not_out;
+ELSE -- If scores are equal, prefer the not out innings
+IF COALESCE(stats1.is_highest_not_out, false)
+AND NOT COALESCE(stats2.is_highest_not_out, false) THEN combined.highest_score := stats1.highest_score;
+combined.is_highest_not_out := true;
+ELSE combined.highest_score := stats2.highest_score;
+combined.is_highest_not_out := stats2.is_highest_not_out;
+END IF;
+END IF;
+-- Handle best innings bowling figures
+IF stats1.best_inn_fig_wkts is NULL
+AND stats2.best_inn_fig_wkts is NULL THEN combined.best_inn_fig_wkts := NULL;
+combined.best_inn_fig_runs := NULL;
+ELSIF COALESCE(stats1.best_inn_fig_wkts, 0) > COALESCE(stats2.best_inn_fig_wkts, 0) THEN combined.best_inn_fig_wkts := stats1.best_inn_fig_wkts;
+combined.best_inn_fig_runs := stats1.best_inn_fig_runs;
+ELSIF COALESCE(stats1.best_inn_fig_wkts, 0) < COALESCE(stats2.best_inn_fig_wkts, 0) THEN combined.best_inn_fig_wkts := stats2.best_inn_fig_wkts;
+combined.best_inn_fig_runs := stats2.best_inn_fig_runs;
+ELSE -- If wickets are equal, prefer the one with fewer runs
+IF COALESCE(stats1.best_inn_fig_runs, 999999) < COALESCE(stats2.best_inn_fig_runs, 999999) THEN combined.best_inn_fig_wkts := stats1.best_inn_fig_wkts;
+combined.best_inn_fig_runs := stats1.best_inn_fig_runs;
+ELSE combined.best_inn_fig_wkts := stats2.best_inn_fig_wkts;
+combined.best_inn_fig_runs := stats2.best_inn_fig_runs;
+END IF;
+END IF;
+-- Handle best match bowling figures
+IF stats1.best_match_fig_wkts IS NULL
+AND stats2.best_match_fig_wkts IS NULL THEN combined.best_match_fig_wkts := NULL;
+combined.best_match_fig_runs := NULL;
+ELSIF COALESCE(stats1.best_match_fig_wkts, 0) > COALESCE(stats2.best_match_fig_wkts, 0) THEN combined.best_match_fig_wkts := stats1.best_match_fig_wkts;
+combined.best_match_fig_runs := stats1.best_match_fig_runs;
+ELSIF COALESCE(stats1.best_match_fig_wkts, 0) < COALESCE(stats2.best_match_fig_wkts, 0) THEN combined.best_match_fig_wkts := stats2.best_match_fig_wkts;
+combined.best_match_fig_runs := stats2.best_match_fig_runs;
+ELSE -- If wickets are equal, prefer the one with fewer runs
+IF COALESCE(stats1.best_match_fig_runs, 999999) < COALESCE(stats2.best_match_fig_runs, 999999) THEN combined.best_match_fig_wkts := stats1.best_match_fig_wkts;
+combined.best_match_fig_runs := stats1.best_match_fig_runs;
+ELSE combined.best_match_fig_wkts := stats2.best_match_fig_wkts;
+combined.best_match_fig_runs := stats2.best_match_fig_runs;
+END IF;
+END IF;
+RETURN combined;
+END;
+$$;
+
+
+ALTER FUNCTION public.combine_career_stats(stats1 public.career_stats, stats2 public.career_stats) OWNER TO postgres;
+
 SET default_tablespace = '';
 
 SET default_table_access_method = heap;
@@ -885,9 +1040,9 @@ ALTER TABLE public.series_squad_entries OWNER TO postgres;
 
 CREATE TABLE public.series_squads (
     id integer NOT NULL,
-    series_id integer,
-    team_id integer,
-    squad_label text
+    series_id integer NOT NULL,
+    team_id integer NOT NULL,
+    squad_label text NOT NULL
 );
 
 
@@ -934,7 +1089,7 @@ ALTER TABLE public.series_team_entries OWNER TO postgres;
 CREATE TABLE public.teams (
     id integer NOT NULL,
     name text NOT NULL,
-    is_male boolean DEFAULT true,
+    is_male boolean DEFAULT true NOT NULL,
     image_url text,
     short_name text,
     playing_level public.playing_level DEFAULT 'international'::public.playing_level NOT NULL

@@ -85,6 +85,25 @@ type Overall_Batting_Continent_Group struct {
 	OverallBattingStats
 }
 
+type Overall_Batting_Series_Group struct {
+	SeriesId     pgtype.Int8 `json:"series_id"`
+	SeriesName   pgtype.Text `json:"series_name"`
+	SeriesSeason pgtype.Text `json:"series_season"`
+	PlayersCount pgtype.Int8 `json:"players_count"`
+	MinDate      pgtype.Date `json:"min_date"`
+	MaxDate      pgtype.Date `json:"max_date"`
+	OverallBattingStats
+}
+
+type Overall_Batting_Tournament_Group struct {
+	TournamentId   pgtype.Int8 `json:"tournament_id"`
+	TournamentName pgtype.Text `json:"tournament_name"`
+	PlayersCount   pgtype.Int8 `json:"players_count"`
+	MinDate        pgtype.Date `json:"min_date"`
+	MaxDate        pgtype.Date `json:"max_date"`
+	OverallBattingStats
+}
+
 type Overall_Batting_Year_Group struct {
 	Year         pgtype.Int8 `json:"year"`
 	PlayersCount pgtype.Int8 `json:"players_count"`
@@ -126,6 +145,19 @@ type Individual_Batting_Innings_Group struct {
 	StrikeRate  pgtype.Float8 `json:"strike_rate"`
 	FoursScored pgtype.Int8   `json:"fours_scored"`
 	SixesScored pgtype.Int8   `json:"sixes_scored"`
+}
+
+type Individual_Batting_Series_Group struct {
+	SeriesId     pgtype.Int8 `json:"series_id"`
+	SeriesName   pgtype.Text `json:"series_name"`
+	SeriesSeason pgtype.Text `json:"series_season"`
+	Overall_Batting_Batter_Group
+}
+
+type Individual_Batting_Tournaments_Group struct {
+	TournamentId   pgtype.Int8 `json:"tournament_id"`
+	TournamentName pgtype.Text `json:"tournament_name"`
+	Overall_Batting_Batter_Group
 }
 
 type Individual_Batting_Ground_Group struct {
