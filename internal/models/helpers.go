@@ -26,11 +26,11 @@ func NewInnings(matchId, battingTeamId, bowlingTeamId int64) *Innings {
 }
 
 func IsBowlerDismissal(dismissalType string) bool {
-	bowlerWickets := []string{"caught", "bowled", "lbw", "stumpted", "hit wicket", "caught and bowled"}
+	bowlerWickets := []string{"caught", "bowled", "lbw", "stumped", "hit wicket", "caught and bowled"}
 	return slices.Contains(bowlerWickets, dismissalType)
 }
 
 func IsTeamDismissal(dismissalType string) bool {
-	teamWickets := []string{"caught", "bowled", "lbw", "stumpted", "hit wicket", "handled the ball", "obstructing the field", "timed out", "hit the ball twice", "caught and bowled", "retired out"}
+	teamWickets := []string{"caught", "bowled", "lbw", "run out", "stumped", "hit wicket", "handled the ball", "obstructing the field", "timed out", "hit the ball twice", "caught and bowled", "retired out"}
 	return slices.Contains(teamWickets, dismissalType)
 }

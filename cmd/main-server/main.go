@@ -51,6 +51,7 @@ func main() {
 	r.Mount("/blog-articles", blogArticlesRouter())
 
 	/* Stats */
+	r.Mount("/stats/filter-options", StatFiltersRouter())
 	r.Mount("/stats/batting", BattingStatsRouter())
 	r.Mount("/stats/bowling", BowlingStatsRouter())
 	r.Mount("/stats/team", TeamStatsRouter())

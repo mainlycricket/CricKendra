@@ -27,10 +27,26 @@ type Overall_Team_Matches_Group struct {
 	Team1Name  pgtype.Text `json:"team1_name"`
 	Team2Id    pgtype.Int8 `json:"team2_id"`
 	Team2Name  pgtype.Text `json:"team2_name"`
-	City       pgtype.Text `json:"city_name"`
+	GroundId   pgtype.Int8 `json:"ground_id"`
+	CityName   pgtype.Text `json:"city_name"`
 	Season     pgtype.Text `json:"season"`
 	StartDate  pgtype.Date `json:"start_date"`
 	TeamsCount pgtype.Int8 `json:"teams_count"`
+	OverallTeamStats
+}
+
+type Overall_Team_Series_Group struct {
+	SeriesId     pgtype.Int8 `json:"series_id"`
+	SeriesName   pgtype.Text `json:"series_name"`
+	SeriesSeason pgtype.Text `json:"series_season"`
+	TeamsCount   pgtype.Int8 `json:"teams_count"`
+	OverallTeamStats
+}
+
+type Overall_Team_Tournament_Group struct {
+	TournamentId   pgtype.Int8 `json:"tournament_id"`
+	TournamentName pgtype.Text `json:"tournament_name"`
+	TeamsCount     pgtype.Int8 `json:"teams_count"`
 	OverallTeamStats
 }
 
@@ -86,17 +102,6 @@ type Overall_Team_Aggregate_Group struct {
 
 /* Individual Stats */
 
-type Individual_Team_Matches_Group struct {
-	IndividualMatchInfo
-
-	TossWinnerId      pgtype.Int8 `json:"toss_winner_id"`
-	IsTossDecisionBat pgtype.Bool `json:"is_toss_decison_bat"`
-	WinMargin         pgtype.Int8 `json:"win_margin"`
-	BallsMargin       pgtype.Int8 `json:"balls_remaining_after_win"`
-	IsWonByRuns       pgtype.Bool `json:"is_won_by_runs"`
-	IsWonByInnings    pgtype.Bool `json:"is_won_by_innings"`
-}
-
 type Individual_Team_Innings_Group struct {
 	IndividualMatchInfo
 
@@ -107,6 +112,48 @@ type Individual_Team_Innings_Group struct {
 	TotalWickets  pgtype.Int8   `json:"total_wickets"`
 	TotalOvers    pgtype.Float8 `json:"total_overs"`
 	ScoringRate   pgtype.Float8 `json:"scoring_rate"`
+}
+
+type Individual_Team_MatchTotals_Group struct {
+	IndividualMatchInfo
+
+	TotalRuns    pgtype.Int8   `json:"total_runs"`
+	TotalBalls   pgtype.Int8   `json:"total_balls"`
+	TotalWickets pgtype.Int8   `json:"total_wickets"`
+	Average      pgtype.Float8 `json:"average"`
+	ScoringRate  pgtype.Float8 `json:"scoring_rate"`
+}
+
+type Individual_Team_MatchResults_Group struct {
+	IndividualMatchInfo
+
+	TossWinnerId   pgtype.Int8 `json:"toss_winner_id"`
+	InningsNumber  pgtype.Int8 `json:"innings_number"`
+	WinMargin      pgtype.Int8 `json:"win_margin"`
+	BallsMargin    pgtype.Int8 `json:"balls_remaining_after_win"`
+	IsWonByRuns    pgtype.Bool `json:"is_won_by_runs"`
+	IsWonByInnings pgtype.Bool `json:"is_won_by_innings"`
+}
+
+type Individual_Team_Series_Group struct {
+	TeamId       pgtype.Int8 `json:"team_id"`
+	TeamName     pgtype.Text `json:"team_name"`
+	SeriesId     pgtype.Int8 `json:"series_id"`
+	SeriesName   pgtype.Text `json:"series_name"`
+	SeriesSeason pgtype.Text `json:"series_season"`
+	MinStartDate pgtype.Date `json:"min_start_date"`
+	MaxStartDate pgtype.Date `json:"max_start_date"`
+	OverallTeamStats
+}
+
+type Individual_Team_Tournaments_Group struct {
+	TeamId         pgtype.Int8 `json:"team_id"`
+	TeamName       pgtype.Text `json:"team_name"`
+	TournamentId   pgtype.Int8 `json:"tournament_id"`
+	TournamentName pgtype.Text `json:"tournament_name"`
+	MinStartDate   pgtype.Date `json:"min_start_date"`
+	MaxStartDate   pgtype.Date `json:"max_start_date"`
+	OverallTeamStats
 }
 
 type Individual_Team_Grounds_Group struct {

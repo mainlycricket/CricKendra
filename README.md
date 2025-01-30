@@ -6,6 +6,20 @@ I am building `CricKendra` out of my passion for cricket and programming.
 
 - A main server - [`cmd/main-server`](./cmd/main-server) - that provides basic endpoints, currently focused on stats engine.
 
+### Roadmap
+
+- CSV Parser ✅
+- Stats Tools:
+    - Batting Stats ✅
+    - Bowling Stats ✅
+    - Teams Stats ✅
+- Match, Series, Player etc. routes completion ⏳
+- Live Scoring System ⏳
+- Single Player, Series, Tournaments Stats Tool ⏳
+- Frontend ⏳
+- All-round & Partnership in Stats Tools ⏳
+- Content Management System ⏳
+
 ### Resources
 
 - Postman Collection [here](https://documenter.getpostman.com/view/25403102/2sAYBREZ3x)

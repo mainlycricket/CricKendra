@@ -1,3 +1,4 @@
 id,name,is_male,playing_level,playing_format
 1,ICC Cricket World Cup,true,international,ODI
 2,ICC Champions Trophy,true,international,ODI
+3,Indian Premier League,true,domestic,T20

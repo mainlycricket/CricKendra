@@ -13,7 +13,7 @@ func InsertDelivery(ctx context.Context, db DB_Exec, delivery *models.Delivery) 
 	cmd, err := db.Exec(ctx, query, delivery.InningsId, delivery.InningsDeliveryNumber, delivery.BallNumber, delivery.OverNumber, delivery.BatterId, delivery.BowlerId, delivery.NonStrikerId, delivery.BatterRuns, delivery.Wides, delivery.Noballs, delivery.Legbyes, delivery.Byes, delivery.Penalty, delivery.TotalExtras, delivery.TotalRuns, delivery.BowlerRuns, delivery.IsFour, delivery.IsSix, delivery.Player1DismissedId, delivery.Player1DismissalType, delivery.Player2DismissedId, delivery.Player2DismissalType, delivery.IsPace, delivery.BowlingStyle, delivery.IsBatterRHB, delivery.IsNonStrikerRHB, delivery.Line, delivery.Length, delivery.BallType, delivery.BallSpeed, delivery.Misc, delivery.WwRegion, delivery.FootType, delivery.ShotType, delivery.Fielder1Id, delivery.Fielder2Id, delivery.Commentary, delivery.CreatedAt, delivery.UpdatedAt)
 
 	if cmd.RowsAffected() == 0 {
-		return errors.New("failed to insert delivery!")
+		return errors.New("failed to insert delivery")
 	}
 
 	return err

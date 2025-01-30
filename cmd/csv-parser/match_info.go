@@ -74,7 +74,7 @@ func newInfoInput(filePath, playingFormat string) *matchInfoInput {
 	infoInput.playingFormat = playingFormat
 	infoInput.playingLevel = "international"
 	if !slices.Contains([]string{"Test", "ODI", "T20I"}, playingFormat) {
-		infoInput.playingFormat = "domestic"
+		infoInput.playingLevel = "domestic"
 	}
 
 	infoInput.is_neutral_venue = false
@@ -184,7 +184,7 @@ func parseMatchInfoFile(filePath, playingFormat string, channel chan<- info_pars
 			continue
 		}
 
-		if row[1] == "toss_decison" {
+		if row[1] == "toss_decision" {
 			infoInput.is_toss_decision_bat = row[2] == "bat"
 			continue
 		}
@@ -262,8 +262,8 @@ func (input *matchInfoInput) initalizeMatch(channel chan<- match_init_response) 
 	output := &matchInfo{
 		infoFilePath: input.filePath,
 		match:        &models.Match{},
-		team1Info:    &teamInfo{},
-		team2Info:    &teamInfo{},
+		team1Info:    newTeamInfo(),
+		team2Info:    newTeamInfo(),
 	}
 
 	defer func() {
@@ -382,6 +382,11 @@ func (input *matchInfoInput) initalizeMatch(channel chan<- match_init_response) 
 		return
 	}
 
+	if err := output.insertPotmEntries(input); err != nil {
+		mainError = fmt.Errorf(`failed to insert potm entries: %v`, err)
+		return
+	}
+
 	output.match = match
 }
 
@@ -418,6 +423,10 @@ func (matchInfo *matchInfo) setVenueDetails(input *matchInfoInput) error {
 		input.cityName = renameData.cityName
 	}
 
+	if input.groundName == "" {
+		return nil
+	}
+
 	cityId, err := cachedCities.loadOrStore(cityKey{name: input.cityName})
 	if err != nil {
 		return fmt.Errorf(`error while loading city %s: %v`, input.cityName, err)
@@ -444,6 +453,10 @@ func (matchInfo *matchInfo) setVenueDetails(input *matchInfoInput) error {
 }
 
 func (matchInfo *matchInfo) setMatchSeries(input *matchInfoInput) error {
+	if input.eventName == "" {
+		return nil
+	}
+
 	seriesKey := seriesKey{
 		name:           input.eventName,
 		is_male:        input.is_male,
@@ -477,7 +490,7 @@ func (matchInfo *matchInfo) setMatchSeries(input *matchInfoInput) error {
 		subSeriesKey := seriesKey
 		subSeriesKey.name = fmt.Sprintf("%s in %s %s series", touringTeam, hostTeam, input.playingFormat)
 
-		subSeriesId, err := cachedSeries.loadOrStore(subSeriesKey, 1, 2, "tour_series")
+		subSeriesId, err := cachedSeries.loadOrStore(subSeriesKey, 1, 2, "tour_sub_series")
 		if err != nil {
 			return fmt.Errorf(`failed to load tour series: %v`, err)
 		}
@@ -487,7 +500,7 @@ func (matchInfo *matchInfo) setMatchSeries(input *matchInfoInput) error {
 
 	var tourFlag string
 	if len(matchInfo.match.SeriesListId) > 0 {
-		tourFlag = "tour_sub_series"
+		tourFlag = "tour_series"
 	}
 
 	mainSeriesId, err := cachedSeries.loadOrStore(seriesKey, 1, 2, tourFlag)

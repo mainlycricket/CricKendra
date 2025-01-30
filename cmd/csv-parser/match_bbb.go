@@ -357,7 +357,10 @@ func (teamInnings *teamInnings) addDismissalEntry(delivery *models.Delivery, isF
 	}
 
 	teamInnings.battingScorecardEntries[batterId] = updatedEntry
-	teamInnings.innings.TotalWkts.Int64++
+
+	if models.IsTeamDismissal(dismissalType) {
+		teamInnings.innings.TotalWkts.Int64++
+	}
 }
 
 func (teamInnings *teamInnings) setBowlPosition(bowlerId int64) {
@@ -436,6 +439,7 @@ func (teamInnings *teamInnings) handleDelivery(tx pgx.Tx, scoringInput *scoringI
 	nonStriker := nonStrikerValue.data
 	delivery.NonStrikerId = nonStriker.Id
 	delivery.IsNonStrikerRHB = nonStriker.IsRHB
+	teamInnings.setBatPosition(nonStriker.Id.Int64)
 
 	// bowler
 	bowlerValue, ok := cachedPlayers.get(playerKey{cricsheet_id: scoringInput.bowlerId})
@@ -448,15 +452,13 @@ func (teamInnings *teamInnings) handleDelivery(tx pgx.Tx, scoringInput *scoringI
 
 	// batter runs
 	delivery.BatterRuns = pgtype.Int8{Int64: scoringInput.batterRuns, Valid: true}
+
+	delivery.IsSix = pgtype.Bool{Bool: false, Valid: true}
+	delivery.IsFour = pgtype.Bool{Bool: false, Valid: true}
 	if scoringInput.batterRuns == 4 {
 		delivery.IsFour = pgtype.Bool{Bool: true, Valid: true}
-		delivery.IsSix = pgtype.Bool{Bool: false, Valid: true}
 	} else if scoringInput.batterRuns == 6 {
 		delivery.IsSix = pgtype.Bool{Bool: true, Valid: true}
-		delivery.IsFour = pgtype.Bool{Bool: false, Valid: true}
-	} else {
-		delivery.IsSix = pgtype.Bool{Bool: false, Valid: true}
-		delivery.IsFour = pgtype.Bool{Bool: false, Valid: true}
 	}
 
 	// individual extras
@@ -493,12 +495,12 @@ func (teamInnings *teamInnings) handleDelivery(tx pgx.Tx, scoringInput *scoringI
 		return err
 	}
 
+	teamInnings.updateBowlerEntry(bowler.Id.Int64, scoringInput, dismissalInput)
+	teamInnings.updateStrikerScores(striker.Id.Int64, scoringInput)
+
 	if teamInnings.isMaidenOver(scoringInput) {
 		teamInnings.addBowlerMaiden(bowler.Id.Int64)
 	}
-
-	teamInnings.updateBowlerEntry(bowler.Id.Int64, scoringInput, dismissalInput)
-	teamInnings.updateStrikerScores(striker.Id.Int64, scoringInput)
 
 	if err := dbutils.InsertDelivery(context.Background(), tx, delivery); err != nil {
 		return fmt.Errorf(`error while inserting delivery: %v`, err)
@@ -526,6 +528,9 @@ func (teamInnings *teamInnings) handleDismissalInput(dismissalInput *dismissalIn
 		dismissedPlayer := dismissedPlayerValue.data
 		delivery.Player1DismissalType = pgtype.Text{String: dismissalInput.dismissalType1, Valid: true}
 		delivery.Player1DismissedId = dismissedPlayer.Id
+	} else {
+		delivery.Player1DismissedId = pgtype.Int8{}
+		delivery.Player1DismissalType = pgtype.Text{}
 	}
 
 	if dismissalInput.dismissedPlayer2Id != "" {
@@ -536,6 +541,9 @@ func (teamInnings *teamInnings) handleDismissalInput(dismissalInput *dismissalIn
 		dismissedPlayer := dismissedPlayerValue.data
 		delivery.Player2DismissalType = pgtype.Text{String: dismissalInput.dismissalType2, Valid: true}
 		delivery.Player2DismissedId = dismissedPlayer.Id
+	} else {
+		delivery.Player2DismissedId = pgtype.Int8{}
+		delivery.Player2DismissalType = pgtype.Text{}
 	}
 
 	return nil
@@ -547,24 +555,24 @@ func (teamInnings *teamInnings) isMaidenOver(scoringInput *scoringInput) bool {
 	// reset balls if bowler changed
 	if teamInnings.maidenOverData.bowlerId != scoringInput.bowlerId {
 		teamInnings.maidenOverData.balls = 0
+		teamInnings.maidenOverData.runs = 0
 	}
+
+	teamInnings.maidenOverData.bowlerId = scoringInput.bowlerId
+	teamInnings.maidenOverData.runs += scoringInput.batterRuns + scoringInput.wides + scoringInput.noballs
 
 	if scoringInput.wides == 0 && scoringInput.noballs == 0 {
 		teamInnings.maidenOverData.balls++
 	}
-	teamInnings.maidenOverData.runs += scoringInput.batterRuns + scoringInput.wides + scoringInput.noballs
 
 	if teamInnings.maidenOverData.balls == teamInnings.match.BallsPerOver.Int64 && teamInnings.maidenOverData.runs == 0 {
 		isMaiden = true
 	}
 
-	// reset balls if last delivery
-	deliveryNumber := int64(scoringInput.ballNumber-float64(int64(scoringInput.ballNumber))) * 10
-	if deliveryNumber == teamInnings.match.BallsPerOver.Int64 {
+	if teamInnings.maidenOverData.balls == teamInnings.match.BallsPerOver.Int64 {
 		teamInnings.maidenOverData.balls = 0
+		teamInnings.maidenOverData.runs = 0
 	}
-
-	teamInnings.maidenOverData.bowlerId = scoringInput.bowlerId
 
 	return isMaiden
 }

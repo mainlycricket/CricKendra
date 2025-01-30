@@ -3,6 +3,7 @@ CSV parser to extract data from CSV files available on [cricsheet.org](https://c
 ### Notes:
 
 - Checkout the CSV Format Info [here](https://cricsheet.org/format/csv_ashwin/)
+- Download the CSV files from [here](https://cricsheet.org/downloads/)
 - Checkout the list of matches covered for testing [here](./matches_covered/)
 - T20I match with id `1229824` always fails because a player named `J Butler` exists in both teams, and a single entry is found in the match info registry
 

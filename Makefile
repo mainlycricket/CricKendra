@@ -1,4 +1,4 @@
-include secret_vars.sh
+include secrets.sh
 
 .PHONY: build-main	
 build-main:
@@ -89,8 +89,17 @@ reset-db: drop-db create-db
 
 .PHONY: sync-db-stats
 sync-db-stats: 
-	psql -h $(DB_HOST) -U $(DB_USER) -d $(DB_NAME) -f ./db_files/stat_queries/sync_player_db_stats.sql
+	psql -h $(DB_HOST) -U $(DB_USER) -d $(DB_NAME) -f ./db_files/sync_player_db_stats.sql
 
 .PHONY: test-postman
 test-postman:
 	postman collection run $(POSTMAN_COLLECTION_ID)
+
+.PHONY: test-code
+test-code:
+	$(MAKE) backup-db
+	psql -h $(DB_HOST) -U $(DB_USER) -c "DROP DATABASE IF EXISTS $(DB_NAME)_test;"
+	psql -h $(DB_HOST) -U $(DB_USER) -c "CREATE DATABASE $(DB_NAME)_test;"
+	psql -h $(DB_HOST) -U $(DB_USER) -d $(DB_NAME)_test -f ./db_files/full_db.sql
+	go test ./...
+	psql -h $(DB_HOST) -U $(DB_USER) -c "DROP DATABASE IF EXISTS $(DB_NAME)_test;"

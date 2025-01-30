@@ -85,6 +85,25 @@ type Overall_Bowling_Continent_Group struct {
 	OverallBowlingStats
 }
 
+type Overall_Bowling_Series_Group struct {
+	SeriesId     pgtype.Int8 `json:"series_id"`
+	SeriesName   pgtype.Text `json:"series_name"`
+	SeriesSeason pgtype.Text `json:"series_season"`
+	PlayersCount pgtype.Int8 `json:"players_count"`
+	MinDate      pgtype.Date `json:"min_date"`
+	MaxDate      pgtype.Date `json:"max_date"`
+	OverallBowlingStats
+}
+
+type Overall_Bowling_Tournament_Group struct {
+	TournamentId   pgtype.Int8 `json:"tournament_id"`
+	TournamentName pgtype.Text `json:"tournament_name"`
+	PlayersCount   pgtype.Int8 `json:"players_count"`
+	MinDate        pgtype.Date `json:"min_date"`
+	MaxDate        pgtype.Date `json:"max_date"`
+	OverallBowlingStats
+}
+
 type Overall_Bowling_Year_Group struct {
 	Year         pgtype.Int8 `json:"year"`
 	PlayersCount pgtype.Int8 `json:"players_count"`
@@ -93,6 +112,12 @@ type Overall_Bowling_Year_Group struct {
 
 type Overall_Bowling_Season_Group struct {
 	Season       pgtype.Text `json:"season"`
+	PlayersCount pgtype.Int8 `json:"players_count"`
+	OverallBowlingStats
+}
+
+type Overall_Bowling_Decade_Group struct {
+	Decade       pgtype.Int8 `json:"decade"`
 	PlayersCount pgtype.Int8 `json:"players_count"`
 	OverallBowlingStats
 }
@@ -121,6 +146,7 @@ type Individual_Bowling_Innings_Group struct {
 	BowlingTeamName pgtype.Text `json:"bowling_team_name"`
 
 	OversBowled   pgtype.Float8 `json:"overs_bowled"`
+	MaidenOvers   pgtype.Float8 `json:"maiden_overs"`
 	RunsConceded  pgtype.Int8   `json:"runs_conceded"`
 	WicketsTaken  pgtype.Int8   `json:"wickets_taken"`
 	Economy       pgtype.Float8 `json:"economy"`
@@ -128,9 +154,46 @@ type Individual_Bowling_Innings_Group struct {
 	SixesConceded pgtype.Int8   `json:"sixes_conceded"`
 }
 
+type Individual_Bowling_MatchTotals_Group struct {
+	MatchId   pgtype.Int8 `json:"match_id"`
+	StartDate pgtype.Date `json:"start_date"`
+	GroundId  pgtype.Int8 `json:"ground_id"`
+	CityName  pgtype.Text `json:"city_name"`
+
+	BowlerId        pgtype.Int8 `json:"bowler_id"`
+	BowlerName      pgtype.Text `json:"bowler_name"`
+	BattingTeamId   pgtype.Int8 `json:"batting_team_id"`
+	BattingTeamName pgtype.Text `json:"batting_team_name"`
+	BowlingTeamId   pgtype.Int8 `json:"bowling_team_id"`
+	BowlingTeamName pgtype.Text `json:"bowling_team_name"`
+
+	OversBowled   pgtype.Float8 `json:"overs_bowled"`
+	MaidenOvers   pgtype.Float8 `json:"maiden_overs"`
+	RunsConceded  pgtype.Int8   `json:"runs_conceded"`
+	WicketsTaken  pgtype.Int8   `json:"wickets_taken"`
+	Average       pgtype.Float8 `json:"average"`
+	Economy       pgtype.Float8 `json:"economy"`
+	StrikeRate    pgtype.Float8 `json:"strike_rate"`
+	FoursConceded pgtype.Int8   `json:"fours_conceded"`
+	SixesConceded pgtype.Int8   `json:"sixes_conceded"`
+}
+
 type Individual_Bowling_Ground_Group struct {
 	GroundId   pgtype.Int8 `json:"ground_id"`
 	GroundName pgtype.Text `json:"ground_name"`
+	Overall_Bowling_Bowler_Group
+}
+
+type Individual_Bowling_Series_Group struct {
+	SeriesId     pgtype.Int8 `json:"series_id"`
+	SeriesName   pgtype.Text `json:"series_name"`
+	SeriesSeason pgtype.Text `json:"series_season"`
+	Overall_Bowling_Bowler_Group
+}
+
+type Individual_Bowling_Tournament_Group struct {
+	TournamentId   pgtype.Int8 `json:"tournament_id"`
+	TournamentName pgtype.Text `json:"tournament_name"`
 	Overall_Bowling_Bowler_Group
 }
 
@@ -161,6 +224,7 @@ type OverallBowlingStats struct {
 	MatchesPlayed   pgtype.Int8   `json:"matches_played"`
 	InningsBowled   pgtype.Int8   `json:"innings_bowled"`
 	OversBowled     pgtype.Float8 `json:"overs_bowled"`
+	MaidenOvers     pgtype.Int8   `json:"maiden_overs"`
 	RunsConceded    pgtype.Int8   `json:"runs_conceded"`
 	WicketsTaken    pgtype.Int8   `json:"wickets_taken"`
 	Average         pgtype.Float8 `json:"average"`
@@ -168,8 +232,11 @@ type OverallBowlingStats struct {
 	Economy         pgtype.Float8 `json:"economy"`
 	FourWktHauls    pgtype.Int8   `json:"four_wicket_hauls"`
 	FiveWktHauls    pgtype.Int8   `json:"five_wicket_hauls"`
-	BestInningsRuns pgtype.Int8   `json:"best_innings_runs"`
+	TenWktHauls     pgtype.Int8   `json:"ten_wicket_hauls"`
+	BestMatchWkts   pgtype.Int8   `json:"best_match_wickets"`
+	BestMatchRuns   pgtype.Int8   `json:"best_match_runs"`
 	BestInningsWkts pgtype.Int8   `json:"best_innings_wickets"`
+	BestInningsRuns pgtype.Int8   `json:"best_innings_runs"`
 	FoursConceded   pgtype.Int8   `json:"fours_conceded"`
 	SixesConceded   pgtype.Int8   `json:"sixes_conceded"`
 }
