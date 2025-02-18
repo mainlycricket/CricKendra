@@ -7,7 +7,6 @@ import (
 	"net/url"
 
 	"github.com/jackc/pgx/v5"
-	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/mainlycricket/CricKendra/internal/models"
 	"github.com/mainlycricket/CricKendra/internal/responses"
 	"github.com/mainlycricket/CricKendra/pkg/pgxutils"
@@ -78,21 +77,4 @@ func UpdateInnings(ctx context.Context, db DB_Exec, innings *models.Innings) err
 	}
 
 	return nil
-}
-
-func ReadInningsEndOptions(ctx context.Context, db *pgxpool.Pool) ([]string, error) {
-	query := `SELECT unnest(enum_range(null::innings_end))`
-
-	rows, err := db.Query(ctx, query)
-	if err != nil {
-		return nil, err
-	}
-
-	inningsEndOptions, err := pgx.CollectRows(rows, func(row pgx.CollectableRow) (string, error) {
-		var inningsEnd string
-		err := row.Scan(&inningsEnd)
-		return inningsEnd, err
-	})
-
-	return inningsEndOptions, err
 }

@@ -4,10 +4,6 @@ include secrets.sh
 build-main:
 	go build -o bin/ ./cmd/main-server/
 
-.PHONY: build-live
-build-live:
-	go build -o bin/ ./cmd/live-server/
-
 .PHONY: build-csv-parser
 build-csv-parser:
 	go build -o bin/ ./cmd/csv-parser/
@@ -15,10 +11,6 @@ build-csv-parser:
 .PHONY: run-main
 run-main: build-main
 	./bin/main-server
-
-.PHONY: run-live
-run-live: build-live
-	./bin/live-server
 
 .PHONY: run-csv-parser
 run-csv-parser: build-csv-parser
@@ -37,14 +29,10 @@ install-tools:
 .PHONY: watch-main
 watch-main:
 	reflex -r '\.go$$' -s -- sh -c 'make build-main && ./bin/main-server'
-
-.PHONY: watch-live
-watch-live:
-	reflex -r '\.go$$' -s -- sh -c './bin/live-server'
 	
-DB_HOST ?= $(POSTGRES_HOST)
-DB_USER ?= $(POSTGRES_USER)
-DB_NAME ?= $(POSTGRES_DB)
+DB_HOST := $(DB_HOST)
+DB_USER := $(DB_USER)
+DB_NAME := $(DB_NAME)
 SEED_FILES := cricsheet_people continents host_nations cities grounds tournaments
 
 .PHONY: drop-db
