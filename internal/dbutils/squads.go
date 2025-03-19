@@ -12,6 +12,75 @@ import (
 	"github.com/mainlycricket/CricKendra/pkg/pgxutils"
 )
 
+func ReadSquadByMatchId(ctx context.Context, db DB_Exec, matchId int64) (responses.MatchSquadResponse, error) {
+	var response responses.MatchSquadResponse
+	matchHeader := &response.MatchHeader
+
+	query := fmt.Sprintf(`
+		WITH match_squads AS (
+			SELECT 
+				mse.team_id,
+				teams.name,
+				
+				ARRAY_AGG(
+					ROW(
+						mse.player_id,
+						players.name,
+					
+						mse.is_captain,
+						mse.is_wk,
+						mse.is_debut,
+						mse.is_vice_captain,
+						mse.playing_status
+					)
+				)
+
+			FROM match_squad_entries mse
+
+			LEFT JOIN teams ON mse.team_id = teams.id
+			LEFT JOIN players ON mse.player_id = players.id
+			
+			WHERE mse.match_id = $1
+
+			GROUP BY mse.team_id, teams.name
+		)
+
+		SELECT
+			%s,
+			ARRAY_AGG(match_squads.*) AS squads
+		FROM matches
+		%s
+		LEFT JOIN match_squads ON match_squads.team_id = innings.batting_team_id
+		WHERE matches.id = $1
+		GROUP BY %s
+	`,
+		matchHeaderQuery.selectFields,
+		matchHeaderQuery.joins,
+		matchHeaderQuery.groupByFields,
+	)
+
+	row := db.QueryRow(ctx, query, matchId)
+
+	err := row.Scan(
+		&matchHeader.MatchId, &matchHeader.PlayingLevel, &matchHeader.PlayingFormat, &matchHeader.MatchType, &matchHeader.EventMatchNumber,
+
+		&matchHeader.Season, &matchHeader.StartDate, &matchHeader.EndDate, &matchHeader.StartTime, &matchHeader.IsDayNight, &matchHeader.GroundId, &matchHeader.GroundName, &matchHeader.MainSeriesId, &matchHeader.MainSeriesName,
+
+		&matchHeader.Team1Id, &matchHeader.Team1Name, &matchHeader.Team1ImageUrl, &matchHeader.Team2Id, &matchHeader.Team2Name, &matchHeader.Team2ImageUrl,
+
+		&matchHeader.InningsScores,
+		&matchHeader.PlayerAwards,
+
+		&response.TeamSquads,
+	)
+
+	if err != nil {
+		return response, err
+	}
+
+	return response, err
+}
+
 func UpsertMatchSquadEntries(ctx context.Context, db DB_Exec, entries []models.MatchSquad) error {
 	query := `
 		INSERT INTO match_squad_entries 
@@ -61,7 +130,7 @@ func InsertSeriesSquad(ctx context.Context, db DB_Exec, entry *models.SeriesSqua
 	return id, err
 }
 
-func ReadSeriesSquads(ctx context.Context, db DB_Exec, queryMap url.Values) (responses.AllSeriesSquadResponse, error) {
+func ReadAllSeriesSquads(ctx context.Context, db DB_Exec, queryMap url.Values) (responses.AllSeriesSquadResponse, error) {
 	var response responses.AllSeriesSquadResponse
 
 	queryInfoInput := pgxutils.QueryInfoInput{

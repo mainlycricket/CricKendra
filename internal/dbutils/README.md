@@ -1,0 +1,4 @@
+-   Some queries have got quite complex, because:
+    -   I have willingly not choosen an ORM
+    -   I want to keep a single database read operation per API request
+    -   I am also trying to reduce the API requests the front-end client would need to make for a single page

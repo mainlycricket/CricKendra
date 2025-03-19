@@ -58,6 +58,87 @@ func UpsertMatchSeriesEntries(ctx context.Context, db DB_Exec, matchId int64, se
 	return batchResults.Close()
 }
 
+var matchInfoQuery = struct {
+	selectFields  string
+	joins         string
+	groupByFields string
+}{
+	selectFields: `
+		matches.id, matches.playing_level, matches.playing_format, matches.match_type, matches.event_match_number,
+
+		-- Day 1, 2, etc - Test / FC
+		-- Stumps, Innings Break, Tea/Lunch/Dinner, Stopped
+		-- Need 50 runs, won by 5 wkts, trail/lead by 8 runs, won the toss and chose to bat, match starts in
+		
+		matches.season, matches.start_date, matches.end_date, matches.start_time, matches.is_day_night, matches.ground_id, grounds.name, matches.main_series_id, main_series.name,
+
+		matches.team1_id, team1.name, team1.image_url, matches.team2_id, team2.name, team2.image_url,
+
+		(
+			SELECT
+				ARRAY_AGG (
+					-- order is necessary for struct scanning
+					ROW (
+						innings.innings_number, innings.batting_team_id, batting_team.name,
+						
+						innings.total_runs, innings.total_balls, innings.total_wickets, innings.innings_end, innings.target_runs, innings.max_overs
+					)
+				)
+		) AS team_innings_short_info
+	`,
+
+	joins: `
+		LEFT JOIN teams team1 ON matches.team1_id = team1.id 
+		LEFT JOIN teams team2 ON matches.team2_id = team2.id
+
+		LEFT JOIN grounds ON matches.ground_id = grounds.id
+		LEFT JOIN series main_series ON matches.main_series_id = main_series.id
+
+		LEFT JOIN innings ON innings.match_id = matches.id
+			AND innings.innings_number IS NOT NULL
+			AND innings.is_super_over = FALSE
+
+		LEFT JOIN teams batting_team ON innings.batting_team_id = batting_team.id
+	`,
+
+	groupByFields: `
+		matches.id, grounds.name,
+		team1.id, team2.name, team1.image_url,
+		team2.id, team2.name, team2.image_url,
+		main_series.id, main_series.name
+	`,
+}
+
+var matchHeaderQuery = struct {
+	selectFields  string
+	joins         string
+	groupByFields string
+}{
+	selectFields: fmt.Sprintf(`
+		%s,
+		(
+			SELECT
+				ARRAY_AGG (
+					-- order is necessary for struct scanning
+					ROW (
+						player_awards.player_id, players.name, player_awards.award_type
+					)
+				)
+			FROM
+				player_awards
+				LEFT JOIN players ON player_awards.player_id = players.id
+			WHERE
+				player_awards.match_id = matches.id
+		) AS match_awards
+	`,
+		matchInfoQuery.selectFields,
+	),
+
+	joins: matchInfoQuery.joins,
+
+	groupByFields: matchInfoQuery.groupByFields,
+}
+
 func ReadMatches(ctx context.Context, db DB_Exec, queryMap url.Values) (responses.AllMatchesResponse, error) {
 	var response responses.AllMatchesResponse
 
@@ -74,31 +155,38 @@ func ReadMatches(ctx context.Context, db DB_Exec, queryMap url.Values) (response
 	}
 
 	query := fmt.Sprintf(`
-		SELECT
-			matches.id, matches.playing_level, matches.playing_format, matches.match_type, matches.cricsheet_id, matches.balls_per_over, matches.event_match_number, matches.start_date, matches.end_date, matches.start_time, matches.is_day_night, matches.ground_id, grounds.name, matches.team1_id, t1.name, t1.image_url, matches.team2_id, t2.name, t2.image_url, matches.season, matches.main_series_id, ms.name, matches.current_status, matches.final_result, matches.outcome_special_method, matches.match_winner_team_id, matches.bowl_out_winner_id, matches.super_over_winner_id, matches.is_won_by_innings, matches.is_won_by_runs, matches.win_margin, matches.balls_remaining_after_win, matches.toss_winner_team_id, matches.is_toss_decision_bat,
-			
-			ARRAY_AGG ( ROW ( innings.innings_number, innings.batting_team_id, innings.total_runs, innings.total_balls, innings.total_wickets, innings.innings_end, innings.target_runs, innings.max_overs ) )
-	
+		SELECT %s
 		FROM matches 
-		
-		LEFT JOIN teams t1 ON matches.team1_id = t1.id 
-		LEFT JOIN teams t2 ON matches.team2_id = t2.id 
-		LEFT JOIN grounds ON matches.ground_id = grounds.id
-		LEFT JOIN series ms ON matches.main_series_id = ms.id
-		LEFT JOIN innings ON innings.match_id = matches.id AND innings.innings_number IS NOT NULL AND innings.is_super_over = FALSE
-		
-		GROUP BY matches.id, grounds.name, t1.name, t2.name, t1.image_url, t2.image_url, ms.name
-		%s %s %s`, queryInfoOutput.WhereClause, queryInfoOutput.OrderByClause, queryInfoOutput.PaginationClause)
+		%s
+		%s
+		GROUP BY %s
+		%s
+		%s`,
+		matchInfoQuery.selectFields,
+		matchInfoQuery.joins,
+		queryInfoOutput.WhereClause,
+		matchInfoQuery.groupByFields,
+		queryInfoOutput.OrderByClause,
+		queryInfoOutput.PaginationClause,
+	)
 
 	rows, err := db.Query(ctx, query, queryInfoOutput.Args...)
 	if err != nil {
 		return response, err
 	}
 
-	matches, err := pgx.CollectRows(rows, func(row pgx.CollectableRow) (responses.AllMatches, error) {
-		var match responses.AllMatches
+	matches, err := pgx.CollectRows(rows, func(row pgx.CollectableRow) (responses.MatchInfo, error) {
+		var match responses.MatchInfo
 
-		err := rows.Scan(&match.Id, &match.PlayingLevel, &match.PlayingFormat, &match.MatchType, &match.CricsheetId, &match.BallsPerOver, &match.EventMatchNumber, &match.StartDate, &match.EndDate, &match.StartTime, &match.IsDayNight, &match.GroundId, &match.GroundName, &match.Team1Id, &match.Team1Name, &match.Team1ImageUrl, &match.Team2Id, &match.Team2Name, &match.Team2ImageUrl, &match.Season, &match.MainSeriesId, &match.MainSeriesName, &match.CurrentStatus, &match.FinalResult, &match.OutcomeSpecialMethod, &match.MatchWinnerId, &match.BowlOutWinnerId, &match.SuperOverWinnerId, &match.IsWonByInnings, &match.IsWonByRuns, &match.WinMargin, &match.BallsMargin, &match.TossWinnerId, &match.IsTossDecisionBat, &match.Innings)
+		err := rows.Scan(
+			&match.MatchId, &match.PlayingLevel, &match.PlayingFormat, &match.MatchType, &match.EventMatchNumber,
+
+			&match.Season, &match.StartDate, &match.EndDate, &match.StartTime, &match.IsDayNight, &match.GroundId, &match.GroundName, &match.MainSeriesId, &match.MainSeriesName,
+
+			&match.Team1Id, &match.Team1Name, &match.Team1ImageUrl, &match.Team2Id, &match.Team2Name, &match.Team2ImageUrl,
+
+			&match.InningsScores,
+		)
 
 		return match, err
 	})
@@ -114,66 +202,294 @@ func ReadMatches(ctx context.Context, db DB_Exec, queryMap url.Values) (response
 	return response, err
 }
 
-func ReadMatchById(ctx context.Context, db DB_Exec, matchId int) (responses.SingleMatchResponse, error) {
-	var match responses.SingleMatchResponse
+func ReadMatchSummary(ctx context.Context, db DB_Exec, matchId int64) (responses.MatchSummary, error) {
+	var response responses.MatchSummary
+	matchHeader := &response.MatchHeader
 
-	query := `
-	SELECT
-		matches.id, matches.playing_level, matches.playing_format, matches.match_type, matches.cricsheet_id, matches.balls_per_over, matches.event_match_number, matches.start_date, matches.end_date, matches.start_time, matches.is_day_night, matches.season, matches.ground_id, grounds.name, matches.main_series_id, series.name, matches.team1_id, t1.name, t1.image_url, matches.team2_id, t2.name, t2.image_url, matches.current_status, matches.final_result, matches.outcome_special_method, matches.match_winner_team_id, matches.bowl_out_winner_id, matches.super_over_winner_id, matches.is_won_by_innings, matches.is_won_by_runs, matches.win_margin, matches.balls_remaining_after_win, matches.toss_winner_team_id, matches.is_toss_decision_bat,
-	
-		(
-	        SELECT ARRAY_AGG ( ROW ( mse.team_id, mse.player_id, players.name, mse.is_captain, mse.is_wk, mse.is_debut, mse.is_vice_captain, mse.playing_status ) )
-	        FROM
-	            match_squad_entries mse
-	            LEFT JOIN players ON mse.player_id = players.id
-	        WHERE
-	            mse.match_id = matches.id
-	    ) AS squad_entries,
+	query := fmt.Sprintf(`
+		WITH
+			top_batters AS (
+				SELECT
+					bs.innings_id, bs.batter_id, batter.name AS batter_name,
 					
-		(
-	        SELECT ARRAY_AGG ( ROW (player_awards.player_id, player_awards.award_type) )
-	        FROM
-	            player_awards
-	        WHERE
-	            player_awards.match_id = matches.id
-        ) AS match_awards,
-	
-        (
-            SELECT
-                ARRAY_AGG (
-                    ROW ( innings.id, innings.innings_number, innings.batting_team_id, innings.bowling_team_id, innings.total_runs, innings.total_balls, innings.total_wickets, innings.byes, innings.leg_byes, innings.wides, innings.noballs, innings.penalty, innings.is_super_over, innings.innings_end, innings.target_runs, innings.max_overs ,
-	                    (
-	                        SELECT ARRAY_AGG ( ROW ( bs.batter_id, bs.batting_position, bs.has_batted, bs.runs_scored, bs.balls_faced, bs.minutes_batted, bs.fours_scored, bs.sixes_scored, bs.dismissal_type, bs.dismissed_by_id, bs.fielder1_id, bs.fielder2_id ) )
-							FROM batting_scorecards bs
-							WHERE bs.innings_id = innings.id
-	                    ),
-	                    (
-	                        SELECT ARRAY_AGG ( ROW ( bs.bowler_id, bs.bowling_position, bs.wickets_taken, bs.runs_conceded, bs.balls_bowled, bs.maiden_overs, bs.fours_conceded, bs.sixes_conceded, bs.wides_conceded, bs.noballs_conceded ) ) 
-							FROM bowling_scorecards bs
-							WHERE bs.innings_id = innings.id
-	                    )
-                    )
-                )
-            FROM
-                innings
-            WHERE
-                innings.match_id = matches.id
-        ) AS innings
-	
-	FROM matches 
+					bs.runs_scored, bs.balls_faced,
 
-	LEFT JOIN teams t1 ON matches.team1_id = t1.id 
-	LEFT JOIN teams t2 ON matches.team2_id = t2.id 
-	LEFT JOIN grounds ON matches.ground_id = grounds.id
-	LEFT JOIN series ON matches.main_series_id = series.id
-	WHERE matches.id = $1
-	`
+					ROW_NUMBER() OVER (
+						PARTITION BY
+							bs.innings_id
+						ORDER BY
+							bs.runs_scored DESC, bs.balls_faced ASC,
+							bs.dismissal_type IS NULL, bs.batting_position ASC
+					) AS rn
+				FROM
+					batting_scorecards bs
+					LEFT JOIN innings ON bs.innings_id = innings.id
+					AND innings.innings_number IS NOT NULL
+					AND innings.is_super_over = FALSE
+					LEFT JOIN players batter ON bs.batter_id = batter.id
+				WHERE
+					innings.match_id = $1
+			),
+			aggregated_top_batters AS (
+				SELECT
+					top_batters.innings_id,
+					ARRAY_AGG (
+						ROW (
+							top_batters.batter_id, top_batters.batter_name,
+							
+							top_batters.runs_scored, top_batters.balls_faced
+						)
+					) AS batters
+				FROM
+					top_batters
+				WHERE
+					top_batters.rn <= 2
+				GROUP BY
+					top_batters.innings_id
+			),
+			top_bowlers AS (
+				SELECT
+					bs.innings_id, bs.bowler_id, bowler.name AS bowler_name,
+
+					bs.balls_bowled / matches.balls_per_over + bs.balls_bowled %% matches.balls_per_over * 0.1 AS overs_bowled,
+					bs.runs_conceded, bs.wickets_taken,
+
+					ROW_NUMBER() OVER (
+						PARTITION BY
+							bs.innings_id
+						ORDER BY
+							bs.wickets_taken DESC, bs.runs_conceded ASC,
+							bs.balls_bowled / matches.balls_per_over + bs.balls_bowled %% matches.balls_per_over * 0.1 DESC, bs.bowling_position ASC
+					) AS rn
+				FROM
+					bowling_scorecards bs
+
+					LEFT JOIN innings ON bs.innings_id = innings.id
+					AND innings.innings_number IS NOT NULL
+					AND innings.is_super_over = FALSE
+
+					LEFT JOIN matches ON innings.match_id = matches.id
+					
+					LEFT JOIN players bowler ON bs.bowler_id = bowler.id
+				WHERE
+					innings.match_id = $1
+			),
+			aggregated_top_bowlers AS (
+				SELECT
+					top_bowlers.innings_id,
+					ARRAY_AGG (
+						ROW (
+							top_bowlers.bowler_id, top_bowlers.bowler_name,
+							
+							top_bowlers.overs_bowled, top_bowlers.wickets_taken, top_bowlers.runs_conceded
+						)
+					) AS bowlers
+				FROM
+					top_bowlers
+				WHERE
+					top_bowlers.rn <= 2
+				GROUP BY
+					top_bowlers.innings_id
+			),
+			scorecard_summary AS (
+				SELECT
+					innings.innings_number, innings.batting_team_id, batting_team.name,
+					
+					innings.total_runs, innings.total_wickets, innings.total_balls,
+					
+					ARRAY_AGG (aggregated_top_batters.batters),
+					ARRAY_AGG (aggregated_top_bowlers.bowlers)
+				FROM
+					innings
+					LEFT JOIN teams batting_team ON innings.batting_team_id = batting_team.id
+					LEFT JOIN aggregated_top_batters ON aggregated_top_batters.innings_id = innings.id
+					LEFT JOIN aggregated_top_bowlers ON aggregated_top_bowlers.innings_id = innings.id
+				WHERE
+					innings.match_id = $1
+					AND innings.innings_number IS NOT NULL
+					AND innings.is_super_over = FALSE
+				GROUP BY
+					innings.innings_number, innings.batting_team_id, batting_team.name,
+					
+					innings.total_runs, innings.total_wickets, innings.total_balls
+			),
+			latest_commentary AS (
+				SELECT
+					deliveries.innings_delivery_number, deliveries.ball_number, deliveries.over_number,
+
+					deliveries.batter_id, batter.name, deliveries.bowler_id, bowler.name, deliveries.fielder1_id, fielder1.name, deliveries.fielder2_Id, fielder2.name,
+					
+					deliveries.wides, deliveries.noballs, deliveries.legbyes, deliveries.byes, deliveries.total_runs, deliveries.is_four, deliveries.is_six,
+					
+					deliveries.player1_dismissed_id, player1_dismissed.name, deliveries.player1_dismissal_type, bs1.runs_scored, bs1.balls_faced, bs1.fours_scored, bs1.sixes_scored,
+
+					deliveries.player2_dismissed_id, player2_dismissed.name, deliveries.player2_dismissal_type, bs2.runs_scored, bs2.balls_faced, bs2.fours_scored, bs2.sixes_scored,
+
+					deliveries.commentary
+				FROM
+					deliveries
+					
+					LEFT JOIN innings ON deliveries.innings_id = innings.id
+					AND innings.is_super_over = FALSE
+					AND innings.innings_number IS NOT NULL
+					
+					LEFT JOIN matches ON innings.match_id = matches.id
+					
+					LEFT JOIN players batter ON deliveries.batter_id = batter.id
+					LEFT JOIN players bowler ON deliveries.bowler_id = bowler.id
+					LEFT JOIN players fielder1 ON deliveries.fielder1_id = fielder1.id
+					LEFT JOIN players fielder2 ON deliveries.fielder2_id = fielder2.id
+					LEFT JOIN players player1_dismissed ON deliveries.player1_dismissed_id = player1_dismissed.id
+					LEFT JOIN players player2_dismissed ON deliveries.player2_dismissed_id = player2_dismissed.id
+
+					LEFT JOIN batting_scorecards bs1 ON bs1.innings_id = deliveries.innings_id
+					AND bs1.batter_id = deliveries.player1_dismissed_id
+					LEFT JOIN batting_scorecards bs2 ON bs2.innings_id = deliveries.innings_id
+					AND bs2.batter_id = deliveries.player2_dismissed_id
+				WHERE
+					matches.id = $1
+				ORDER BY
+					innings.innings_number DESC,
+					deliveries.innings_delivery_number DESC
+				FETCH FIRST
+					50 ROWS ONLY
+			)
+		SELECT
+			%s,
+			(
+				SELECT
+					ARRAY_AGG (scorecard_summary.*)
+				FROM
+					scorecard_summary
+			) AS scorecard_summary,
+			(
+				SELECT
+					ARRAY_AGG (latest_commentary.*)
+				FROM
+					latest_commentary
+			) AS latest_commentary
+		FROM matches
+		%s
+		WHERE matches.id = $1
+		GROUP BY %s;
+	`, matchHeaderQuery.selectFields, matchHeaderQuery.joins, matchHeaderQuery.groupByFields)
 
 	row := db.QueryRow(ctx, query, matchId)
 
-	err := row.Scan(&match.Id, &match.PlayingLevel, &match.PlayingFormat, &match.MatchType, &match.CricsheetId, &match.BallsPerOver, &match.EventMatchNumber, &match.StartDate, &match.EndDate, &match.StartTime, &match.IsDayNight, &match.Season, &match.GroundId, &match.GroundName, &match.MainSeriesId, &match.MainSeriesName, &match.Team1Id, &match.Team1Name, &match.Team1ImageUrl, &match.Team2Id, &match.Team2Name, &match.Team2ImageUrl, &match.CurrentStatus, &match.FinalResult, &match.OutcomeSpecialMethod, &match.MatchWinnerId, &match.BowlOutWinnerId, &match.SuperOverWinnerId, &match.IsWonByInnings, &match.IsWonByRuns, &match.WinMargin, &match.BallsMargin, &match.TossWinnerId, &match.IsTossDecisionBat, &match.SquadEntries, &match.MatchAwards, &match.Innings)
+	err := row.Scan(
+		&matchHeader.MatchId, &matchHeader.PlayingLevel, &matchHeader.PlayingFormat, &matchHeader.MatchType, &matchHeader.EventMatchNumber,
 
-	return match, err
+		&matchHeader.Season, &matchHeader.StartDate, &matchHeader.EndDate, &matchHeader.StartTime, &matchHeader.IsDayNight, &matchHeader.GroundId, &matchHeader.GroundName, &matchHeader.MainSeriesId, &matchHeader.MainSeriesName,
+
+		&matchHeader.Team1Id, &matchHeader.Team1Name, &matchHeader.Team1ImageUrl, &matchHeader.Team2Id, &matchHeader.Team2Name, &matchHeader.Team2ImageUrl,
+
+		&matchHeader.InningsScores,
+		&matchHeader.PlayerAwards,
+
+		&response.ScorecardSummary,
+		&response.LatestCommentary,
+	)
+
+	return response, err
+}
+
+func ReadMatchFullScorecard(ctx context.Context, db DB_Exec, matchId int64) (responses.MatchScorecardResponse, error) {
+	var response responses.MatchScorecardResponse
+	matchHeader := &response.MatchHeader
+
+	query := fmt.Sprintf(`
+		SELECT
+			%s,
+			(
+				SELECT
+					ARRAY_AGG (
+						-- order is necessary for struct scanning
+						ROW (
+							innings.innings_number, innings.batting_team_id, batting_team.name,
+
+							innings.total_runs, innings.total_balls, innings.total_wickets, innings.byes, innings.leg_byes, innings.wides, innings.noballs, innings.penalty,
+
+							innings.innings_end, innings.target_runs, innings.max_overs,
+
+							(
+								SELECT
+									ARRAY_AGG (
+										-- order is necessary for struct scanning
+										ROW (
+											bs.batter_id, batter.name, bs.batting_position, bs.has_batted,
+
+											bs.runs_scored, bs.balls_faced, bs.minutes_batted, bs.fours_scored, bs.sixes_scored,
+
+											bs.dismissal_type, bs.dismissed_by_id, dismissed_by.name, bs.fielder1_id, fielder1.name, bs.fielder2_id, fielder2.name
+										)
+									)
+								FROM
+									batting_scorecards bs
+									LEFT JOIN players batter ON bs.batter_id = batter.id
+									LEFT JOIN players dismissed_by ON bs.dismissed_by_id = dismissed_by.id
+									LEFT JOIN players fielder1 ON bs.fielder1_id = fielder1.id
+									LEFT JOIN players fielder2 ON bs.fielder2_id = fielder2.id
+								WHERE
+									bs.innings_id = innings.id
+							),
+
+							(
+								SELECT
+									ARRAY_AGG (
+										-- order is necessary for struct scanning
+										ROW (
+											bs.bowler_id, bowler.name, bs.bowling_position,
+
+											bs.wickets_taken, bs.runs_conceded,
+											
+											bs.balls_bowled / matches.balls_per_over + bs.balls_bowled %% matches.balls_per_over * 0.1,
+											
+											bs.maiden_overs, bs.fours_conceded, bs.sixes_conceded, bs.wides_conceded, bs.noballs_conceded
+										)
+									)
+								FROM
+									bowling_scorecards bs
+
+									LEFT JOIN players bowler ON bs.bowler_id = bowler.id
+
+								WHERE
+									bs.innings_id = innings.id AND
+									bs.bowling_position IS NOT NULL
+							)
+						)
+					)
+			) AS match_innings
+		
+		FROM matches 
+		%s
+		WHERE matches.id = $1
+		GROUP BY %s
+	`,
+		matchHeaderQuery.selectFields,
+		matchHeaderQuery.joins,
+		matchHeaderQuery.groupByFields,
+	)
+
+	row := db.QueryRow(ctx, query, matchId)
+
+	err := row.Scan(
+		&matchHeader.MatchId, &matchHeader.PlayingLevel, &matchHeader.PlayingFormat, &matchHeader.MatchType, &matchHeader.EventMatchNumber,
+
+		&matchHeader.Season, &matchHeader.StartDate, &matchHeader.EndDate, &matchHeader.StartTime, &matchHeader.IsDayNight, &matchHeader.GroundId, &matchHeader.GroundName, &matchHeader.MainSeriesId, &matchHeader.MainSeriesName,
+
+		&matchHeader.Team1Id, &matchHeader.Team1Name, &matchHeader.Team1ImageUrl, &matchHeader.Team2Id, &matchHeader.Team2Name, &matchHeader.Team2ImageUrl,
+
+		&matchHeader.InningsScores,
+		&matchHeader.PlayerAwards,
+
+		&response.InningsScorecards,
+	)
+
+	if err != nil {
+		return response, err
+	}
+
+	return response, nil
 }
 
 func UpdateMatch(ctx context.Context, db *pgxpool.Pool, match *models.Match) error {
@@ -281,98 +597,59 @@ func SetMatchBBBDone(ctx context.Context, db DB_Exec, matchId int64) error {
 	return nil
 }
 
-func ReadMatchResultOptions(ctx context.Context, db *pgxpool.Pool) ([]string, error) {
-	query := `SELECT unnest(enum_range(null::match_final_result))`
-
-	rows, err := db.Query(ctx, query)
-	if err != nil {
-		return nil, err
-	}
-
-	matchResultOptions, err := pgx.CollectRows(rows, func(row pgx.CollectableRow) (string, error) {
-		var matchResult string
-		err := row.Scan(&matchResult)
-		return matchResult, err
-	})
-
-	return matchResultOptions, err
-}
-
-func ReadMatchTypeOptions(ctx context.Context, db *pgxpool.Pool) ([]string, error) {
-	query := `SELECT unnest(enum_range(null::match_type))`
-
-	rows, err := db.Query(ctx, query)
-	if err != nil {
-		return nil, err
-	}
-
-	matchTypeOptions, err := pgx.CollectRows(rows, func(row pgx.CollectableRow) (string, error) {
-		var matchType string
-		err := row.Scan(&matchType)
-		return matchType, err
-	})
-
-	return matchTypeOptions, err
-}
-
-func ReadMatchFormats(ctx context.Context, db *pgxpool.Pool) ([]string, error) {
-	query := `SELECT unnest(enum_range(null::playing_format))`
-
-	rows, err := db.Query(ctx, query)
-	if err != nil {
-		return nil, err
-	}
-
-	matchFormats, err := pgx.CollectRows(rows, func(row pgx.CollectableRow) (string, error) {
-		var matchFormat string
-		err := row.Scan(&matchFormat)
-		return matchFormat, err
-	})
-
-	return matchFormats, err
-}
-
-func ReadMatchLevels(ctx context.Context, db *pgxpool.Pool) ([]string, error) {
-	query := `SELECT unnest(enum_range(null::playing_level))`
-
-	rows, err := db.Query(ctx, query)
-	if err != nil {
-		return nil, err
-	}
-
-	playingLevels, err := pgx.CollectRows(rows, func(row pgx.CollectableRow) (string, error) {
-		var playingLevel string
-		err := row.Scan(&playingLevel)
-		return playingLevel, err
-	})
-
-	return playingLevels, err
-}
-
-func ReadSeriesMatches(ctx context.Context, db DB_Exec, seriesId int64) ([]responses.AllMatches, error) {
+func ReadMatchesBySeriesId(ctx context.Context, db DB_Exec, seriesId int64) ([]responses.MatchInfo, error) {
 	query := `
-	SELECT 
-    	matches.id, matches.playing_level, matches.playing_format, matches.match_type, matches.cricsheet_id, matches.balls_per_over, matches.event_match_number, matches.start_date, matches.end_date, matches.start_time, matches.is_day_night, matches.ground_id, grounds.name, matches.team1_id, t1.name, t1.image_url, matches.team2_id, t2.name, t2.image_url, matches.season, matches.main_series_id, ms.name, matches.current_status, matches.final_result, matches.outcome_special_method, matches.match_winner_team_id, matches.bowl_out_winner_id, matches.super_over_winner_id, matches.is_won_by_innings, matches.is_won_by_runs, matches.win_margin, matches.balls_remaining_after_win, matches.toss_winner_team_id, matches.is_toss_decision_bat,
-	    (
-	        SELECT
-	            ARRAY_AGG (
-	                ROW ( innings.innings_number, innings.batting_team_id, innings.total_runs, innings.total_balls, innings.total_wickets, innings.innings_end, innings.target_runs, innings.max_overs )
-	            )
-	        FROM
-	            innings
-	        WHERE
-	            innings.match_id = matches.id AND innings.is_super_over = FALSE AND innings.innings_number IS NOT NULL
-	    )
-	FROM
-	    matches
-	    LEFT JOIN match_series_entries mse ON mse.match_id = matches.id
-	    LEFT JOIN series ON mse.series_id = series.id
-	    LEFT JOIN series ms ON matches.main_series_id = ms.id
-	    LEFT JOIN teams t1 ON matches.team1_id = t1.id
-	    LEFT JOIN teams t2 ON matches.team2_id = t2.id
-	    LEFT JOIN grounds ON matches.ground_id = grounds.id
-	WHERE
-	    series.id = $1
+		SELECT
+			matches.id, matches.playing_level, matches.playing_format, matches.match_type, matches.event_match_number,
+			
+			-- Day 1, 2, etc - Test / FC
+			-- Stumps, Innings Break, Tea/Lunch/Dinner, Stopped
+			-- Need 50 runs, won by 5 wkts, trail/lead by 8 runs, won the toss and chose to bat, match starts in
+
+			matches.season, matches.start_date, matches.end_date, matches.start_time, matches.is_day_night, matches.ground_id, grounds.name, matches.main_series_id, main_series.name,
+
+			matches.team1_id, team1.name, team1.image_url,
+			matches.team2_id, team2.name, team2.image_url,
+			
+			(
+				SELECT
+					ARRAY_AGG (
+						-- order is necessary for struct scanning
+						ROW (
+							innings.innings_number, innings.batting_team_id, batting_team.name,
+							
+							innings.total_runs, innings.total_balls, innings.total_wickets, innings.innings_end, innings.target_runs, innings.max_overs
+						)
+					)
+			) AS team_innings_short_info
+
+		FROM matches
+		
+		LEFT JOIN innings ON innings.match_id = matches.id
+			AND innings.innings_number IS NOT NULL
+			AND innings.is_super_over = FALSE
+
+		LEFT JOIN teams batting_team ON innings.batting_team_id = batting_team.id
+
+		LEFT JOIN match_series_entries mse ON mse.match_id = matches.id
+
+		LEFT JOIN series ON mse.series_id = series.id
+		LEFT JOIN series main_series ON matches.main_series_id = main_series.id
+
+		LEFT JOIN teams team1 ON matches.team1_id = team1.id
+		LEFT JOIN teams team2 ON matches.team2_id = team2.id
+
+		LEFT JOIN grounds ON matches.ground_id = grounds.id
+		
+		WHERE series.id = $1
+
+		GROUP BY
+			matches.id, grounds.name,
+			team1.id, team2.name, team1.image_url,
+			team2.id, team2.name, team2.image_url,
+			main_series.id, main_series.name
+
+		ORDER BY matches.start_date ASC
 	`
 
 	rows, err := db.Query(ctx, query, seriesId)
@@ -380,10 +657,18 @@ func ReadSeriesMatches(ctx context.Context, db DB_Exec, seriesId int64) ([]respo
 		return nil, err
 	}
 
-	matches, err := pgx.CollectRows(rows, func(row pgx.CollectableRow) (responses.AllMatches, error) {
-		var match responses.AllMatches
+	matches, err := pgx.CollectRows(rows, func(row pgx.CollectableRow) (responses.MatchInfo, error) {
+		var match responses.MatchInfo
 
-		err := rows.Scan(&match.Id, &match.PlayingLevel, &match.PlayingFormat, &match.MatchType, &match.CricsheetId, &match.BallsPerOver, &match.EventMatchNumber, &match.StartDate, &match.EndDate, &match.StartTime, &match.IsDayNight, &match.GroundId, &match.GroundName, &match.Team1Id, &match.Team1Name, &match.Team1ImageUrl, &match.Team2Id, &match.Team2Name, &match.Team2ImageUrl, &match.Season, &match.MainSeriesId, &match.MainSeriesName, &match.CurrentStatus, &match.FinalResult, &match.OutcomeSpecialMethod, &match.MatchWinnerId, &match.BowlOutWinnerId, &match.SuperOverWinnerId, &match.IsWonByInnings, &match.IsWonByRuns, &match.WinMargin, &match.BallsMargin, &match.TossWinnerId, &match.IsTossDecisionBat, &match.Innings)
+		err := rows.Scan(
+			&match.MatchId, &match.PlayingLevel, &match.PlayingFormat, &match.MatchType, &match.EventMatchNumber,
+
+			&match.Season, &match.StartDate, &match.EndDate, &match.StartTime, &match.IsDayNight, &match.GroundId, &match.GroundName, &match.MainSeriesId, &match.MainSeriesName,
+
+			&match.Team1Id, &match.Team1Name, &match.Team1ImageUrl, &match.Team2Id, &match.Team2Name, &match.Team2ImageUrl,
+
+			&match.InningsScores,
+		)
 
 		return match, err
 	})

@@ -46,9 +46,8 @@ func main() {
 	r.Mount("/cities", citiesRouter())
 	r.Mount("/grounds", groundsRouter())
 	r.Mount("/matches", matchesRouter())
-	r.Mount("/innings", inningsRouter())
 	r.Mount("/users", usersRouter())
-	r.Mount("/blog-articles", blogArticlesRouter())
+	r.Mount("/options", optionsRouter())
 
 	/* Stats */
 	r.Mount("/stats/filter-options", StatFiltersRouter())

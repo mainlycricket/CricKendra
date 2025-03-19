@@ -14,17 +14,14 @@ import (
 func matchesRouter() *chi.Mux {
 	r := chi.NewRouter()
 
-	r.Get("/match-result-options", getMatchResultOptions)
-
-	r.Get("/match-type-options", getMatchTypeOptions)
-
-	r.Get("/match-format-options", getMatchFormats)
-
-	r.Get("/match-level-options", getMatchLevels)
-
 	r.Post("/", createMatch)
 	r.Get("/", getMatches)
-	r.Get("/{matchId}", getMatchById)
+
+	r.Get("/{matchId}/summary", getMatchSummary)
+	r.Get("/{matchId}/full-scorecard", getMatchFullScorecard)
+	r.Get("/{matchId}/squads", getMatchSquad)
+
+	r.Mount("/{matchId}/innings", inningsRouter())
 
 	return r
 }
@@ -58,63 +55,56 @@ func getMatches(w http.ResponseWriter, r *http.Request) {
 	responses.WriteJsonResponse(w, responses.ApiResponse{Success: true, Message: "matches read successfully", Data: response}, http.StatusOK)
 }
 
-func getMatchById(w http.ResponseWriter, r *http.Request) {
-	id := r.PathValue("matchId")
-	int_id, err := strconv.Atoi(id)
+func getMatchSummary(w http.ResponseWriter, r *http.Request) {
+	matchIdRaw := r.PathValue("matchId")
+
+	matchId, err := strconv.ParseInt(matchIdRaw, 10, 64)
 	if err != nil {
-		responses.WriteJsonResponse(w, responses.ApiResponse{Success: false, Message: "invalid match id", Data: err}, http.StatusBadRequest)
+		responses.WriteJsonResponse(w, responses.ApiResponse{Message: "invalid match id", Data: nil}, http.StatusBadRequest)
 		return
 	}
 
-	match, err := dbutils.ReadMatchById(r.Context(), DB_POOL, int_id)
+	scorecard, err := dbutils.ReadMatchSummary(r.Context(), DB_POOL, matchId)
 	if err != nil {
-		responses.WriteJsonResponse(w, responses.ApiResponse{Success: false, Message: "error while reading match", Data: err}, http.StatusBadRequest)
+		responses.WriteJsonResponse(w, responses.ApiResponse{Message: "error while reading match summary", Data: err}, http.StatusInternalServerError)
 		return
 	}
 
-	responses.WriteJsonResponse(w, responses.ApiResponse{Success: true, Message: "fetched match successfully", Data: match}, http.StatusOK)
+	responses.WriteJsonResponse(w, responses.ApiResponse{Success: true, Message: "fetched match summary", Data: scorecard}, http.StatusOK)
 }
 
-func getMatchResultOptions(w http.ResponseWriter, r *http.Request) {
-	teams, err := dbutils.ReadMatchResultOptions(r.Context(), DB_POOL)
+func getMatchFullScorecard(w http.ResponseWriter, r *http.Request) {
+	matchIdRaw := r.PathValue("matchId")
 
+	matchId, err := strconv.ParseInt(matchIdRaw, 10, 64)
 	if err != nil {
-		responses.WriteJsonResponse(w, responses.ApiResponse{Success: false, Message: "error while reading match result options", Data: err}, http.StatusBadRequest)
+		responses.WriteJsonResponse(w, responses.ApiResponse{Message: "invalid match id", Data: nil}, http.StatusBadRequest)
 		return
 	}
 
-	responses.WriteJsonResponse(w, responses.ApiResponse{Success: true, Message: "match result options read successfully", Data: teams}, http.StatusOK)
+	scorecard, err := dbutils.ReadMatchFullScorecard(r.Context(), DB_POOL, matchId)
+	if err != nil {
+		responses.WriteJsonResponse(w, responses.ApiResponse{Message: "error while reading match scorecard", Data: err}, http.StatusInternalServerError)
+		return
+	}
+
+	responses.WriteJsonResponse(w, responses.ApiResponse{Success: true, Message: "fetched match scorecard", Data: scorecard}, http.StatusOK)
 }
 
-func getMatchTypeOptions(w http.ResponseWriter, r *http.Request) {
-	teams, err := dbutils.ReadMatchTypeOptions(r.Context(), DB_POOL)
+func getMatchSquad(w http.ResponseWriter, r *http.Request) {
+	matchIdRaw := r.PathValue("matchId")
 
+	matchId, err := strconv.ParseInt(matchIdRaw, 10, 64)
 	if err != nil {
-		responses.WriteJsonResponse(w, responses.ApiResponse{Success: false, Message: "error while reading match type options", Data: err}, http.StatusBadRequest)
+		responses.WriteJsonResponse(w, responses.ApiResponse{Message: "invalid match id", Data: nil}, http.StatusBadRequest)
 		return
 	}
 
-	responses.WriteJsonResponse(w, responses.ApiResponse{Success: true, Message: "match type options read successfully", Data: teams}, http.StatusOK)
-}
-
-func getMatchFormats(w http.ResponseWriter, r *http.Request) {
-	teams, err := dbutils.ReadMatchFormats(r.Context(), DB_POOL)
-
+	scorecard, err := dbutils.ReadSquadByMatchId(r.Context(), DB_POOL, matchId)
 	if err != nil {
-		responses.WriteJsonResponse(w, responses.ApiResponse{Success: false, Message: "error while reading match formats", Data: err}, http.StatusBadRequest)
+		responses.WriteJsonResponse(w, responses.ApiResponse{Message: "error while reading match squad", Data: err}, http.StatusInternalServerError)
 		return
 	}
 
-	responses.WriteJsonResponse(w, responses.ApiResponse{Success: true, Message: "match formats read successfully", Data: teams}, http.StatusOK)
-}
-
-func getMatchLevels(w http.ResponseWriter, r *http.Request) {
-	teams, err := dbutils.ReadMatchLevels(r.Context(), DB_POOL)
-
-	if err != nil {
-		responses.WriteJsonResponse(w, responses.ApiResponse{Success: false, Message: "error while reading match levels", Data: err}, http.StatusBadRequest)
-		return
-	}
-
-	responses.WriteJsonResponse(w, responses.ApiResponse{Success: true, Message: "match levels read successfully", Data: teams}, http.StatusOK)
+	responses.WriteJsonResponse(w, responses.ApiResponse{Success: true, Message: "fetched match squad", Data: scorecard}, http.StatusOK)
 }

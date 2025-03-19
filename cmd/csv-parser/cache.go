@@ -395,7 +395,7 @@ func (cache *seriesSquadCache) loadOrStore(key seriesSquadKey, teamName string) 
 	}
 
 	filters := cache.getFiltersFromKey(key)
-	dbResponse, err := dbutils.ReadSeriesSquads(context.Background(), DB_POOL, filters)
+	dbResponse, err := dbutils.ReadAllSeriesSquads(context.Background(), DB_POOL, filters)
 	if err != nil {
 		return pgtype.Int8{}, err
 	}

@@ -503,7 +503,8 @@ func (matchInfo *matchInfo) setMatchSeries(input *matchInfoInput) error {
 		tourFlag = "tour_series"
 	}
 
-	mainSeriesId, err := cachedSeries.loadOrStore(seriesKey, 1, 2, tourFlag)
+	team1_id, team2_id := matchInfo.team1Info.id, matchInfo.team2Info.id
+	mainSeriesId, err := cachedSeries.loadOrStore(seriesKey, team1_id, team2_id, tourFlag)
 	if err != nil {
 		return fmt.Errorf(`failed to load main series: %v`, err)
 	}

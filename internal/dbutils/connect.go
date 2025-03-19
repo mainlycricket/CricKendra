@@ -10,9 +10,9 @@ import (
 )
 
 type DB_Exec interface {
-	Exec(context.Context, string, ...any) (pgconn.CommandTag, error)
-	Query(context.Context, string, ...any) (pgx.Rows, error)
-	QueryRow(context.Context, string, ...any) pgx.Row
+	Exec(ctx context.Context, query string, args ...any) (pgconn.CommandTag, error)
+	Query(ctx context.Context, query string, args ...any) (pgx.Rows, error)
+	QueryRow(ctx context.Context, query string, args ...any) pgx.Row
 	SendBatch(ctx context.Context, b *pgx.Batch) pgx.BatchResults
 }
 
@@ -23,7 +23,7 @@ func Connect(ctx context.Context, connectionUrl string) (*pgxpool.Pool, error) {
 	}
 
 	config.AfterConnect = func(ctx context.Context, conn *pgx.Conn) error {
-		return RegisterDataTypes(ctx, conn)
+		return registerDataTypes(ctx, conn)
 	}
 
 	pool, err := pgxpool.NewWithConfig(ctx, config)
@@ -39,7 +39,7 @@ func Connect(ctx context.Context, connectionUrl string) (*pgxpool.Pool, error) {
 	return pool, nil
 }
 
-func RegisterDataTypes(ctx context.Context, conn *pgx.Conn) error {
+func registerDataTypes(ctx context.Context, conn *pgx.Conn) error {
 	dataTypeNames := []string{
 		"career_stats",
 		"dismissal_type",

@@ -123,35 +123,318 @@ func ReadSeries(ctx context.Context, db DB_Exec, queryMap url.Values) (responses
 	return response, err
 }
 
-func ReadSeriesById(ctx context.Context, db DB_Exec, id int64) (responses.SingleSeries, error) {
-	var series responses.SingleSeries
+var seriesHeaderQuery = struct {
+	withClause    string
+	selectFields  string
+	joins         string
+	groupByFields string
+}{
+	withClause: `WITH
+	top_batters AS (
+		SELECT
+			-- order is crucial for struct unpacking
+			bs.batter_id, players.name, players.image_url,
+			COUNT(DISTINCT bs.innings_id), SUM(bs.runs_scored),
+			(
+				CASE
+					WHEN COUNT(
+						CASE
+							WHEN bs.dismissal_type IS NOT NULL
+							AND bs.dismissal_type NOT IN ('retired hurt', 'retired not out') THEN 1
+						END
+					) > 0 THEN SUM(bs.runs_scored) * 1.0 / COUNT(
+						CASE
+							WHEN bs.dismissal_type IS NOT NULL
+							AND bs.dismissal_type NOT IN ('retired hurt', 'retired not out') THEN 1
+						END
+					)
+					ELSE NULL
+				END
+			)
+		FROM batting_scorecards bs
+			LEFT JOIN innings ON bs.innings_id = innings.id
+			AND innings.innings_number IS NOT NULL
+			AND innings.is_super_over = FALSE
+			LEFT JOIN match_series_entries mse ON mse.match_id = innings.match_id
+			LEFT JOIN players ON bs.batter_id = players.id
+		WHERE mse.series_id = $1
+		GROUP BY bs.batter_id, players.name, players.image_url
+		ORDER BY
+			SUM(bs.runs_scored) DESC,
+			(
+				CASE
+					WHEN COUNT(
+						CASE
+							WHEN bs.dismissal_type IS NOT NULL
+							AND bs.dismissal_type NOT IN ('retired hurt', 'retired not out') THEN 1
+						END
+					) > 0 THEN SUM(bs.runs_scored) * 1.0 / COUNT(
+						CASE
+							WHEN bs.dismissal_type IS NOT NULL
+							AND bs.dismissal_type NOT IN ('retired hurt', 'retired not out') THEN 1
+						END
+					)
+					ELSE NULL
+				END
+			) DESC,
+			COUNT(DISTINCT bs.innings_id) ASC
+		FETCH FIRST 3 rows ONLY
+	),
+	top_bowlers AS (
+		SELECT
+			-- order is crucial for struct unpacking
+			bs.bowler_id, players.name, players.image_url,
+			COUNT(DISTINCT bs.innings_id), SUM(bs.wickets_taken),
+			(
+				CASE
+					WHEN SUM(bs.wickets_taken) > 0 THEN SUM(bs.runs_conceded) * 1.0 / SUM(bs.wickets_taken)
+					ELSE NULL
+				END
+			)
+		FROM bowling_scorecards bs
+			LEFT JOIN innings ON bs.innings_id = innings.id
+			AND innings.innings_number IS NOT NULL
+			AND innings.is_super_over = FALSE
+			LEFT JOIN match_series_entries mse ON mse.match_id = innings.match_id
+			LEFT JOIN players ON bs.bowler_id = players.id
+		WHERE mse.series_id = $1
+		GROUP BY bs.bowler_id, players.name, players.image_url
+		ORDER BY
+			SUM(bs.wickets_taken) DESC,
+			(
+				CASE
+					WHEN SUM(bs.wickets_taken) > 0 THEN SUM(bs.runs_conceded) * 1.0 / SUM(bs.wickets_taken)
+					ELSE NULL
+				END
+			) ASC,
+			COUNT(DISTINCT bs.innings_id) ASC
+		FETCH FIRST 3 rows ONLY
+	)`,
+	selectFields: `series.id, series.name, series.season,
+				   series.tournament_id, tournaments.name,
+				   ( SELECT ARRAY_AGG(top_batters.*) FROM top_batters ) AS top_batters,
+				   ( SELECT ARRAY_AGG(top_bowlers.*) FROM top_bowlers ) AS top_bowlers`,
+	joins:         `LEFT JOIN tournaments ON series.tournament_id = tournaments.id`,
+	groupByFields: `series.id, tournaments.name`,
+}
 
-	query := `
+func ReadSeriesOverviewById(ctx context.Context, db DB_Exec, seriesId int64) (responses.SingleSeriesOverview, error) {
+	var seriesOverview responses.SingleSeriesOverview
+	header := &seriesOverview.SeriesHeader
+
+	query := fmt.Sprintf(`
+		%s,
+		fixture_matches AS (
+			SELECT %s
+			FROM matches
+			LEFT JOIN match_series_entries mse ON mse.match_id = matches.id
+			%s
+			WHERE mse.series_id = $1 AND matches.final_result IS NULL
+			GROUP BY %s
+			ORDER BY matches.start_date ASC, matches.start_time ASC
+			FETCH FIRST 10 ROWS ONLY
+		),
+		result_matches AS (
+			SELECT %s
+			FROM matches
+			LEFT JOIN match_series_entries mse ON mse.match_id = matches.id
+			%s
+			WHERE mse.series_id = $1 AND matches.final_result IS NOT NULL
+			GROUP BY %s
+			ORDER BY matches.start_date DESC, matches.start_time DESC
+			FETCH FIRST 10 ROWS ONLY
+		)
 		SELECT 
-			s.id, s.name, s.is_male, s.playing_level, s.playing_format, s.season,
-		 	
-			ARRAY_AGG (DISTINCT ROW (ste.team_id, t.name)), 
-			
-			s.start_date, s.end_date, s.winner_team_id, s.final_status, s.tour_flag, s.tournament_id, tournaments.name
-		FROM
-		    series s
-		    LEFT JOIN tournaments ON s.tournament_id = tournaments.id
-		    LEFT JOIN series_team_entries ste ON s.id = ste.series_id
-		    LEFT JOIN teams t ON ste.team_id = t.id
+			%s,
+			series.winner_team_id, winner_team.name, series.final_status,
+			( SELECT ARRAY_AGG(fixture_matches.*) FROM fixture_matches ) AS fixture_matches,
+			( SELECT ARRAY_AGG(result_matches.*) FROM result_matches ) AS result_matches
+		FROM series
+		   	%s
+		    LEFT JOIN teams winner_team ON series.winner_team_id = winner_team.id
 		WHERE
-		    s.id = $1
+		    series.id = $1
 		GROUP BY
-		    s.id,
-		    tournaments.name
-	`
+		    %s,
+			winner_team.name
+	`,
+		seriesHeaderQuery.withClause,
+		matchInfoQuery.selectFields, matchInfoQuery.joins, matchHeaderQuery.groupByFields,
+		matchInfoQuery.selectFields, matchInfoQuery.joins, matchHeaderQuery.groupByFields,
+		seriesHeaderQuery.selectFields, seriesHeaderQuery.joins, seriesHeaderQuery.groupByFields)
 
-	err := db.QueryRow(ctx, query, id).Scan(&series.Id, &series.Name, &series.IsMale, &series.PlayingLevel, &series.PlayingFormat, &series.Season, &series.Teams, &series.StartDate, &series.EndDate, &series.WinnerTeamId, &series.FinalStatus, &series.TourFlag, &series.TournamentId, &series.TournamentName)
+	err := db.QueryRow(ctx, query, seriesId).Scan(
+		&header.SeriesId, &header.SeriesName, &header.Season, &header.TournamentId, &header.TournamentName,
+		&header.TopBatters, &header.TopBowlers,
+		&seriesOverview.WinnerTeamId, &seriesOverview.WinnerTeamName, &seriesOverview.FinalStatus,
+		&seriesOverview.FixtureMatches, &seriesOverview.ResultMatches,
+	)
 
 	if err != nil {
-		return series, err
+		return seriesOverview, err
 	}
 
-	series.Matches, err = ReadSeriesMatches(ctx, db, id)
+	return seriesOverview, err
+}
 
-	return series, err
+func ReadSeriesMatchesById(ctx context.Context, db DB_Exec, seriesId int64) (responses.SingleSeriesMatches, error) {
+	var seriesWithMatches responses.SingleSeriesMatches
+	header := &seriesWithMatches.SeriesHeader
+
+	query := fmt.Sprintf(`
+		%s,
+		series_matches AS (
+			SELECT %s
+			FROM matches
+			LEFT JOIN match_series_entries mse ON mse.match_id = matches.id
+			%s
+			WHERE mse.series_id = $1
+			GROUP BY %s
+			ORDER BY matches.start_date ASC, matches.start_time ASC
+		)
+		SELECT 
+			%s,
+			( SELECT ARRAY_AGG(series_matches.*) FROM series_matches ) AS series_matches
+		FROM series
+		   	%s
+		    LEFT JOIN teams winner_team ON series.winner_team_id = winner_team.id
+		WHERE
+		    series.id = $1
+		GROUP BY
+		    %s
+	`,
+		seriesHeaderQuery.withClause,
+		matchInfoQuery.selectFields, matchInfoQuery.joins, matchHeaderQuery.groupByFields,
+		seriesHeaderQuery.selectFields, seriesHeaderQuery.joins, seriesHeaderQuery.groupByFields)
+
+	err := db.QueryRow(ctx, query, seriesId).Scan(
+		&header.SeriesId, &header.SeriesName, &header.Season, &header.TournamentId, &header.TournamentName,
+		&header.TopBatters, &header.TopBowlers,
+		&seriesWithMatches.Matches,
+	)
+
+	if err != nil {
+		return seriesWithMatches, err
+	}
+
+	return seriesWithMatches, err
+}
+
+func ReadSeriesTeamsById(ctx context.Context, db DB_Exec, seriesId int64) (responses.SingleSeriesTeams, error) {
+	var seriesWithTeams responses.SingleSeriesTeams
+	header := &seriesWithTeams.SeriesHeader
+
+	query := fmt.Sprintf(`
+		%s
+		SELECT 
+			%s,
+			-- order is crucial for struct unpacking
+			ARRAY_AGG ( ROW ( teams.id, teams.name, teams.image_url ) )
+		FROM series
+		   	%s
+		    LEFT JOIN series_team_entries ON series_team_entries.series_id = series.id
+			LEFT JOIN teams ON series_team_entries.team_id = teams.id
+		WHERE
+		    series.id = $1
+		GROUP BY
+		    %s
+	`,
+		seriesHeaderQuery.withClause,
+		seriesHeaderQuery.selectFields, seriesHeaderQuery.joins, seriesHeaderQuery.groupByFields)
+
+	err := db.QueryRow(ctx, query, seriesId).Scan(
+		&header.SeriesId, &header.SeriesName, &header.Season, &header.TournamentId, &header.TournamentName,
+		&header.TopBatters, &header.TopBowlers,
+		&seriesWithTeams.Teams,
+	)
+
+	if err != nil {
+		return seriesWithTeams, err
+	}
+
+	return seriesWithTeams, err
+}
+
+func ReadSeriesSquadsListById(ctx context.Context, db DB_Exec, seriesId int64) (responses.SingleSeriesSquadsList, error) {
+	var seriesWithSquadsList responses.SingleSeriesSquadsList
+	header := &seriesWithSquadsList.SeriesHeader
+
+	query := fmt.Sprintf(`
+		%s
+		SELECT 
+			%s,
+			-- order is crucial for struct unpacking
+			ARRAY_AGG ( ROW ( series_squads.id, series_squads.squad_label, teams.image_url ) )
+		FROM series
+		   	%s
+		    LEFT JOIN series_squads ON series_squads.series_id = series.id
+			LEFT JOIN teams ON series_squads.team_id = teams.id
+		WHERE
+		    series.id = $1
+		GROUP BY
+		    %s
+	`,
+		seriesHeaderQuery.withClause,
+		seriesHeaderQuery.selectFields, seriesHeaderQuery.joins, seriesHeaderQuery.groupByFields)
+
+	err := db.QueryRow(ctx, query, seriesId).Scan(
+		&header.SeriesId, &header.SeriesName, &header.Season, &header.TournamentId, &header.TournamentName,
+		&header.TopBatters, &header.TopBowlers,
+		&seriesWithSquadsList.SquadsList,
+	)
+
+	if err != nil {
+		return seriesWithSquadsList, err
+	}
+
+	return seriesWithSquadsList, err
+}
+
+func ReadSeriesSingleSquadById(ctx context.Context, db DB_Exec, seriesId, squadId int64) (responses.SingleSeriesSingleSquad, error) {
+	var seriesWithSquad responses.SingleSeriesSingleSquad
+	header := &seriesWithSquad.SeriesHeader
+
+	query := fmt.Sprintf(`
+		%s,
+
+		squads_list AS (
+			SELECT series_squads.id, series_squads.squad_label
+			FROM series_squads
+			WHERE series_squads.series_id = $1
+		) 
+
+		SELECT 
+			%s,
+			-- order is crucial for struct unpacking
+			( SELECT ARRAY_AGG ( squads_list.* ) FROM squads_list ) AS squads_list,
+
+			ARRAY_AGG ( ROW ( 
+				series_squad_entries.player_id, players.name, players.playing_role,
+				players.date_of_birth, players.is_rhb, players.primary_bowling_style,
+				series_squad_entries.is_captain, series_squad_entries.is_vice_captain, series_squad_entries.is_wk
+			) )
+		FROM series
+		   	%s
+		    LEFT JOIN series_squads ON series_squads.series_id = series.id 
+			LEFT JOIN series_squad_entries ON series_squad_entries.squad_id = series_squads.id 
+			LEFT JOIN players ON series_squad_entries.player_id = players.id
+		WHERE
+		    series.id = $1 AND series_squad_entries.squad_id = $2
+		GROUP BY
+		    %s
+	`,
+		seriesHeaderQuery.withClause,
+		seriesHeaderQuery.selectFields, seriesHeaderQuery.joins, seriesHeaderQuery.groupByFields)
+
+	err := db.QueryRow(ctx, query, seriesId, squadId).Scan(
+		&header.SeriesId, &header.SeriesName, &header.Season, &header.TournamentId, &header.TournamentName,
+		&header.TopBatters, &header.TopBowlers,
+		&seriesWithSquad.SquadsList, &seriesWithSquad.Players,
+	)
+
+	if err != nil {
+		return seriesWithSquad, err
+	}
+
+	return seriesWithSquad, err
 }

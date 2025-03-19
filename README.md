@@ -13,7 +13,7 @@ I am building `CricKendra` out of my passion for cricket and programming.
     - Batting Stats ✅
     - Bowling Stats ✅
     - Teams Stats ✅
-- Match, Series, Player etc. routes completion ⏳
+- Single Match & Single Series routes ✅
 - Live Scoring System ⏳
 - Single Player, Series, Tournaments Stats Tool ⏳
 - Frontend ⏳
