@@ -271,7 +271,11 @@ func (mq *matchQuery) tournament(tournaments []string) {
 		if _, ok := mq.joins[match_seriesEntires_join]; !ok {
 			mq.joins[match_seriesEntires_join] = len(mq.joins)
 		}
-		mq.joins[match_series_join] = len(mq.joins)
+
+		if _, ok := mq.joins[match_series_join]; !ok {
+			mq.joins[match_series_join] = len(mq.joins)
+		}
+
 		mq.joins[match_tournaments_join] = len(mq.joins)
 
 		mq.conditions = append(mq.conditions, fmt.Sprintf(`tournaments.id IN (%s)`, strings.Join(placeholders, ", ")))

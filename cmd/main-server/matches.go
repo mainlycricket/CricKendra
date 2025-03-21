@@ -23,6 +23,8 @@ func matchesRouter() *chi.Mux {
 
 	r.Mount("/{matchId}/innings", inningsRouter())
 
+	r.Patch("/{matchId}/toss", updateMatchTossDecision)
+
 	return r
 }
 
@@ -42,6 +44,30 @@ func createMatch(w http.ResponseWriter, r *http.Request) {
 	}
 
 	responses.WriteJsonResponse(w, responses.ApiResponse{Success: true, Message: "match created successfully", Data: matchId}, http.StatusCreated)
+}
+
+func updateMatchTossDecision(w http.ResponseWriter, r *http.Request) {
+	matchIdRaw := r.PathValue("matchId")
+
+	matchId, err := strconv.ParseInt(matchIdRaw, 10, 64)
+	if err != nil {
+		responses.WriteJsonResponse(w, responses.ApiResponse{Message: "invalid match id", Data: nil}, http.StatusBadRequest)
+		return
+	}
+
+	var input models.TossDecisionInput
+
+	if err := json.NewDecoder(r.Body).Decode(&input); err != nil {
+		responses.WriteJsonResponse(w, responses.ApiResponse{Success: false, Message: "error while decoding json", Data: err}, http.StatusBadRequest)
+		return
+	}
+
+	if err := dbutils.UpdateMatchTossDecisionById(r.Context(), DB_POOL, matchId, &input); err != nil {
+		responses.WriteJsonResponse(w, responses.ApiResponse{Success: false, Message: "error while updating match toss decision", Data: err}, http.StatusBadRequest)
+		return
+	}
+
+	responses.WriteJsonResponse(w, responses.ApiResponse{Success: true, Message: "match toss decision update successfully", Data: nil}, http.StatusCreated)
 }
 
 func getMatches(w http.ResponseWriter, r *http.Request) {

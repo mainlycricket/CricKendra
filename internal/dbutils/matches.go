@@ -58,6 +58,23 @@ func UpsertMatchSeriesEntries(ctx context.Context, db DB_Exec, matchId int64, se
 	return batchResults.Close()
 }
 
+func UpdateMatchTossDecisionById(ctx context.Context, db DB_Exec, matchId int64, input *models.TossDecisionInput) error {
+	query := `UPDATE matches 
+				SET toss_winner_team_id = $1, toss_loser_team_id = $2, is_toss_decision_bat = $3
+				WHERE matches.id = $4`
+
+	cmd, err := db.Exec(ctx, query, input.TossWinnerId, input.TossLoserId, input.IsTossDecisionBat, matchId)
+	if err != nil {
+		return err
+	}
+
+	if cmd.RowsAffected() != 1 {
+		return errors.New("failed to update toss decision")
+	}
+
+	return nil
+}
+
 var matchInfoQuery = struct {
 	selectFields  string
 	joins         string
