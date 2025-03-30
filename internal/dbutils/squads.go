@@ -93,7 +93,7 @@ func UpsertMatchSquadEntries(ctx context.Context, db DB_Exec, entries []models.M
 
 	batch := &pgx.Batch{}
 	for _, entry := range entries {
-		batch.Queue(query, &entry.PlayerId, &entry.MatchId, &entry.TeamId, &entry.IsCaptain, &entry.IsViceCaptain, &entry.IsWk, &entry.IsDebut, &entry.PlayingStatus)
+		_ = batch.Queue(query, &entry.PlayerId, &entry.MatchId, &entry.TeamId, &entry.IsCaptain, &entry.IsViceCaptain, &entry.IsWk, &entry.IsDebut, &entry.PlayingStatus)
 	}
 
 	batchResults := db.SendBatch(ctx, batch)

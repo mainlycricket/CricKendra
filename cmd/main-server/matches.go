@@ -24,6 +24,7 @@ func matchesRouter() *chi.Mux {
 	r.Mount("/{matchId}/innings", inningsRouter())
 
 	r.Patch("/{matchId}/toss", updateMatchTossDecision)
+	r.Patch("/{matchId}/result", updateMatchResult)
 
 	return r
 }
@@ -49,7 +50,7 @@ func createMatch(w http.ResponseWriter, r *http.Request) {
 func updateMatchTossDecision(w http.ResponseWriter, r *http.Request) {
 	matchIdRaw := r.PathValue("matchId")
 
-	matchId, err := strconv.ParseInt(matchIdRaw, 10, 64)
+	parsedMatchId, err := strconv.ParseInt(matchIdRaw, 10, 64)
 	if err != nil {
 		responses.WriteJsonResponse(w, responses.ApiResponse{Message: "invalid match id", Data: nil}, http.StatusBadRequest)
 		return
@@ -62,12 +63,40 @@ func updateMatchTossDecision(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if err := dbutils.UpdateMatchTossDecisionById(r.Context(), DB_POOL, matchId, &input); err != nil {
+	input.MatchId.Int64, input.MatchId.Valid = parsedMatchId, true
+
+	if err := dbutils.UpdateMatchTossDecisionById(r.Context(), DB_POOL, &input); err != nil {
 		responses.WriteJsonResponse(w, responses.ApiResponse{Success: false, Message: "error while updating match toss decision", Data: err}, http.StatusBadRequest)
 		return
 	}
 
-	responses.WriteJsonResponse(w, responses.ApiResponse{Success: true, Message: "match toss decision update successfully", Data: nil}, http.StatusCreated)
+	responses.WriteJsonResponse(w, responses.ApiResponse{Success: true, Message: "match toss decision updated successfully", Data: nil}, http.StatusCreated)
+}
+
+func updateMatchResult(w http.ResponseWriter, r *http.Request) {
+	matchIdRaw := r.PathValue("matchId")
+
+	parsedMatchId, err := strconv.ParseInt(matchIdRaw, 10, 64)
+	if err != nil {
+		responses.WriteJsonResponse(w, responses.ApiResponse{Message: "invalid match id", Data: nil}, http.StatusBadRequest)
+		return
+	}
+
+	var input models.MatchResultInput
+
+	if err := json.NewDecoder(r.Body).Decode(&input); err != nil {
+		responses.WriteJsonResponse(w, responses.ApiResponse{Success: false, Message: "error while decoding json", Data: err}, http.StatusBadRequest)
+		return
+	}
+
+	input.MatchId.Int64, input.MatchId.Valid = parsedMatchId, true
+
+	if err := dbutils.UpdateMatchResultById(r.Context(), DB_POOL, &input); err != nil {
+		responses.WriteJsonResponse(w, responses.ApiResponse{Success: false, Message: "error while updating match result", Data: err}, http.StatusBadRequest)
+		return
+	}
+
+	responses.WriteJsonResponse(w, responses.ApiResponse{Success: true, Message: "match result updated successfully", Data: nil}, http.StatusCreated)
 }
 
 func getMatches(w http.ResponseWriter, r *http.Request) {

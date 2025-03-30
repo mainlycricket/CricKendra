@@ -58,18 +58,40 @@ func UpsertMatchSeriesEntries(ctx context.Context, db DB_Exec, matchId int64, se
 	return batchResults.Close()
 }
 
-func UpdateMatchTossDecisionById(ctx context.Context, db DB_Exec, matchId int64, input *models.TossDecisionInput) error {
-	query := `UPDATE matches 
-				SET toss_winner_team_id = $1, toss_loser_team_id = $2, is_toss_decision_bat = $3
-				WHERE matches.id = $4`
+func UpdateMatchTossDecisionById(ctx context.Context, db DB_Exec, input *models.TossDecisionInput) error {
+	query := `
+		UPDATE matches SET
+			toss_winner_team_id = $1, toss_loser_team_id = $2, is_toss_decision_bat = $3
+		WHERE matches.id = $4`
 
-	cmd, err := db.Exec(ctx, query, input.TossWinnerId, input.TossLoserId, input.IsTossDecisionBat, matchId)
+	cmd, err := db.Exec(ctx, query, input.TossWinnerId, input.TossLoserId, input.IsTossDecisionBat, input.MatchId)
 	if err != nil {
 		return err
 	}
 
 	if cmd.RowsAffected() != 1 {
 		return errors.New("failed to update toss decision")
+	}
+
+	return nil
+}
+
+func UpdateMatchResultById(ctx context.Context, db DB_Exec, input *models.MatchResultInput) error {
+	query := `
+		UPDATE matches SET
+			final_result = $1, match_winner_team_id = $2, match_loser_team_id = $3,
+			bowl_out_winner_id = $4, super_over_winner_id = $5, is_won_by_innings = $6,
+			is_won_by_runs = $7, win_margin = $8, balls_remaining_after_win = $9,
+			outcome_special_method = $10
+		WHERE id = $11`
+
+	cmd, err := db.Exec(ctx, query, input.FinalResult, input.MatchWinnerId, input.MatchLoserId, input.BowlOutWinnerId, input.SuperOverWinnerId, input.IsWonByInnings, input.IsWonByRuns, input.WinMargin, input.BallsMargin, input.OutcomeSpecialMethod, input.MatchId)
+	if err != nil {
+		return err
+	}
+
+	if cmd.RowsAffected() != 1 {
+		return errors.New("failed to update match result")
 	}
 
 	return nil

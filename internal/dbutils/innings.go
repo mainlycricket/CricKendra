@@ -22,6 +22,26 @@ func InsertInnings(ctx context.Context, db DB_Exec, innings *models.Innings) (in
 	return id, err
 }
 
+// all-out, declare, target reached etc
+func UpdateInningsEnd(ctx context.Context, db DB_Exec, input *models.InningsEndInput) error {
+	query := `
+		UPDATE innings
+			SET innings_end = $1
+		WHERE id = $2
+	`
+
+	cmd, err := db.Exec(ctx, query, input.InningsEnd, input.InningsId)
+	if err != nil {
+		return err
+	}
+
+	if cmd.RowsAffected() != 1 {
+		return errors.New("failed to update innings end")
+	}
+
+	return nil
+}
+
 func ReadInnings(ctx context.Context, db DB_Exec, queryMap url.Values) (responses.AllInningsResponse, error) {
 	var response responses.AllInningsResponse
 

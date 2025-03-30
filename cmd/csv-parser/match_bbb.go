@@ -352,6 +352,10 @@ func (teamInnings *teamInnings) addDismissalEntry(delivery *models.Delivery, isF
 	updatedEntry.DismissalType = pgtype.Text{String: dismissalType, Valid: true}
 	updatedEntry.DismissalBallNumber = delivery.InningsDeliveryNumber
 
+	if isFirst {
+		updatedEntry.Fielder1Id, updatedEntry.Fielder2Id = delivery.Fielder1Id, delivery.Fielder2Id
+	}
+
 	if models.IsBowlerDismissal(dismissalType) {
 		updatedEntry.DismissedById = pgtype.Int8{Int64: delivery.BowlerId.Int64, Valid: true}
 	}
