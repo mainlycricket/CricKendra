@@ -257,6 +257,13 @@ func ReadMatchSummary(ctx context.Context, db DB_Exec, matchId int64) (responses
 						PARTITION BY
 							bs.innings_id
 						ORDER BY
+							(
+								CASE
+									WHEN bs.batter_id = innings.striker_id THEN 2
+									WHEN bs.batter_id = innings.non_striker_id THEN 1
+									ELSE 0
+								END
+							) DESC,
 							bs.runs_scored DESC, bs.balls_faced ASC,
 							bs.dismissal_type IS NULL, bs.batting_position ASC
 					) AS rn
@@ -297,6 +304,13 @@ func ReadMatchSummary(ctx context.Context, db DB_Exec, matchId int64) (responses
 						PARTITION BY
 							bs.innings_id
 						ORDER BY
+							(
+								CASE
+									WHEN bs.bowler_id = innings.bowler1_id THEN 2
+									WHEN bs.bowler_id = innings.bowler2_id THEN 1
+									ELSE 0
+								END
+							) DESC,
 							bs.wickets_taken DESC, bs.runs_conceded ASC,
 							bs.balls_bowled / matches.balls_per_over + bs.balls_bowled %% matches.balls_per_over * 0.1 DESC, bs.bowling_position ASC
 					) AS rn

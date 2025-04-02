@@ -127,8 +127,7 @@ CREATE TYPE public.innings_end AS ENUM (
     'all_out',
     'declared',
     'target_reached',
-    'forfeited',
-    'incomplete'
+    'forfeited'
 );
 
 
@@ -749,7 +748,11 @@ CREATE TABLE public.innings (
     is_super_over boolean DEFAULT false,
     innings_end public.innings_end,
     target_runs integer,
-    max_overs double precision
+    max_overs double precision,
+    striker_id integer,
+    non_striker_id integer,
+    bowler1_id integer,
+    bowler2_id integer
 );
 
 
@@ -1693,6 +1696,22 @@ ALTER TABLE ONLY public.innings
 
 
 --
+-- Name: innings innings_bowler1_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.innings
+    ADD CONSTRAINT innings_bowler1_id_fkey FOREIGN KEY (bowler1_id) REFERENCES public.players(id);
+
+
+--
+-- Name: innings innings_bowler2_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.innings
+    ADD CONSTRAINT innings_bowler2_id_fkey FOREIGN KEY (bowler2_id) REFERENCES public.players(id);
+
+
+--
 -- Name: innings innings_bowling_team_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -1706,6 +1725,22 @@ ALTER TABLE ONLY public.innings
 
 ALTER TABLE ONLY public.innings
     ADD CONSTRAINT innings_match_id_fkey FOREIGN KEY (match_id) REFERENCES public.matches(id) ON UPDATE CASCADE ON DELETE CASCADE NOT VALID;
+
+
+--
+-- Name: innings innings_non_striker_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.innings
+    ADD CONSTRAINT innings_non_striker_id_fkey FOREIGN KEY (non_striker_id) REFERENCES public.players(id);
+
+
+--
+-- Name: innings innings_striker_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.innings
+    ADD CONSTRAINT innings_striker_id_fkey FOREIGN KEY (striker_id) REFERENCES public.players(id);
 
 
 --

@@ -17,6 +17,7 @@ type BatterPositionInput struct {
 }
 
 type DeliveryScoringInput struct {
+	MatchId               pgtype.Int8
 	InningsId             pgtype.Int8
 	InningsDeliveryNumber pgtype.Int8 `json:"innings_delivery_number"`
 
@@ -42,7 +43,10 @@ type DeliveryScoringInput struct {
 	Fielder1Id           pgtype.Int8 `json:"fielder1_id"`
 	Fielder2Id           pgtype.Int8 `json:"fielder2_id"`
 
-	IsMaidenComplete pgtype.Bool `json:"is_maiden_complete"`
+	NewStrikerId    pgtype.Int8 `json:"new_striker_id"`
+	NewNonStrikerId pgtype.Int8 `json:"new_non_striker_id"`
+	NewBowler1Id    pgtype.Int8 `json:"new_bowler1_id"`
+	NewBowler2Id    pgtype.Int8 `json:"new_bowler2_id"`
 }
 
 type DeliveryCommentaryInput struct {
@@ -72,6 +76,18 @@ type DeliveryAdvanceInfoInput struct {
 type InningsEndInput struct {
 	InningsId  pgtype.Int8
 	InningsEnd pgtype.Text `json:"innings_end"`
+}
+
+type InningsCurrentBattersInput struct {
+	InningsId    pgtype.Int8
+	StrikerId    pgtype.Int8 `json:"striker_id"`
+	NonStrikerId pgtype.Int8 `json:"non_striker_id"`
+}
+
+type InningsCurrentBowlersInput struct {
+	InningsId pgtype.Int8
+	Bowler1Id pgtype.Int8 `json:"bowler1_id"`
+	Bowler2Id pgtype.Int8 `json:"bowler2_id"`
 }
 
 type MatchResultInput struct {

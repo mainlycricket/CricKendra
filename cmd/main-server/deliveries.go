@@ -24,10 +24,17 @@ func deliveriesRouter() *chi.Mux {
 }
 
 func createDeliveryWithScoringInput(w http.ResponseWriter, r *http.Request) {
-	rawInningsId := r.PathValue("inningsId")
+	rawMatchId, rawInningsId := r.PathValue("matchId"), r.PathValue("inningsId")
+
 	parsedInningsId, err := strconv.ParseInt(rawInningsId, 10, 64)
 	if err != nil {
 		responses.WriteJsonResponse(w, responses.ApiResponse{Success: false, Message: "invalid innings id", Data: err}, http.StatusBadRequest)
+		return
+	}
+
+	parsedMatchId, err := strconv.ParseInt(rawMatchId, 10, 64)
+	if err != nil {
+		responses.WriteJsonResponse(w, responses.ApiResponse{Success: false, Message: "invalid match id", Data: err}, http.StatusBadRequest)
 		return
 	}
 
@@ -39,6 +46,7 @@ func createDeliveryWithScoringInput(w http.ResponseWriter, r *http.Request) {
 	}
 
 	input.InningsId.Int64, input.InningsId.Valid = parsedInningsId, true
+	input.MatchId.Int64, input.MatchId.Valid = parsedMatchId, true
 
 	if err := dbutils.InsertDeliveryWithScoringData(r.Context(), DB_POOL, &input); err != nil {
 		responses.WriteJsonResponse(w, responses.ApiResponse{Success: false, Message: "error while inserting delivery with scoring input", Data: err}, http.StatusBadRequest)

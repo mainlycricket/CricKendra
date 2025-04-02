@@ -19,6 +19,10 @@ func inningsRouter() *chi.Mux {
 	r.Post("/", createInnings)
 	r.Get("/{inningsNumber}/commentary", getMatchInningsDeliveries)
 
+	r.Patch("/{inningsId}/innings-end", updateInningsEnd)
+	r.Patch("/{inningsId}/current-batters", updateInningsCurrentBatters)
+	r.Patch("/{inningsId}/current-bowlers", updateInningsCurrentBowlers)
+
 	r.Mount("/{inningsNumber}/batting-scorecards", battingScorecardsRouter())
 	r.Mount("/{inningsNumber}/bowling-scorecards", bowlingScorecardsRouter())
 	r.Mount("/{inningsNumber}/deliveries", deliveriesRouter())
@@ -62,11 +66,61 @@ func updateInningsEnd(w http.ResponseWriter, r *http.Request) {
 	input.InningsId.Int64, input.InningsId.Valid = parsedInningsId, true
 
 	if err := dbutils.UpdateInningsEnd(r.Context(), DB_POOL, &input); err != nil {
-		responses.WriteJsonResponse(w, responses.ApiResponse{Success: false, Message: "error while inserting innings", Data: err}, http.StatusBadRequest)
+		responses.WriteJsonResponse(w, responses.ApiResponse{Success: false, Message: "error while updating innings end", Data: err}, http.StatusBadRequest)
 		return
 	}
 
 	responses.WriteJsonResponse(w, responses.ApiResponse{Success: true, Message: "innings end updated successfully", Data: nil}, http.StatusCreated)
+}
+
+func updateInningsCurrentBatters(w http.ResponseWriter, r *http.Request) {
+	rawInningsId := r.PathValue("inningsId")
+	parsedInningsId, err := strconv.ParseInt(rawInningsId, 10, 64)
+	if err != nil {
+		responses.WriteJsonResponse(w, responses.ApiResponse{Success: false, Message: "invalid innings id", Data: err}, http.StatusBadRequest)
+		return
+	}
+
+	var input models.InningsCurrentBattersInput
+
+	if err := json.NewDecoder(r.Body).Decode(&input); err != nil {
+		responses.WriteJsonResponse(w, responses.ApiResponse{Success: false, Message: "error while decoding json", Data: err}, http.StatusBadRequest)
+		return
+	}
+
+	input.InningsId.Int64, input.InningsId.Valid = parsedInningsId, true
+
+	if err := dbutils.UpdateInningsCurrentBatters(r.Context(), DB_POOL, &input); err != nil {
+		responses.WriteJsonResponse(w, responses.ApiResponse{Success: false, Message: "error while updating innings current batters", Data: err}, http.StatusBadRequest)
+		return
+	}
+
+	responses.WriteJsonResponse(w, responses.ApiResponse{Success: true, Message: "innings current batters updated successfully", Data: nil}, http.StatusCreated)
+}
+
+func updateInningsCurrentBowlers(w http.ResponseWriter, r *http.Request) {
+	rawInningsId := r.PathValue("inningsId")
+	parsedInningsId, err := strconv.ParseInt(rawInningsId, 10, 64)
+	if err != nil {
+		responses.WriteJsonResponse(w, responses.ApiResponse{Success: false, Message: "invalid innings id", Data: err}, http.StatusBadRequest)
+		return
+	}
+
+	var input models.InningsCurrentBowlersInput
+
+	if err := json.NewDecoder(r.Body).Decode(&input); err != nil {
+		responses.WriteJsonResponse(w, responses.ApiResponse{Success: false, Message: "error while decoding json", Data: err}, http.StatusBadRequest)
+		return
+	}
+
+	input.InningsId.Int64, input.InningsId.Valid = parsedInningsId, true
+
+	if err := dbutils.UpdateInningsCurrentBowlers(r.Context(), DB_POOL, &input); err != nil {
+		responses.WriteJsonResponse(w, responses.ApiResponse{Success: false, Message: "error while updating innings current bowlers", Data: err}, http.StatusBadRequest)
+		return
+	}
+
+	responses.WriteJsonResponse(w, responses.ApiResponse{Success: true, Message: "innings current bowlers updated successfully", Data: nil}, http.StatusCreated)
 }
 
 func getMatchInningsDeliveries(w http.ResponseWriter, r *http.Request) {

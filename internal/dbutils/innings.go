@@ -23,10 +23,12 @@ func InsertInnings(ctx context.Context, db DB_Exec, innings *models.Innings) (in
 }
 
 // all-out, declare, target reached etc
+// Will also mark strikers, non-strikers, current bowlers as NULL
 func UpdateInningsEnd(ctx context.Context, db DB_Exec, input *models.InningsEndInput) error {
 	query := `
 		UPDATE innings
-			SET innings_end = $1
+			SET innings_end = $1,
+				striker_id = NULL, non_striker_id = NULL, bowler1_id = NULL, bowler2_id = NULL
 		WHERE id = $2
 	`
 
@@ -37,6 +39,44 @@ func UpdateInningsEnd(ctx context.Context, db DB_Exec, input *models.InningsEndI
 
 	if cmd.RowsAffected() != 1 {
 		return errors.New("failed to update innings end")
+	}
+
+	return nil
+}
+
+func UpdateInningsCurrentBatters(ctx context.Context, db DB_Exec, input *models.InningsCurrentBattersInput) error {
+	query := `
+		UPDATE innings SET
+			striker_id = $1, non_striker_id = $2
+		WHERE id = $3
+	`
+
+	cmd, err := db.Exec(ctx, query, input.StrikerId, input.NonStrikerId, input.InningsId)
+	if err != nil {
+		return err
+	}
+
+	if cmd.RowsAffected() != 1 {
+		return errors.New("failed to update innings current batters")
+	}
+
+	return nil
+}
+
+func UpdateInningsCurrentBowlers(ctx context.Context, db DB_Exec, input *models.InningsCurrentBowlersInput) error {
+	query := `
+		UPDATE innings SET
+			bowler1_id = $1, bowler2_id = $2
+		WHERE id = $3
+	`
+
+	cmd, err := db.Exec(ctx, query, input.Bowler1Id, input.Bowler2Id, input.InningsId)
+	if err != nil {
+		return err
+	}
+
+	if cmd.RowsAffected() != 1 {
+		return errors.New("failed to update innings current bowlers")
 	}
 
 	return nil

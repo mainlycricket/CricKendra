@@ -41,6 +41,8 @@
 
 #### Figure outs
 
+- Update Delivery Scoring Input
 - Day No. for Test
 - Session No . / Break
 - Testing in Postman
+- Use Redis cache for match state info like maiden overs etc

@@ -30,71 +30,101 @@ func InsertDeliveryWithScoringData(ctx context.Context, db DB_Exec, input *model
 	// insert delivery
 	batch.Queue(`INSERT INTO deliveries (innings_id, innings_delivery_number, ball_number, over_number, batter_id, bowler_id, non_striker_id, batter_runs, wides, noballs, legbyes, byes, penalty, total_extras, total_runs, bowler_runs, is_four, is_six, player1_dismissed_id, player1_dismissal_type, fielder1_id, fielder2_id) VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22)`, input.InningsId, input.InningsDeliveryNumber, input.BallNumber, input.OverNumber, input.BatterId, input.BowlerId, input.NonStrikerId, input.BatterRuns, input.Wides, input.Noballs, input.Legbyes, input.Byes, input.Penalty, input.TotalExtras, input.TotalRuns, input.BowlerRuns, input.IsFour, input.IsSix, input.Player1DismissedId, input.Player1DismissalType, input.Fielder1Id, input.Fielder2Id)
 
-	var bowlerBallInc, fourInc, sixInc, bowlerWicketInc, teamWicketInc, maidenOverInc int
-	var dismissedById pgtype.Int8
-
-	if input.IsFour.Valid && input.IsFour.Bool {
-		fourInc++
-	} else if input.IsSix.Valid && input.IsSix.Bool {
-		sixInc++
-	}
-
-	if input.Wides.Int64 == 0 && input.Noballs.Int64 == 0 {
-		bowlerBallInc++
-	}
-
-	if input.Player1DismissedId.Valid {
-		if models.IsBowlerDismissal(input.Player1DismissalType.String) {
-			dismissedById = input.BowlerId
-			bowlerWicketInc++
-			teamWicketInc++
-		} else if models.IsTeamDismissal(input.Player1DismissalType.String) {
-			teamWicketInc++
-		}
-	}
-
-	if input.IsMaidenComplete.Valid && input.IsMaidenComplete.Bool {
-		maidenOverInc++
-	}
-
 	// update batter entry
 	if input.Wides.Int64 == 0 {
-		batch.Queue(`
-		UPDATE batting_scorecards SET
-			runs_socred = runs_scored + $1, balls_faced = balls_faced + 1,
-			fours_scored = fours_scored + $2, sixes_faced = sixes_scored + $3
-		WHERE innings_id = $4 AND batter_id = $5
-		`, input.BatterRuns, fourInc, sixInc, input.InningsId, input.BatterId)
+		query, args := getDeliveryBatterTriggerBatch(input, false)
+		_ = batch.Queue(query, args...)
 	}
 
 	// update dismissed1 entry
 	if input.Player1DismissedId.Valid {
-		batch.Queue(`
-		UPDATE batting_scorecards SET
-			dismissed_by_id = $1, dismissal_type = $2, dismissal_ball_number = $3,
-			fielder1_id = $4, fielder2_id = $5
-		WHERE innings_id = $6 AND batter_id = $7
-		`, dismissedById, input.Player1DismissalType, input.InningsDeliveryNumber, input.Fielder1Id, input.Fielder2Id, input.InningsId, input.Player1DismissedId)
+		query, args := getDeliveryPlayer1DismissedTriggerBatch(input, false)
+		_ = batch.Queue(query, args...)
 	}
 
 	// update bowler entry
-	batch.Queue(`
-		UPDATE bowling_scorecards
-			SET wickets_taken = wickets_taken + $1, runs_conceded = runs_conceded + $2,
-			balls_bowled = balls_bowled + $3, fours_conceded = fours_conceded + $4,
-			sixes_conceded = sixes_conceded + $5, wides_conceded = wides_conceded + $6,
-			noballs_conceded = noballs_conceded + $7, maiden_overs = maiden_overs + $8
-		WHERE innings_id = $9 AND bowler_id = $10
-	`, bowlerWicketInc, input.BowlerRuns, bowlerBallInc, fourInc, sixInc, input.Wides, input.Noballs, maidenOverInc, input.InningsId, input.BowlerId)
+	bowlerQuery, bowlerArgs := getDeliveryBowlerTriggerBatch(input, false)
+	_ = batch.Queue(bowlerQuery, bowlerArgs...)
 
-	// update innings score
+	// update innings entry
+	inningsQuery, inningsArgs := getDeliveryInningsTriggerBatch(input, false)
+	_ = batch.Queue(inningsQuery, inningsArgs...)
+
+	result := db.SendBatch(ctx, &batch)
+	return result.Close()
+}
+
+func UpdateDeliveryWithScoringData(ctx context.Context, db DB_Exec, newInput *models.DeliveryScoringInput) error {
+	existingInput := models.DeliveryScoringInput{
+		InningsId:             newInput.InningsId,
+		InningsDeliveryNumber: newInput.InningsDeliveryNumber,
+	}
+
+	query := `
+	SELECT
+		ball_number, over_number, batter_id, bowler_id, non_striker_id, batter_runs, wides,
+		noballs, legbyes, byes, penalty, total_extras, total_runs, bowler_runs, is_four, is_six
+		player1_dismissed_id, player1_dismissal_type, fielder1_id, fielder2_id
+	FROM deliveries
+	WHERE innings_id = $1 AND innings_delivery_number = $2`
+
+	err := db.QueryRow(ctx, query, newInput.InningsId, newInput.InningsDeliveryNumber).Scan(&existingInput.BallNumber, &existingInput.OverNumber, &existingInput.BatterId, &existingInput.BowlerId, &existingInput.NonStrikerId, &existingInput.BatterRuns, &existingInput.Wides, &existingInput.Noballs, &existingInput.Legbyes, &existingInput.Byes, &existingInput.Penalty, &existingInput.TotalExtras, &existingInput.TotalRuns, &existingInput.BowlerRuns, &existingInput.IsFour, &existingInput.IsSix, &existingInput.Player1DismissedId, &existingInput.Player1DismissalType, &existingInput.Fielder1Id, &existingInput.Fielder2Id)
+
+	if err != nil {
+		return err
+	}
+
+	batch := pgx.Batch{}
+
+	// undo batter entry
+	if existingInput.Wides.Int64 == 0 {
+		query, args := getDeliveryBatterTriggerBatch(&existingInput, true)
+		_ = batch.Queue(query, args...)
+	}
+
+	// undo dismissed1 entry
+	if existingInput.Player1DismissedId.Valid {
+		query, args := getDeliveryPlayer1DismissedTriggerBatch(&existingInput, true)
+		_ = batch.Queue(query, args...)
+	}
+
+	// undo bowler entry
+	bowlerQuery, bowlerArgs := getDeliveryBowlerTriggerBatch(&existingInput, true)
+	_ = batch.Queue(bowlerQuery, bowlerArgs...)
+
+	// undo innings entry
+	inningsQuery, inningsArgs := getDeliveryInningsTriggerBatch(&existingInput, true)
+	_ = batch.Queue(inningsQuery, inningsArgs...)
+
+	// insert delivery
 	batch.Queue(`
-		UPDATE innings
-			SET total_runs = total_runs + $1, total_balls = total_balls + $2,
-			total_wickets = total_wickets + $3, byes = byes + $4, leg_byes = leg_byes + $5, 
-			wides = wides + $6, noballs = noballs + $7, penalty = penalty + $8
-		WHERE id = $9
-	`, input.TotalRuns, bowlerBallInc, teamWicketInc, input.Byes, input.Legbyes, input.Wides, input.Noballs, input.Penalty, input.InningsId)
+		UPDATE deliveries SET
+			ball_number = $1, over_number = $2, batter_id = $3, bowler_id = $4, non_striker_id = $5,
+			batter_runs = $6, wides = $7, noballs = $8, legbyes = $9, byes = $10, penalty = $11,
+			total_extras = $12, total_runs = $13, bowler_runs = $14, is_four = $15, is_six = $15,
+			player1_dismissed_id = $16, player1_dismissal_type = $17, fielder1_id = $18, fielder2_id = $19
+		WHERE innings_id = $20 AND innings_delivery_number = $21`,
+		existingInput.BallNumber, existingInput.OverNumber, existingInput.BatterId, existingInput.BowlerId, existingInput.NonStrikerId, existingInput.BatterRuns, existingInput.Wides, existingInput.Noballs, existingInput.Legbyes, existingInput.Byes, existingInput.Penalty, existingInput.TotalExtras, existingInput.TotalRuns, existingInput.BowlerRuns, existingInput.IsFour, existingInput.IsSix, existingInput.Player1DismissedId, existingInput.Player1DismissalType, existingInput.Fielder1Id, existingInput.Fielder2Id, existingInput.InningsId, existingInput.InningsDeliveryNumber)
+
+	// update batter entry
+	if newInput.Wides.Int64 == 0 {
+		query, args := getDeliveryBatterTriggerBatch(newInput, false)
+		_ = batch.Queue(query, args...)
+	}
+
+	// update dismissed1 entry
+	if newInput.Player1DismissedId.Valid {
+		query, args := getDeliveryPlayer1DismissedTriggerBatch(newInput, false)
+		_ = batch.Queue(query, args...)
+	}
+
+	// update bowler entry
+	bowlerQuery1, bowlerArgs1 := getDeliveryBowlerTriggerBatch(newInput, false)
+	_ = batch.Queue(bowlerQuery1, bowlerArgs1...)
+
+	// update innings entry
+	inningsQuery1, inningsArgs1 := getDeliveryInningsTriggerBatch(newInput, false)
+	_ = batch.Queue(inningsQuery1, inningsArgs1...)
 
 	result := db.SendBatch(ctx, &batch)
 	return result.Close()
@@ -217,4 +247,148 @@ func ReadDeliveriesByMatchInnings(ctx context.Context, db DB_Exec, match_id int6
 	}
 
 	return response, nil
+}
+
+// helpers
+
+func getDeliveryBatterTriggerBatch(input *models.DeliveryScoringInput, undoFlag bool) (string, []any) {
+	var fourInc, sixInc int
+
+	if input.IsFour.Valid && input.IsFour.Bool {
+		fourInc++
+	} else if input.IsSix.Valid && input.IsSix.Bool {
+		sixInc++
+	}
+
+	sign := '+'
+	if undoFlag {
+		sign = '-'
+	}
+
+	query := fmt.Sprintf(`
+	UPDATE batting_scorecards SET
+		runs_socred = runs_scored %c $1, balls_faced = balls_faced %c 1,
+		fours_scored = fours_scored %c $2, sixes_faced = sixes_scored %c $3
+	WHERE innings_id = $4 AND batter_id = $5
+	`, sign, sign, sign, sign)
+
+	args := []any{input.BatterRuns, fourInc, sixInc, input.InningsId, input.BatterId}
+
+	return query, args
+}
+
+func getDeliveryPlayer1DismissedTriggerBatch(input *models.DeliveryScoringInput, undoFlag bool) (string, []any) {
+	var (
+		query         string
+		args          []any
+		dismissedById pgtype.Int8
+	)
+
+	if input.Player1DismissedId.Valid && models.IsBowlerDismissal(input.Player1DismissalType.String) {
+		dismissedById = input.BowlerId
+	}
+
+	if undoFlag {
+		query = `
+			UPDATE batting_scorecards SET
+				dismissed_by_id = NULL, dismissal_type = NULL, dismissal_ball_number = NULL,
+				fielder1_id = NULL, fielder2_id = NULL
+			WHERE innings_id = $1 AND batter_id = $2`
+
+		args = []any{input.InningsId, input.Player1DismissedId}
+	} else {
+		query = `
+			UPDATE batting_scorecards SET
+				dismissed_by_id = $1, dismissal_type = $2, dismissal_ball_number = $3,
+				fielder1_id = $4, fielder2_id = $5
+			WHERE innings_id = $6 AND batter_id = $7`
+
+		args = []any{
+			dismissedById, input.Player1DismissalType, input.InningsDeliveryNumber, input.Fielder1Id, input.Fielder2Id, input.InningsId, input.Player1DismissedId,
+		}
+	}
+
+	return query, args
+}
+
+func getDeliveryBowlerTriggerBatch(input *models.DeliveryScoringInput, undoFlag bool) (string, []any) {
+	var bowlerBallInc, bowlerWicketInc, fourInc, sixInc int
+
+	if input.IsFour.Valid && input.IsFour.Bool {
+		fourInc++
+	} else if input.IsSix.Valid && input.IsSix.Bool {
+		sixInc++
+	}
+
+	if input.Wides.Int64 == 0 && input.Noballs.Int64 == 0 {
+		bowlerBallInc++
+	}
+
+	if input.Player1DismissedId.Valid && models.IsBowlerDismissal(input.Player1DismissalType.String) {
+		bowlerWicketInc++
+	}
+
+	sign := '+'
+	if undoFlag {
+		sign = '-'
+	}
+
+	query := fmt.Sprintf(`
+		WITH match AS (
+			SELECT balls_per_over
+			FROM matches
+			WHERE id = $1
+		),
+		maiden AS (
+			SELECT
+				(CASE 
+					WHEN COUNT(DISTINCT bowler_id) = 1
+					AND SUM(bowler_runs) = 0
+					AND COUNT(ball_number) - SUM(wides) - SUM(noballs) = (SELECT balls_per_over FROM match)
+					THEN 1 ELSE 0
+				END) AS increase
+			FROM deliveries
+			WHERE innings_id = $2 AND over_number = $3
+		)
+		UPDATE bowling_scorecards
+		SET wickets_taken = wickets_taken %c $4, runs_conceded = runs_conceded %c $4,
+			balls_bowled = balls_bowled %c $5, fours_conceded = fours_conceded %c $6,
+			sixes_conceded = sixes_conceded %c $7, wides_conceded = wides_conceded %c $8,
+			noballs_conceded = noballs_conceded %c $9, maiden_overs = maiden_overs %c (SELECT increase FROM maiden)
+		WHERE innings_id = $2 AND bowler_id = $3
+	`, sign, sign, sign, sign, sign, sign, sign, sign)
+
+	args := []any{input.MatchId, input.InningsId, input.BowlerId, bowlerWicketInc, input.BowlerRuns, bowlerBallInc, fourInc, sixInc, input.Wides, input.Noballs}
+
+	return query, args
+}
+
+func getDeliveryInningsTriggerBatch(input *models.DeliveryScoringInput, undoFlag bool) (string, []any) {
+	var bowlerBallInc, teamWicketInc int
+
+	if input.Wides.Int64 == 0 && input.Noballs.Int64 == 0 {
+		bowlerBallInc++
+	}
+
+	if input.Player1DismissedId.Valid && models.IsTeamDismissal(input.Player1DismissalType.String) {
+		teamWicketInc++
+	}
+
+	sign := '+'
+	if undoFlag {
+		sign = '-'
+	}
+
+	query := fmt.Sprintf(`
+		UPDATE innings SET
+			total_runs = total_runs %c $1, total_balls = total_balls %c $2,
+			total_wickets = total_wickets %c $3, byes = byes %c $4, leg_byes = leg_byes %c $5, 
+			wides = wides %c $6, noballs = noballs %c $7, penalty = penalty %c $8,
+			striker_id = $9, non_striker_id = $10, bowler1_id = $11, bowler2_id = $12
+		WHERE id = $13
+	`, sign, sign, sign, sign, sign, sign, sign, sign)
+
+	args := []any{input.TotalRuns, bowlerBallInc, teamWicketInc, input.Byes, input.Legbyes, input.Wides, input.Noballs, input.Penalty, input.NewStrikerId, input.NonStrikerId, input.NewBowler1Id, input.NewBowler2Id, input.InningsId}
+
+	return query, args
 }
