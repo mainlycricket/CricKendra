@@ -849,7 +849,8 @@ CREATE TABLE public.matches (
     cricsheet_id text,
     is_neutral_venue boolean,
     is_bbb_done boolean DEFAULT false,
-    end_date date
+    end_date date,
+    match_state boolean
 );
 
 
@@ -1525,6 +1526,14 @@ ALTER TABLE ONLY public.tournaments
 
 ALTER TABLE ONLY public.continents
     ADD CONSTRAINT unique_continent_name UNIQUE (name);
+
+
+--
+-- Name: users users_email_key; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.users
+    ADD CONSTRAINT users_email_key UNIQUE (email);
 
 
 --

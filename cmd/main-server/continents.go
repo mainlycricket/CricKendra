@@ -8,20 +8,30 @@ import (
 	"github.com/mainlycricket/CricKendra/internal/dbutils"
 	"github.com/mainlycricket/CricKendra/internal/models"
 	"github.com/mainlycricket/CricKendra/internal/responses"
+	"github.com/mainlycricket/CricKendra/internal/utils"
 )
 
 func continentsRouter() *chi.Mux {
 	r := chi.NewRouter()
+
+	// auth by controller
 	r.Post("/", createContinent)
+
 	r.Get("/", getContinents)
+
 	return r
 }
 
 func createContinent(w http.ResponseWriter, r *http.Request) {
+	_, err := utils.AuthorizeRequest(r, []string{SYSTEM_ADMIN_ROLE})
+	if err != nil {
+		responses.WriteJsonResponse(w, responses.ApiResponse{Success: false, Message: "unauthorized request", Data: err}, http.StatusUnauthorized)
+		return
+	}
+
 	var continent models.Continent
 
-	err := json.NewDecoder(r.Body).Decode(&continent)
-	if err != nil {
+	if err := json.NewDecoder(r.Body).Decode(&continent); err != nil {
 		responses.WriteJsonResponse(w, responses.ApiResponse{Success: false, Message: "error while decoding json", Data: err}, http.StatusBadRequest)
 		return
 	}

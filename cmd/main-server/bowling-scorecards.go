@@ -9,12 +9,15 @@ import (
 	"github.com/mainlycricket/CricKendra/internal/dbutils"
 	"github.com/mainlycricket/CricKendra/internal/models"
 	"github.com/mainlycricket/CricKendra/internal/responses"
+	"github.com/mainlycricket/CricKendra/internal/utils"
 )
 
 /* Used in inningsRouter */
 
 func bowlingScorecardsRouter() *chi.Mux {
 	r := chi.NewRouter()
+
+	r.Use(utils.AuthorizationMiddleware([]string{SYSTEM_ADMIN_ROLE}))
 
 	r.Post("/", createBowlingScorecardEntry)
 

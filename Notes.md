@@ -18,11 +18,16 @@
 - DB stats will be updated automatically after each match completion
 - Get Player Profile will return computed stats in a unified manner
 
+#### 2. Match
+
+- `match_state` indicates "upcoming" if NULL, "live" if true, "completed" if false
+- Once the `match_state` is false, it can't be updated
+
 ### Live Server
 
 #### Admin Flow
 
-- Auth Setup - TODO
+- Auth Setup
 - Create Match
 - Upsert Match Squad
 - Start Match - TODO
@@ -31,17 +36,17 @@
 - Create innings
 - Create batter entries
 - Update batter position & has batted
-- Create bowler entry
-- Create delivery with scoring input
+- Create bowler entry & set bowler 1, bowler 2
+- Create delivery with scoring input (update striker/non-striker)
 - Update delivery with commentary
 - Update delivery with advance info
 - End Innings
 - Set Match Result
-- Stop Match - TODO
+- Stop Match & Update Player Career Stats - TODO
 
 #### Figure outs
 
-- Update Delivery Scoring Input
+- How to update career stats
 - Day No. for Test
 - Session No . / Break
 - Testing in Postman

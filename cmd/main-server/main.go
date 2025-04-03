@@ -14,6 +14,9 @@ import (
 	"github.com/mainlycricket/CricKendra/internal/dbutils"
 )
 
+// user roles for auth
+const SYSTEM_ADMIN_ROLE string = "system_admin"
+
 var DB_POOL *pgxpool.Pool
 
 func main() {
@@ -28,7 +31,7 @@ func main() {
 	r.Use(middleware.Logger)
 	r.Use(cors.Handler(cors.Options{
 		AllowedOrigins:   []string{os.Getenv("FRONTEND_URL")},
-		AllowedMethods:   []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"},
+		AllowedMethods:   []string{"GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"},
 		AllowedHeaders:   []string{"Accept", "Authorization", "Content-Type", "X-CSRF-Token"},
 		ExposedHeaders:   []string{"Link"},
 		AllowCredentials: true,
@@ -55,8 +58,7 @@ func main() {
 	r.Mount("/stats/bowling", BowlingStatsRouter())
 	r.Mount("/stats/team", TeamStatsRouter())
 
-	err = http.ListenAndServe(":8080", r)
-	if err != nil {
+	if err := http.ListenAndServe(":8080", r); err != nil {
 		log.Fatalf(`error while starting server: %v`, err)
 	}
 }

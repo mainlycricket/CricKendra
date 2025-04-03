@@ -9,6 +9,7 @@ import (
 	"github.com/mainlycricket/CricKendra/internal/dbutils"
 	"github.com/mainlycricket/CricKendra/internal/models"
 	"github.com/mainlycricket/CricKendra/internal/responses"
+	"github.com/mainlycricket/CricKendra/internal/utils"
 )
 
 /* Used in matchesRouter */
@@ -16,13 +17,15 @@ import (
 func inningsRouter() *chi.Mux {
 	r := chi.NewRouter()
 
-	r.Post("/", createInnings)
 	r.Get("/{inningsNumber}/commentary", getMatchInningsDeliveries)
 
+	// auth by controller
+	r.Post("/", createInnings)
 	r.Patch("/{inningsId}/innings-end", updateInningsEnd)
 	r.Patch("/{inningsId}/current-batters", updateInningsCurrentBatters)
 	r.Patch("/{inningsId}/current-bowlers", updateInningsCurrentBowlers)
 
+	// auth by own middlewares
 	r.Mount("/{inningsNumber}/batting-scorecards", battingScorecardsRouter())
 	r.Mount("/{inningsNumber}/bowling-scorecards", bowlingScorecardsRouter())
 	r.Mount("/{inningsNumber}/deliveries", deliveriesRouter())
@@ -31,10 +34,15 @@ func inningsRouter() *chi.Mux {
 }
 
 func createInnings(w http.ResponseWriter, r *http.Request) {
+	_, err := utils.AuthorizeRequest(r, []string{SYSTEM_ADMIN_ROLE})
+	if err != nil {
+		responses.WriteJsonResponse(w, responses.ApiResponse{Success: false, Message: "unauthorized request", Data: err}, http.StatusUnauthorized)
+		return
+	}
+
 	var innings models.Innings
 
-	err := json.NewDecoder(r.Body).Decode(&innings)
-	if err != nil {
+	if err := json.NewDecoder(r.Body).Decode(&innings); err != nil {
 		responses.WriteJsonResponse(w, responses.ApiResponse{Success: false, Message: "error while decoding json", Data: err}, http.StatusBadRequest)
 		return
 	}
@@ -49,6 +57,12 @@ func createInnings(w http.ResponseWriter, r *http.Request) {
 }
 
 func updateInningsEnd(w http.ResponseWriter, r *http.Request) {
+	_, err := utils.AuthorizeRequest(r, []string{SYSTEM_ADMIN_ROLE})
+	if err != nil {
+		responses.WriteJsonResponse(w, responses.ApiResponse{Success: false, Message: "unauthorized request", Data: err}, http.StatusUnauthorized)
+		return
+	}
+
 	rawInningsId := r.PathValue("inningsId")
 	parsedInningsId, err := strconv.ParseInt(rawInningsId, 10, 64)
 	if err != nil {
@@ -74,6 +88,12 @@ func updateInningsEnd(w http.ResponseWriter, r *http.Request) {
 }
 
 func updateInningsCurrentBatters(w http.ResponseWriter, r *http.Request) {
+	_, err := utils.AuthorizeRequest(r, []string{SYSTEM_ADMIN_ROLE})
+	if err != nil {
+		responses.WriteJsonResponse(w, responses.ApiResponse{Success: false, Message: "unauthorized request", Data: err}, http.StatusUnauthorized)
+		return
+	}
+
 	rawInningsId := r.PathValue("inningsId")
 	parsedInningsId, err := strconv.ParseInt(rawInningsId, 10, 64)
 	if err != nil {
@@ -99,6 +119,12 @@ func updateInningsCurrentBatters(w http.ResponseWriter, r *http.Request) {
 }
 
 func updateInningsCurrentBowlers(w http.ResponseWriter, r *http.Request) {
+	_, err := utils.AuthorizeRequest(r, []string{SYSTEM_ADMIN_ROLE})
+	if err != nil {
+		responses.WriteJsonResponse(w, responses.ApiResponse{Success: false, Message: "unauthorized request", Data: err}, http.StatusUnauthorized)
+		return
+	}
+
 	rawInningsId := r.PathValue("inningsId")
 	parsedInningsId, err := strconv.ParseInt(rawInningsId, 10, 64)
 	if err != nil {

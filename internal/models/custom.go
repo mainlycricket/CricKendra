@@ -2,6 +2,11 @@ package models
 
 import "github.com/jackc/pgx/v5/pgtype"
 
+type LoginInput struct {
+	Email    pgtype.Text `json:"email"`
+	Password pgtype.Text `json:"password"`
+}
+
 type TossDecisionInput struct {
 	MatchId           pgtype.Int8
 	TossWinnerId      pgtype.Int8 `json:"toss_winner_team_id"`

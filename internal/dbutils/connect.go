@@ -2,11 +2,16 @@ package dbutils
 
 import (
 	"context"
+	"errors"
 	"fmt"
+	"os"
 
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgconn"
+	"github.com/jackc/pgx/v5/pgtype"
 	"github.com/jackc/pgx/v5/pgxpool"
+	"github.com/mainlycricket/CricKendra/internal/models"
+	"github.com/mainlycricket/CricKendra/internal/utils"
 )
 
 type DB_Exec interface {
@@ -31,9 +36,12 @@ func Connect(ctx context.Context, connectionUrl string) (*pgxpool.Pool, error) {
 		return nil, fmt.Errorf("unable to create connection pool: %w", err)
 	}
 
-	err = pool.Ping(ctx)
-	if err != nil {
+	if err := pool.Ping(ctx); err != nil {
 		return nil, fmt.Errorf("failed to connect to database: %v", err)
+	}
+
+	if err := upsertAdmin(pool); err != nil {
+		return nil, fmt.Errorf(`failed to upsert admin: %v`, err)
 	}
 
 	return pool, nil
@@ -55,4 +63,26 @@ func registerDataTypes(ctx context.Context, conn *pgx.Conn) error {
 	}
 
 	return nil
+}
+
+func upsertAdmin(db *pgxpool.Pool) error {
+	email, password := os.Getenv("ADMIN_EMAIL"), os.Getenv("ADMIN_PASSWORD")
+	if email == "" || password == "" {
+		return errors.New("email or password not present")
+	}
+
+	hashedPassword, err := utils.HashPassword(password)
+	if err != nil {
+		return err
+	}
+
+	user := models.User{
+		Name:     pgtype.Text{String: "System Admin", Valid: true},
+		Email:    pgtype.Text{String: email, Valid: true},
+		Password: pgtype.Text{String: hashedPassword, Valid: true},
+		Role:     pgtype.Text{String: "system_admin", Valid: true},
+	}
+
+	_, err = UpsertUser(context.Background(), db, &user)
+	return err
 }

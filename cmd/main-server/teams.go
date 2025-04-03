@@ -8,20 +8,29 @@ import (
 	"github.com/mainlycricket/CricKendra/internal/dbutils"
 	"github.com/mainlycricket/CricKendra/internal/models"
 	"github.com/mainlycricket/CricKendra/internal/responses"
+	"github.com/mainlycricket/CricKendra/internal/utils"
 )
 
 func teamsRouter() *chi.Mux {
 	r := chi.NewRouter()
+
+	// auth by controller
 	r.Get("/", getTeams)
+
 	r.Post("/", createTeam)
 	return r
 }
 
 func createTeam(w http.ResponseWriter, r *http.Request) {
+	_, err := utils.AuthorizeRequest(r, []string{SYSTEM_ADMIN_ROLE})
+	if err != nil {
+		responses.WriteJsonResponse(w, responses.ApiResponse{Success: false, Message: "unauthorized request", Data: err}, http.StatusUnauthorized)
+		return
+	}
+
 	var team models.Team
 
-	err := json.NewDecoder(r.Body).Decode(&team)
-	if err != nil {
+	if err := json.NewDecoder(r.Body).Decode(&team); err != nil {
 		responses.WriteJsonResponse(w, responses.ApiResponse{Success: false, Message: "error while decoding json", Data: err}, http.StatusBadRequest)
 		return
 	}

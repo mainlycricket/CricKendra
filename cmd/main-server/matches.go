@@ -9,31 +9,39 @@ import (
 	"github.com/mainlycricket/CricKendra/internal/dbutils"
 	"github.com/mainlycricket/CricKendra/internal/models"
 	"github.com/mainlycricket/CricKendra/internal/responses"
+	"github.com/mainlycricket/CricKendra/internal/utils"
 )
 
 func matchesRouter() *chi.Mux {
 	r := chi.NewRouter()
 
+	// auth by controller
 	r.Post("/", createMatch)
 	r.Get("/", getMatches)
+	r.Patch("/{matchId}/upsert-squad", upsertMatchSquadEntries)
+	r.Patch("/{matchId}/toss-decision", updateMatchTossDecision)
+	r.Patch("/{matchId}/match-result", updateMatchResult)
 
 	r.Get("/{matchId}/summary", getMatchSummary)
 	r.Get("/{matchId}/full-scorecard", getMatchFullScorecard)
 	r.Get("/{matchId}/squads", getMatchSquad)
 
+	// auth mixed - see inningsRouter
 	r.Mount("/{matchId}/innings", inningsRouter())
-
-	r.Patch("/{matchId}/toss", updateMatchTossDecision)
-	r.Patch("/{matchId}/result", updateMatchResult)
 
 	return r
 }
 
 func createMatch(w http.ResponseWriter, r *http.Request) {
+	_, err := utils.AuthorizeRequest(r, []string{SYSTEM_ADMIN_ROLE})
+	if err != nil {
+		responses.WriteJsonResponse(w, responses.ApiResponse{Success: false, Message: "unauthorized request", Data: err}, http.StatusUnauthorized)
+		return
+	}
+
 	var match models.Match
 
-	err := json.NewDecoder(r.Body).Decode(&match)
-	if err != nil {
+	if err := json.NewDecoder(r.Body).Decode(&match); err != nil {
 		responses.WriteJsonResponse(w, responses.ApiResponse{Success: false, Message: "error while decoding json", Data: err}, http.StatusBadRequest)
 		return
 	}
@@ -47,7 +55,46 @@ func createMatch(w http.ResponseWriter, r *http.Request) {
 	responses.WriteJsonResponse(w, responses.ApiResponse{Success: true, Message: "match created successfully", Data: matchId}, http.StatusCreated)
 }
 
+func upsertMatchSquadEntries(w http.ResponseWriter, r *http.Request) {
+	_, err := utils.AuthorizeRequest(r, []string{SYSTEM_ADMIN_ROLE})
+	if err != nil {
+		responses.WriteJsonResponse(w, responses.ApiResponse{Success: false, Message: "unauthorized request", Data: err}, http.StatusUnauthorized)
+		return
+	}
+
+	matchIdRaw := r.PathValue("matchId")
+	parsedMatchId, err := strconv.ParseInt(matchIdRaw, 10, 64)
+	if err != nil {
+		responses.WriteJsonResponse(w, responses.ApiResponse{Message: "invalid match id", Data: nil}, http.StatusBadRequest)
+		return
+	}
+
+	var entries []models.MatchSquad
+	if err := json.NewDecoder(r.Body).Decode(&entries); err != nil {
+		responses.WriteJsonResponse(w, responses.ApiResponse{Success: false, Message: "error while decoding json", Data: err}, http.StatusBadRequest)
+		return
+	}
+
+	for idx, entry := range entries {
+		entry.MatchId.Int64, entry.MatchId.Valid = parsedMatchId, true
+		entries[idx] = entry
+	}
+
+	if err := dbutils.UpsertMatchSquadEntries(r.Context(), DB_POOL, entries); err != nil {
+		responses.WriteJsonResponse(w, responses.ApiResponse{Success: false, Message: "error while upserting match squad entries", Data: err}, http.StatusBadRequest)
+		return
+	}
+
+	responses.WriteJsonResponse(w, responses.ApiResponse{Success: true, Message: "match squad entries upserted successfully", Data: nil}, http.StatusCreated)
+}
+
 func updateMatchTossDecision(w http.ResponseWriter, r *http.Request) {
+	_, err := utils.AuthorizeRequest(r, []string{SYSTEM_ADMIN_ROLE})
+	if err != nil {
+		responses.WriteJsonResponse(w, responses.ApiResponse{Success: false, Message: "unauthorized request", Data: err}, http.StatusUnauthorized)
+		return
+	}
+
 	matchIdRaw := r.PathValue("matchId")
 
 	parsedMatchId, err := strconv.ParseInt(matchIdRaw, 10, 64)
@@ -74,6 +121,12 @@ func updateMatchTossDecision(w http.ResponseWriter, r *http.Request) {
 }
 
 func updateMatchResult(w http.ResponseWriter, r *http.Request) {
+	_, err := utils.AuthorizeRequest(r, []string{SYSTEM_ADMIN_ROLE})
+	if err != nil {
+		responses.WriteJsonResponse(w, responses.ApiResponse{Success: false, Message: "unauthorized request", Data: err}, http.StatusUnauthorized)
+		return
+	}
+
 	matchIdRaw := r.PathValue("matchId")
 
 	parsedMatchId, err := strconv.ParseInt(matchIdRaw, 10, 64)
