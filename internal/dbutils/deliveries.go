@@ -63,7 +63,7 @@ func UpdateDeliveryWithScoringData(ctx context.Context, db DB_Exec, newInput *mo
 	query := `
 	SELECT
 		ball_number, over_number, batter_id, bowler_id, non_striker_id, batter_runs, wides,
-		noballs, legbyes, byes, penalty, total_extras, total_runs, bowler_runs, is_four, is_six
+		noballs, legbyes, byes, penalty, total_extras, total_runs, bowler_runs, is_four, is_six,
 		player1_dismissed_id, player1_dismissal_type, fielder1_id, fielder2_id
 	FROM deliveries
 	WHERE innings_id = $1 AND innings_delivery_number = $2`
@@ -96,15 +96,15 @@ func UpdateDeliveryWithScoringData(ctx context.Context, db DB_Exec, newInput *mo
 	inningsQuery, inningsArgs := getDeliveryInningsTriggerBatch(&existingInput, true)
 	_ = batch.Queue(inningsQuery, inningsArgs...)
 
-	// insert delivery
+	// update delivery
 	batch.Queue(`
 		UPDATE deliveries SET
 			ball_number = $1, over_number = $2, batter_id = $3, bowler_id = $4, non_striker_id = $5,
 			batter_runs = $6, wides = $7, noballs = $8, legbyes = $9, byes = $10, penalty = $11,
-			total_extras = $12, total_runs = $13, bowler_runs = $14, is_four = $15, is_six = $15,
-			player1_dismissed_id = $16, player1_dismissal_type = $17, fielder1_id = $18, fielder2_id = $19
-		WHERE innings_id = $20 AND innings_delivery_number = $21`,
-		existingInput.BallNumber, existingInput.OverNumber, existingInput.BatterId, existingInput.BowlerId, existingInput.NonStrikerId, existingInput.BatterRuns, existingInput.Wides, existingInput.Noballs, existingInput.Legbyes, existingInput.Byes, existingInput.Penalty, existingInput.TotalExtras, existingInput.TotalRuns, existingInput.BowlerRuns, existingInput.IsFour, existingInput.IsSix, existingInput.Player1DismissedId, existingInput.Player1DismissalType, existingInput.Fielder1Id, existingInput.Fielder2Id, existingInput.InningsId, existingInput.InningsDeliveryNumber)
+			total_extras = $12, total_runs = $13, bowler_runs = $14, is_four = $15, is_six = $16,
+			player1_dismissed_id = $17, player1_dismissal_type = $18, fielder1_id = $19, fielder2_id = $20
+		WHERE innings_id = $21 AND innings_delivery_number = $22`,
+		newInput.BallNumber, newInput.OverNumber, newInput.BatterId, newInput.BowlerId, newInput.NonStrikerId, newInput.BatterRuns, newInput.Wides, newInput.Noballs, newInput.Legbyes, newInput.Byes, newInput.Penalty, newInput.TotalExtras, newInput.TotalRuns, newInput.BowlerRuns, newInput.IsFour, newInput.IsSix, newInput.Player1DismissedId, newInput.Player1DismissalType, newInput.Fielder1Id, newInput.Fielder2Id, newInput.InningsId, newInput.InningsDeliveryNumber)
 
 	// update batter entry
 	if newInput.Wides.Int64 == 0 {
@@ -127,6 +127,7 @@ func UpdateDeliveryWithScoringData(ctx context.Context, db DB_Exec, newInput *mo
 	_ = batch.Queue(inningsQuery1, inningsArgs1...)
 
 	result := db.SendBatch(ctx, &batch)
+
 	return result.Close()
 }
 
@@ -152,9 +153,9 @@ func UpdateDeliveryAdvanceInfo(ctx context.Context, db DB_Exec, input *models.De
 	query := `
 		UPDATE deliveries
 			SET is_pace = $1, bowling_style = $2, is_batter_rhb = $3, is_non_striker_rhb = $4,
-			line = $5, length = $6, ball_type = $7, ball_speed = $7, misc = $8, ww_region = $9,
-			foot_type = $10, shot_type = $11, updated_at = now()
-		WHERE innings_id = $12 AND innings_delivery_number = $13`
+			line = $5, length = $6, ball_type = $7, ball_speed = $8, misc = $9, ww_region = $10,
+			foot_type = $11, shot_type = $12, updated_at = now()
+		WHERE innings_id = $13 AND innings_delivery_number = $14`
 
 	cmd, err := db.Exec(ctx, query, input.IsPace, input.BowlingStyle, input.IsBatterRHB, input.IsNonStrikerRHB, input.Line, input.Length, input.BallType, input.BallSpeed, input.Misc, input.WwRegion, input.FootType, input.ShotType, input.InningsId, input.InningsDeliveryNumber)
 	if err != nil {
@@ -168,7 +169,7 @@ func UpdateDeliveryAdvanceInfo(ctx context.Context, db DB_Exec, input *models.De
 	return nil
 }
 
-func ReadDeliveriesByMatchInnings(ctx context.Context, db DB_Exec, match_id int64, innings_number int) (responses.MatchCommentaryResponse, error) {
+func ReadDeliveriesByMatchInnings(ctx context.Context, db DB_Exec, match_id int64, innings_id int64) (responses.MatchCommentaryResponse, error) {
 	var response responses.MatchCommentaryResponse
 	matchHeader := &response.MatchHeader
 
@@ -191,7 +192,7 @@ func ReadDeliveriesByMatchInnings(ctx context.Context, db DB_Exec, match_id int6
 
 			LEFT JOIN innings ON deliveries.innings_id = innings.id
 				AND innings.is_super_over = FALSE
-				AND innings.innings_number = $2
+				AND innings.id = $2
 
 			LEFT JOIN matches ON innings.match_id = matches.id
 
@@ -227,12 +228,13 @@ func ReadDeliveriesByMatchInnings(ctx context.Context, db DB_Exec, match_id int6
 		matchHeaderQuery.groupByFields,
 	)
 
-	rows := db.QueryRow(ctx, query, match_id, innings_number)
+	rows := db.QueryRow(ctx, query, match_id, innings_id)
 
 	err := rows.Scan(
 		&matchHeader.MatchId, &matchHeader.PlayingLevel, &matchHeader.PlayingFormat, &matchHeader.MatchType, &matchHeader.EventMatchNumber,
+		&matchHeader.MatchState, &matchHeader.MatchStateDescription,
 
-		&matchHeader.Season, &matchHeader.StartDate, &matchHeader.EndDate, &matchHeader.StartTime, &matchHeader.IsDayNight, &matchHeader.GroundId, &matchHeader.GroundName, &matchHeader.MainSeriesId, &matchHeader.MainSeriesName,
+		&matchHeader.Season, &matchHeader.StartDate, &matchHeader.EndDate, &matchHeader.StartDateTimeUtc, &matchHeader.IsDayNight, &matchHeader.GroundId, &matchHeader.GroundName, &matchHeader.MainSeriesId, &matchHeader.MainSeriesName,
 
 		&matchHeader.Team1Id, &matchHeader.Team1Name, &matchHeader.Team1ImageUrl, &matchHeader.Team2Id, &matchHeader.Team2Name, &matchHeader.Team2ImageUrl,
 
@@ -267,8 +269,8 @@ func getDeliveryBatterTriggerBatch(input *models.DeliveryScoringInput, undoFlag 
 
 	query := fmt.Sprintf(`
 	UPDATE batting_scorecards SET
-		runs_socred = runs_scored %c $1, balls_faced = balls_faced %c 1,
-		fours_scored = fours_scored %c $2, sixes_faced = sixes_scored %c $3
+		runs_scored = runs_scored %c $1, balls_faced = balls_faced %c 1,
+		fours_scored = fours_scored %c $2, sixes_scored = sixes_scored %c $3
 	WHERE innings_id = $4 AND batter_id = $5
 	`, sign, sign, sign, sign)
 
@@ -351,14 +353,14 @@ func getDeliveryBowlerTriggerBatch(input *models.DeliveryScoringInput, undoFlag 
 			WHERE innings_id = $2 AND over_number = $3
 		)
 		UPDATE bowling_scorecards
-		SET wickets_taken = wickets_taken %c $4, runs_conceded = runs_conceded %c $4,
-			balls_bowled = balls_bowled %c $5, fours_conceded = fours_conceded %c $6,
-			sixes_conceded = sixes_conceded %c $7, wides_conceded = wides_conceded %c $8,
-			noballs_conceded = noballs_conceded %c $9, maiden_overs = maiden_overs %c (SELECT increase FROM maiden)
-		WHERE innings_id = $2 AND bowler_id = $3
+		SET wickets_taken = wickets_taken %c $4, runs_conceded = runs_conceded %c $5,
+			balls_bowled = balls_bowled %c $6, fours_conceded = fours_conceded %c $7,
+			sixes_conceded = sixes_conceded %c $8, wides_conceded = wides_conceded %c $9,
+			noballs_conceded = noballs_conceded %c $10, maiden_overs = maiden_overs %c (SELECT increase FROM maiden)
+		WHERE innings_id = $2 AND bowler_id = $11
 	`, sign, sign, sign, sign, sign, sign, sign, sign)
 
-	args := []any{input.MatchId, input.InningsId, input.BowlerId, bowlerWicketInc, input.BowlerRuns, bowlerBallInc, fourInc, sixInc, input.Wides, input.Noballs}
+	args := []any{input.MatchId, input.InningsId, input.OverNumber, bowlerWicketInc, input.BowlerRuns, bowlerBallInc, fourInc, sixInc, input.Wides, input.Noballs, input.BowlerId}
 
 	return query, args
 }

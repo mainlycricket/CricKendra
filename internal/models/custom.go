@@ -16,7 +16,7 @@ type TossDecisionInput struct {
 
 type BatterPositionInput struct {
 	InningsId       pgtype.Int8
-	BatterId        pgtype.Int8 `json:"batter_id"`
+	BatterId        pgtype.Int8
 	HasBatted       pgtype.Bool `json:"has_batted"`
 	BattingPosition pgtype.Int8 `json:"batting_position"`
 }
@@ -55,14 +55,14 @@ type DeliveryScoringInput struct {
 }
 
 type DeliveryCommentaryInput struct {
-	InningsId             pgtype.Int8 `json:"innings_id"`
-	InningsDeliveryNumber pgtype.Int8 `json:"innings_delivery_number"`
+	InningsId             pgtype.Int8
+	InningsDeliveryNumber pgtype.Int8
 	Commentary            pgtype.Text `json:"commentary"`
 }
 
 type DeliveryAdvanceInfoInput struct {
-	InningsId             pgtype.Int8 `json:"innings_id"`
-	InningsDeliveryNumber pgtype.Int8 `json:"innings_delivery_number"`
+	InningsId             pgtype.Int8
+	InningsDeliveryNumber pgtype.Int8
 
 	IsPace          pgtype.Bool   `json:"is_pace"`            // true if pacer, false if spin
 	BowlingStyle    pgtype.Text   `json:"bowling_style"`      // RAFM, LAFM, LAF etc
@@ -98,7 +98,7 @@ type InningsCurrentBowlersInput struct {
 type MatchResultInput struct {
 	MatchId pgtype.Int8
 
-	FinalResult          pgtype.Text `json:"final_result"` // completed, abandoned, no result
+	FinalResult          pgtype.Text `json:"final_result"` // winner decided, abandoned, no result
 	MatchWinnerId        pgtype.Int8 `json:"match_winner_team_id"`
 	MatchLoserId         pgtype.Int8 `json:"match_loser_team_id"`
 	BowlOutWinnerId      pgtype.Int8 `json:"bowl_out_winner_id"`
@@ -108,4 +108,11 @@ type MatchResultInput struct {
 	WinMargin            pgtype.Int8 `json:"win_margin"`                // runs or wickets
 	BallsMargin          pgtype.Int8 `json:"balls_remaining_after_win"` // successful chases
 	OutcomeSpecialMethod pgtype.Text `json:"outcome_special_method"`
+}
+
+type MatchStateInput struct {
+	MatchId pgtype.Int8
+
+	State            pgtype.Text `json:"state"`
+	StateDescription pgtype.Text `json:"state_description"`
 }

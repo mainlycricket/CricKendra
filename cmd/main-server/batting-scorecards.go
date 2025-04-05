@@ -19,8 +19,8 @@ func battingScorecardsRouter() *chi.Mux {
 
 	r.Use(utils.AuthorizationMiddleware([]string{SYSTEM_ADMIN_ROLE}))
 
-	r.Post("/", createBattingScorecardEntries)
-	r.Patch("/batter-position", updateBatterPositionByInningsId)
+	r.Post("/entries", createBattingScorecardEntries)
+	r.Patch("/{batterId}/batting-position", updateBatterPositionByInningsId)
 
 	return r
 }
@@ -54,10 +54,17 @@ func createBattingScorecardEntries(w http.ResponseWriter, r *http.Request) {
 }
 
 func updateBatterPositionByInningsId(w http.ResponseWriter, r *http.Request) {
-	rawInningsId := r.PathValue("inningsId")
+	rawInningsId, rawBatterId := r.PathValue("inningsId"), r.PathValue("batterId")
+
 	parsedInningsId, err := strconv.ParseInt(rawInningsId, 10, 64)
 	if err != nil {
 		responses.WriteJsonResponse(w, responses.ApiResponse{Success: false, Message: "invalid innings id", Data: err}, http.StatusBadRequest)
+		return
+	}
+
+	parsedBatterId, err := strconv.ParseInt(rawBatterId, 10, 64)
+	if err != nil {
+		responses.WriteJsonResponse(w, responses.ApiResponse{Success: false, Message: "invalid batter id", Data: err}, http.StatusBadRequest)
 		return
 	}
 
@@ -69,11 +76,12 @@ func updateBatterPositionByInningsId(w http.ResponseWriter, r *http.Request) {
 	}
 
 	input.InningsId.Int64, input.InningsId.Valid = parsedInningsId, true
+	input.BatterId.Int64, input.BatterId.Valid = parsedBatterId, true
 
 	if err := dbutils.UpdateBatterPositionByInningsId(r.Context(), DB_POOL, &input); err != nil {
 		responses.WriteJsonResponse(w, responses.ApiResponse{Success: false, Message: "error while updating batter batting position", Data: err}, http.StatusBadRequest)
 		return
 	}
 
-	responses.WriteJsonResponse(w, responses.ApiResponse{Success: true, Message: "batter batting position updated successfully", Data: nil}, http.StatusCreated)
+	responses.WriteJsonResponse(w, responses.ApiResponse{Success: true, Message: "batter batting position updated successfully", Data: nil}, http.StatusOK)
 }

@@ -149,6 +149,20 @@ CREATE TYPE public.match_final_result AS ENUM (
 ALTER TYPE public.match_final_result OWNER TO postgres;
 
 --
+-- Name: match_state_enum; Type: TYPE; Schema: public; Owner: postgres
+--
+
+CREATE TYPE public.match_state_enum AS ENUM (
+    'upcoming',
+    'live',
+    'break',
+    'completed'
+);
+
+
+ALTER TYPE public.match_state_enum OWNER TO postgres;
+
+--
 -- Name: match_type; Type: TYPE; Schema: public; Owner: postgres
 --
 
@@ -640,7 +654,6 @@ CREATE TABLE public.deliveries (
     line text,
     length text,
     ball_type text,
-    ball_speed text,
     misc text,
     ww_region text,
     foot_type text,
@@ -651,7 +664,8 @@ CREATE TABLE public.deliveries (
     created_at timestamp with time zone,
     updated_at timestamp with time zone,
     total_extras integer,
-    innings_delivery_number integer NOT NULL
+    innings_delivery_number integer NOT NULL,
+    ball_speed double precision
 );
 
 
@@ -841,7 +855,6 @@ CREATE TABLE public.matches (
     balls_per_over integer DEFAULT 6,
     event_match_number integer,
     start_date date,
-    start_time time with time zone,
     bowl_out_winner_id integer,
     super_over_winner_id integer,
     is_won_by_innings boolean,
@@ -850,7 +863,9 @@ CREATE TABLE public.matches (
     is_neutral_venue boolean,
     is_bbb_done boolean DEFAULT false,
     end_date date,
-    match_state boolean
+    match_state public.match_state_enum DEFAULT 'upcoming'::public.match_state_enum,
+    match_state_description text,
+    start_datetime_utc timestamp with time zone
 );
 
 
@@ -1542,6 +1557,27 @@ ALTER TABLE ONLY public.users
 
 ALTER TABLE ONLY public.users
     ADD CONSTRAINT users_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: deliveries_innings_id_innings_delivery_number_key; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX deliveries_innings_id_innings_delivery_number_key ON public.deliveries USING btree (innings_id, innings_delivery_number);
+
+
+--
+-- Name: idx_batting_scorecards_innings_id_batter_id; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE UNIQUE INDEX idx_batting_scorecards_innings_id_batter_id ON public.batting_scorecards USING btree (innings_id, batter_id);
+
+
+--
+-- Name: idx_bowling_scorecards_innings_id_bowler_id; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE UNIQUE INDEX idx_bowling_scorecards_innings_id_bowler_id ON public.bowling_scorecards USING btree (innings_id, bowler_id);
 
 
 --

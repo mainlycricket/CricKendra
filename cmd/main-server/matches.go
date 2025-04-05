@@ -17,11 +17,12 @@ func matchesRouter() *chi.Mux {
 
 	// auth by controller
 	r.Post("/", createMatch)
-	r.Get("/", getMatches)
-	r.Patch("/{matchId}/upsert-squad", upsertMatchSquadEntries)
+	r.Post("/{matchId}/upsert-squad", upsertMatchSquadEntries)
 	r.Patch("/{matchId}/toss-decision", updateMatchTossDecision)
 	r.Patch("/{matchId}/match-result", updateMatchResult)
+	r.Patch("/{matchId}/match-state", updateMatchState)
 
+	r.Get("/", getMatches)
 	r.Get("/{matchId}/summary", getMatchSummary)
 	r.Get("/{matchId}/full-scorecard", getMatchFullScorecard)
 	r.Get("/{matchId}/squads", getMatchSquad)
@@ -117,7 +118,7 @@ func updateMatchTossDecision(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	responses.WriteJsonResponse(w, responses.ApiResponse{Success: true, Message: "match toss decision updated successfully", Data: nil}, http.StatusCreated)
+	responses.WriteJsonResponse(w, responses.ApiResponse{Success: true, Message: "match toss decision updated successfully", Data: nil}, http.StatusOK)
 }
 
 func updateMatchResult(w http.ResponseWriter, r *http.Request) {
@@ -149,7 +150,43 @@ func updateMatchResult(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	responses.WriteJsonResponse(w, responses.ApiResponse{Success: true, Message: "match result updated successfully", Data: nil}, http.StatusCreated)
+	responses.WriteJsonResponse(w, responses.ApiResponse{Success: true, Message: "match result updated successfully", Data: nil}, http.StatusOK)
+}
+
+func updateMatchState(w http.ResponseWriter, r *http.Request) {
+	_, err := utils.AuthorizeRequest(r, []string{SYSTEM_ADMIN_ROLE})
+	if err != nil {
+		responses.WriteJsonResponse(w, responses.ApiResponse{Success: false, Message: "unauthorized request", Data: err}, http.StatusUnauthorized)
+		return
+	}
+
+	matchIdRaw := r.PathValue("matchId")
+	parsedMatchId, err := strconv.ParseInt(matchIdRaw, 10, 64)
+	if err != nil {
+		responses.WriteJsonResponse(w, responses.ApiResponse{Message: "invalid match id", Data: nil}, http.StatusBadRequest)
+		return
+	}
+
+	var input models.MatchStateInput
+
+	if err := json.NewDecoder(r.Body).Decode(&input); err != nil {
+		responses.WriteJsonResponse(w, responses.ApiResponse{Success: false, Message: "error while decoding json", Data: err}, http.StatusBadRequest)
+		return
+	}
+
+	input.MatchId.Int64, input.MatchId.Valid = parsedMatchId, true
+
+	if err := input.Validate(r.Context(), DB_POOL); err != nil {
+		responses.WriteJsonResponse(w, responses.ApiResponse{Success: false, Message: "invalid operation", Data: err}, http.StatusBadRequest)
+		return
+	}
+
+	if err := dbutils.UpdateMatchStateById(r.Context(), DB_POOL, &input); err != nil {
+		responses.WriteJsonResponse(w, responses.ApiResponse{Success: false, Message: "error while updating match state", Data: err}, http.StatusBadRequest)
+		return
+	}
+
+	responses.WriteJsonResponse(w, responses.ApiResponse{Success: true, Message: "match state updated successfully", Data: nil}, http.StatusOK)
 }
 
 func getMatches(w http.ResponseWriter, r *http.Request) {

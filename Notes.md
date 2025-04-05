@@ -30,7 +30,7 @@
 - Auth Setup
 - Create Match
 - Upsert Match Squad
-- Start Match - TODO
+- Start Match
 - Toss Decision
 - Upsert Match Squad
 - Create innings
@@ -42,11 +42,10 @@
 - Update delivery with advance info
 - End Innings
 - Set Match Result
-- Stop Match & Update Player Career Stats - TODO
+- Stop Match & Update Player Career Stats
 
 #### Figure outs
 
-- How to update career stats
 - Day No. for Test
 - Session No . / Break
 - Testing in Postman

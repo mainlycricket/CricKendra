@@ -231,7 +231,7 @@ func ReadSeriesOverviewById(ctx context.Context, db DB_Exec, seriesId int64) (re
 			%s
 			WHERE mse.series_id = $1 AND matches.final_result IS NULL
 			GROUP BY %s
-			ORDER BY matches.start_date ASC, matches.start_time ASC
+			ORDER BY matches.start_datetime_utc ASC
 			FETCH FIRST 10 ROWS ONLY
 		),
 		result_matches AS (
@@ -241,7 +241,7 @@ func ReadSeriesOverviewById(ctx context.Context, db DB_Exec, seriesId int64) (re
 			%s
 			WHERE mse.series_id = $1 AND matches.final_result IS NOT NULL
 			GROUP BY %s
-			ORDER BY matches.start_date DESC, matches.start_time DESC
+			ORDER BY matches.start_datetime_utc DESC
 			FETCH FIRST 10 ROWS ONLY
 		)
 		SELECT 
@@ -290,7 +290,7 @@ func ReadSeriesMatchesById(ctx context.Context, db DB_Exec, seriesId int64) (res
 			%s
 			WHERE mse.series_id = $1
 			GROUP BY %s
-			ORDER BY matches.start_date ASC, matches.start_time ASC
+			ORDER BY matches.start_datetime_utc ASC
 		)
 		SELECT 
 			%s,

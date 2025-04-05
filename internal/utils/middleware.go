@@ -39,7 +39,7 @@ func AuthorizeRequest(r *http.Request, allowedRoles []string) (CustomJwtClaims, 
 
 	jwtInfo := CustomJwtClaims{
 		Role:   claims["role"].(string),
-		UserId: uint(claims["user_id"].(uint)),
+		UserId: uint(claims["user_id"].(float64)),
 	}
 
 	if len(allowedRoles) > 0 && !slices.Contains(allowedRoles, jwtInfo.Role) {

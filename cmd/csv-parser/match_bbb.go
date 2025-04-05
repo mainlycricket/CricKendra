@@ -172,8 +172,13 @@ func insertBBB(filePath string, matchInfo *matchInfo, channel chan<- error) {
 		}
 	}
 
-	if err = dbutils.SetMatchBBBDone(context.Background(), tx, matchInfo.match.Id.Int64); err != nil {
-		mainError = fmt.Errorf(`error while setting bbb done: %v`, err)
+	stateInput := models.MatchStateInput{
+		MatchId: matchInfo.match.Id,
+		State:   pgtype.Text{String: "completed", Valid: true},
+	}
+
+	if err = dbutils.UpdateMatchStateById(context.Background(), tx, &stateInput); err != nil {
+		mainError = fmt.Errorf(`error while updating match state: %v`, err)
 		return
 	}
 }

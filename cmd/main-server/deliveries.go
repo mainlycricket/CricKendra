@@ -19,7 +19,7 @@ func deliveriesRouter() *chi.Mux {
 
 	r.Use(utils.AuthorizationMiddleware([]string{SYSTEM_ADMIN_ROLE}))
 
-	r.Post("/", createDeliveryWithScoringInput)
+	r.Post("/scoring", createDeliveryWithScoringInput)
 	r.Patch("/{inningsDeliveryNumber}/scoring", updateDeliveryWithScoringInput)
 	r.Patch("/{inningsDeliveryNumber}/commentary", updateDeliveryCommentary)
 	r.Patch("/{inningsDeliveryNumber}/advance-info", updateDeliveryAdvanceInfo)
@@ -61,7 +61,7 @@ func createDeliveryWithScoringInput(w http.ResponseWriter, r *http.Request) {
 }
 
 func updateDeliveryWithScoringInput(w http.ResponseWriter, r *http.Request) {
-	rawMatchId, rawInningsId := r.PathValue("matchId"), r.PathValue("inningsId")
+	rawMatchId, rawInningsId, rawDeliveryNumber := r.PathValue("matchId"), r.PathValue("inningsId"), r.PathValue("inningsDeliveryNumber")
 
 	parsedInningsId, err := strconv.ParseInt(rawInningsId, 10, 64)
 	if err != nil {
@@ -75,6 +75,12 @@ func updateDeliveryWithScoringInput(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	parsedDeliveryNumber, err := strconv.ParseInt(rawDeliveryNumber, 10, 64)
+	if err != nil {
+		responses.WriteJsonResponse(w, responses.ApiResponse{Success: false, Message: "invalid innings delivery number", Data: err}, http.StatusBadRequest)
+		return
+	}
+
 	var input models.DeliveryScoringInput
 
 	if err := json.NewDecoder(r.Body).Decode(&input); err != nil {
@@ -84,6 +90,7 @@ func updateDeliveryWithScoringInput(w http.ResponseWriter, r *http.Request) {
 
 	input.InningsId.Int64, input.InningsId.Valid = parsedInningsId, true
 	input.MatchId.Int64, input.MatchId.Valid = parsedMatchId, true
+	input.InningsDeliveryNumber.Int64, input.InningsDeliveryNumber.Valid = parsedDeliveryNumber, true
 
 	if err := dbutils.UpdateDeliveryWithScoringData(r.Context(), DB_POOL, &input); err != nil {
 		responses.WriteJsonResponse(w, responses.ApiResponse{Success: false, Message: "error while updating delivery with scoring input", Data: err}, http.StatusBadRequest)
@@ -123,7 +130,7 @@ func updateDeliveryCommentary(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	responses.WriteJsonResponse(w, responses.ApiResponse{Success: true, Message: "delivery commentary updated successfully", Data: nil}, http.StatusCreated)
+	responses.WriteJsonResponse(w, responses.ApiResponse{Success: true, Message: "delivery commentary updated successfully", Data: nil}, http.StatusOK)
 }
 
 func updateDeliveryAdvanceInfo(w http.ResponseWriter, r *http.Request) {
@@ -156,5 +163,5 @@ func updateDeliveryAdvanceInfo(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	responses.WriteJsonResponse(w, responses.ApiResponse{Success: true, Message: "delivery advance info updated successfully", Data: nil}, http.StatusCreated)
+	responses.WriteJsonResponse(w, responses.ApiResponse{Success: true, Message: "delivery advance info updated successfully", Data: nil}, http.StatusOK)
 }

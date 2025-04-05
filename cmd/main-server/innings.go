@@ -17,7 +17,7 @@ import (
 func inningsRouter() *chi.Mux {
 	r := chi.NewRouter()
 
-	r.Get("/{inningsNumber}/commentary", getMatchInningsDeliveries)
+	r.Get("/{inningsId}/commentary", getMatchInningsDeliveries)
 
 	// auth by controller
 	r.Post("/", createInnings)
@@ -26,9 +26,9 @@ func inningsRouter() *chi.Mux {
 	r.Patch("/{inningsId}/current-bowlers", updateInningsCurrentBowlers)
 
 	// auth by own middlewares
-	r.Mount("/{inningsNumber}/batting-scorecards", battingScorecardsRouter())
-	r.Mount("/{inningsNumber}/bowling-scorecards", bowlingScorecardsRouter())
-	r.Mount("/{inningsNumber}/deliveries", deliveriesRouter())
+	r.Mount("/{inningsId}/batting-scorecards", battingScorecardsRouter())
+	r.Mount("/{inningsId}/bowling-scorecards", bowlingScorecardsRouter())
+	r.Mount("/{inningsId}/deliveries", deliveriesRouter())
 
 	return r
 }
@@ -40,12 +40,21 @@ func createInnings(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	matchIdRaw := r.PathValue("matchId")
+	parsedMatchId, err := strconv.ParseInt(matchIdRaw, 10, 64)
+	if err != nil {
+		responses.WriteJsonResponse(w, responses.ApiResponse{Message: "invalid match id", Data: nil}, http.StatusBadRequest)
+		return
+	}
+
 	var innings models.Innings
 
 	if err := json.NewDecoder(r.Body).Decode(&innings); err != nil {
 		responses.WriteJsonResponse(w, responses.ApiResponse{Success: false, Message: "error while decoding json", Data: err}, http.StatusBadRequest)
 		return
 	}
+
+	innings.MatchId.Int64, innings.MatchId.Valid = parsedMatchId, true
 
 	inningsId, err := dbutils.InsertInnings(r.Context(), DB_POOL, &innings)
 	if err != nil {
@@ -84,7 +93,7 @@ func updateInningsEnd(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	responses.WriteJsonResponse(w, responses.ApiResponse{Success: true, Message: "innings end updated successfully", Data: nil}, http.StatusCreated)
+	responses.WriteJsonResponse(w, responses.ApiResponse{Success: true, Message: "innings end updated successfully", Data: nil}, http.StatusOK)
 }
 
 func updateInningsCurrentBatters(w http.ResponseWriter, r *http.Request) {
@@ -115,7 +124,7 @@ func updateInningsCurrentBatters(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	responses.WriteJsonResponse(w, responses.ApiResponse{Success: true, Message: "innings current batters updated successfully", Data: nil}, http.StatusCreated)
+	responses.WriteJsonResponse(w, responses.ApiResponse{Success: true, Message: "innings current batters updated successfully", Data: nil}, http.StatusOK)
 }
 
 func updateInningsCurrentBowlers(w http.ResponseWriter, r *http.Request) {
@@ -146,11 +155,11 @@ func updateInningsCurrentBowlers(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	responses.WriteJsonResponse(w, responses.ApiResponse{Success: true, Message: "innings current bowlers updated successfully", Data: nil}, http.StatusCreated)
+	responses.WriteJsonResponse(w, responses.ApiResponse{Success: true, Message: "innings current bowlers updated successfully", Data: nil}, http.StatusOK)
 }
 
 func getMatchInningsDeliveries(w http.ResponseWriter, r *http.Request) {
-	matchIdRaw, inningsNumberRaw := r.PathValue("matchId"), r.PathValue("inningsNumber")
+	matchIdRaw, inningsIdRaw := r.PathValue("matchId"), r.PathValue("inningsId")
 
 	matchId, err := strconv.ParseInt(matchIdRaw, 10, 64)
 	if err != nil {
@@ -158,13 +167,13 @@ func getMatchInningsDeliveries(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	inningsNumber, err := strconv.Atoi(inningsNumberRaw)
+	parsedInningsId, err := strconv.ParseInt(inningsIdRaw, 10, 64)
 	if err != nil {
-		responses.WriteJsonResponse(w, responses.ApiResponse{Message: "invalid innings number", Data: err}, http.StatusBadRequest)
+		responses.WriteJsonResponse(w, responses.ApiResponse{Message: "invalid innings id", Data: err}, http.StatusBadRequest)
 		return
 	}
 
-	commentary, err := dbutils.ReadDeliveriesByMatchInnings(r.Context(), DB_POOL, matchId, inningsNumber)
+	commentary, err := dbutils.ReadDeliveriesByMatchInnings(r.Context(), DB_POOL, matchId, parsedInningsId)
 	if err != nil {
 		responses.WriteJsonResponse(w, responses.ApiResponse{Message: "error while reading innings commentary", Data: err}, http.StatusInternalServerError)
 		return

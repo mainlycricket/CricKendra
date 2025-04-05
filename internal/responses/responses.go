@@ -267,24 +267,26 @@ type SeriesHeader struct {
 // Matches
 
 type MatchInfo struct {
-	MatchId          pgtype.Int8 `json:"match_id"`
-	PlayingLevel     pgtype.Text `json:"playing_level"`
-	PlayingFormat    pgtype.Text `json:"playing_format"`
-	MatchType        pgtype.Text `json:"match_type"`
-	EventMatchNumber pgtype.Int8 `json:"event_match_number"`
+	MatchId               pgtype.Int8 `json:"match_id"`
+	PlayingLevel          pgtype.Text `json:"playing_level"`
+	PlayingFormat         pgtype.Text `json:"playing_format"`
+	MatchType             pgtype.Text `json:"match_type"`
+	EventMatchNumber      pgtype.Int8 `json:"event_match_number"`
+	MatchState            pgtype.Text `json:"match_state"`
+	MatchStateDescription pgtype.Text `json:"match_state_description"`
 	// Day 1, 2, etc - Test / FC
 	// Stumps, Innings Break, Tea/Lunch/Dinner, Stopped
 	// Need 50 runs , won by 5 wkts , trail/lead by 8 runs , won the toss and chose to bat, match starts in
 
-	Season         pgtype.Text        `json:"season"`
-	StartDate      pgtype.Date        `json:"start_date"`
-	EndDate        pgtype.Date        `json:"end_date"`
-	StartTime      pgtype.Timestamptz `json:"start_time"`
-	IsDayNight     pgtype.Bool        `json:"is_day_night"`
-	GroundId       pgtype.Int8        `json:"ground_id"`
-	GroundName     pgtype.Text        `json:"ground_name"`
-	MainSeriesId   pgtype.Int8        `json:"main_series_id"`
-	MainSeriesName pgtype.Text        `json:"main_series_name"`
+	Season           pgtype.Text        `json:"season"`
+	StartDate        pgtype.Date        `json:"start_date"`
+	EndDate          pgtype.Date        `json:"end_date"`
+	StartDateTimeUtc pgtype.Timestamptz `json:"start_datetime_utc"`
+	IsDayNight       pgtype.Bool        `json:"is_day_night"`
+	GroundId         pgtype.Int8        `json:"ground_id"`
+	GroundName       pgtype.Text        `json:"ground_name"`
+	MainSeriesId     pgtype.Int8        `json:"main_series_id"`
+	MainSeriesName   pgtype.Text        `json:"main_series_name"`
 
 	Team1Id       pgtype.Int8 `json:"team1_id"`
 	Team1Name     pgtype.Text `json:"team1_name"`
