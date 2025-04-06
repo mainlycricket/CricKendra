@@ -21,6 +21,7 @@ func matchesRouter() *chi.Mux {
 	r.Patch("/{matchId}/toss-decision", updateMatchTossDecision)
 	r.Patch("/{matchId}/match-result", updateMatchResult)
 	r.Patch("/{matchId}/match-state", updateMatchState)
+	r.Post("/{matchId}/player-awards", upsertMatchPlayerAwards)
 
 	r.Get("/", getMatches)
 	r.Get("/{matchId}/summary", getMatchSummary)
@@ -187,6 +188,40 @@ func updateMatchState(w http.ResponseWriter, r *http.Request) {
 	}
 
 	responses.WriteJsonResponse(w, responses.ApiResponse{Success: true, Message: "match state updated successfully", Data: nil}, http.StatusOK)
+}
+
+func upsertMatchPlayerAwards(w http.ResponseWriter, r *http.Request) {
+	_, err := utils.AuthorizeRequest(r, []string{SYSTEM_ADMIN_ROLE})
+	if err != nil {
+		responses.WriteJsonResponse(w, responses.ApiResponse{Success: false, Message: "unauthorized request", Data: err}, http.StatusUnauthorized)
+		return
+	}
+
+	matchIdRaw := r.PathValue("matchId")
+	parsedMatchId, err := strconv.ParseInt(matchIdRaw, 10, 64)
+	if err != nil {
+		responses.WriteJsonResponse(w, responses.ApiResponse{Message: "invalid match id", Data: nil}, http.StatusBadRequest)
+		return
+	}
+
+	var entries []models.PlayerAwardEntry
+
+	if err := json.NewDecoder(r.Body).Decode(&entries); err != nil {
+		responses.WriteJsonResponse(w, responses.ApiResponse{Success: false, Message: "error while decoding json", Data: err}, http.StatusBadRequest)
+		return
+	}
+
+	for idx, entry := range entries {
+		entry.MatchId.Int64, entry.MatchId.Valid = parsedMatchId, true
+		entries[idx] = entry
+	}
+
+	if err := dbutils.UpsertMatchAwardEntries(r.Context(), DB_POOL, entries); err != nil {
+		responses.WriteJsonResponse(w, responses.ApiResponse{Success: false, Message: "error while upserting match award entries", Data: err}, http.StatusBadRequest)
+		return
+	}
+
+	responses.WriteJsonResponse(w, responses.ApiResponse{Success: true, Message: "match award entries upserted successfully", Data: nil}, http.StatusCreated)
 }
 
 func getMatches(w http.ResponseWriter, r *http.Request) {

@@ -54,6 +54,14 @@ type DeliveryScoringInput struct {
 	NewBowler2Id    pgtype.Int8 `json:"new_bowler2_id"`
 }
 
+type DeliveryPlayer2DismissedInput struct {
+	InningsId             pgtype.Int8
+	InningsDeliveryNumber pgtype.Int8
+
+	Player2DismissedId   pgtype.Int8 `json:"player2_dismissed_id"`
+	Player2DismissalType pgtype.Text `json:"player2_dismissal_type"`
+}
+
 type DeliveryCommentaryInput struct {
 	InningsId             pgtype.Int8
 	InningsDeliveryNumber pgtype.Int8
@@ -115,4 +123,11 @@ type MatchStateInput struct {
 
 	State            pgtype.Text `json:"state"`
 	StateDescription pgtype.Text `json:"state_description"`
+}
+
+type SeriesFinalResult struct {
+	SeriesId pgtype.Int8
+
+	WinnerTeamId pgtype.Int8 `json:"winner_team_id"`
+	FinalStatus  pgtype.Text `json:"final_status"`
 }

@@ -672,6 +672,20 @@ CREATE TABLE public.deliveries (
 ALTER TABLE public.deliveries OWNER TO postgres;
 
 --
+-- Name: fall_of_wickets; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public.fall_of_wickets (
+    innings_id integer NOT NULL,
+    batter_id integer NOT NULL,
+    team_runs integer NOT NULL,
+    wicket_number integer NOT NULL
+);
+
+
+ALTER TABLE public.fall_of_wickets OWNER TO postgres;
+
+--
 -- Name: grounds; Type: TABLE; Schema: public; Owner: postgres
 --
 
@@ -1567,6 +1581,20 @@ CREATE INDEX deliveries_innings_id_innings_delivery_number_key ON public.deliver
 
 
 --
+-- Name: fall_of_wickets_innings_id_batter_id_key; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX fall_of_wickets_innings_id_batter_id_key ON public.fall_of_wickets USING btree (innings_id, batter_id);
+
+
+--
+-- Name: fall_of_wickets_innings_id_wicket_number_key; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX fall_of_wickets_innings_id_wicket_number_key ON public.fall_of_wickets USING btree (innings_id, wicket_number);
+
+
+--
 -- Name: idx_batting_scorecards_innings_id_batter_id; Type: INDEX; Schema: public; Owner: postgres
 --
 
@@ -1714,6 +1742,22 @@ ALTER TABLE ONLY public.deliveries
 
 ALTER TABLE ONLY public.deliveries
     ADD CONSTRAINT deliveries_player2_dismissed_id_fkey FOREIGN KEY (player2_dismissed_id) REFERENCES public.players(id) ON UPDATE CASCADE ON DELETE CASCADE NOT VALID;
+
+
+--
+-- Name: fall_of_wickets fall_of_wickets_batter_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.fall_of_wickets
+    ADD CONSTRAINT fall_of_wickets_batter_id_fkey FOREIGN KEY (batter_id) REFERENCES public.players(id);
+
+
+--
+-- Name: fall_of_wickets fall_of_wickets_innings_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.fall_of_wickets
+    ADD CONSTRAINT fall_of_wickets_innings_id_fkey FOREIGN KEY (innings_id) REFERENCES public.innings(id);
 
 
 --

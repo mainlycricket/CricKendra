@@ -50,6 +50,12 @@ func InsertDeliveryWithScoringData(ctx context.Context, db DB_Exec, input *model
 	inningsQuery, inningsArgs := getDeliveryInningsTriggerBatch(input, false)
 	_ = batch.Queue(inningsQuery, inningsArgs...)
 
+	// update FoW entry
+	if input.Player1DismissedId.Valid && models.IsTeamDismissal(input.Player1DismissalType.String) {
+		query, args := getDeliveryFallofWktTriggerBatch(input, false)
+		_ = batch.Queue(query, args...)
+	}
+
 	result := db.SendBatch(ctx, &batch)
 	return result.Close()
 }
@@ -96,6 +102,12 @@ func UpdateDeliveryWithScoringData(ctx context.Context, db DB_Exec, newInput *mo
 	inningsQuery, inningsArgs := getDeliveryInningsTriggerBatch(&existingInput, true)
 	_ = batch.Queue(inningsQuery, inningsArgs...)
 
+	// undo FoW entry
+	if existingInput.Player1DismissedId.Valid && models.IsTeamDismissal(existingInput.Player1DismissalType.String) {
+		query, args := getDeliveryFallofWktTriggerBatch(&existingInput, true)
+		_ = batch.Queue(query, args...)
+	}
+
 	// update delivery
 	batch.Queue(`
 		UPDATE deliveries SET
@@ -125,6 +137,12 @@ func UpdateDeliveryWithScoringData(ctx context.Context, db DB_Exec, newInput *mo
 	// update innings entry
 	inningsQuery1, inningsArgs1 := getDeliveryInningsTriggerBatch(newInput, false)
 	_ = batch.Queue(inningsQuery1, inningsArgs1...)
+
+	// update FoW entry
+	if newInput.Player1DismissedId.Valid && models.IsTeamDismissal(newInput.Player1DismissalType.String) {
+		query, args := getDeliveryFallofWktTriggerBatch(newInput, false)
+		_ = batch.Queue(query, args...)
+	}
 
 	result := db.SendBatch(ctx, &batch)
 
@@ -176,7 +194,7 @@ func ReadDeliveriesByMatchInnings(ctx context.Context, db DB_Exec, match_id int6
 	query := fmt.Sprintf(`
 		WITH innings_commentary AS (
 			SELECT
-				deliveries.innings_delivery_number, deliveries.ball_number, deliveries.over_number,
+				deliveries.innings_id, deliveries.innings_delivery_number, deliveries.ball_number, deliveries.over_number,
 		
 				deliveries.batter_id, batter.name, deliveries.bowler_id, bowler.name, deliveries.fielder1_id, fielder1.name, deliveries.fielder2_Id, fielder2.name,
 	
@@ -391,6 +409,30 @@ func getDeliveryInningsTriggerBatch(input *models.DeliveryScoringInput, undoFlag
 	`, sign, sign, sign, sign, sign, sign, sign, sign)
 
 	args := []any{input.TotalRuns, bowlerBallInc, teamWicketInc, input.Byes, input.Legbyes, input.Wides, input.Noballs, input.Penalty, input.NewStrikerId, input.NonStrikerId, input.NewBowler1Id, input.NewBowler2Id, input.InningsId}
+
+	return query, args
+}
+
+func getDeliveryFallofWktTriggerBatch(input *models.DeliveryScoringInput, undoFlag bool) (string, []any) {
+	var (
+		query string
+		args  []any
+	)
+
+	if undoFlag {
+		query = "DELETE FROM fall_of_wickets WHERE innings_id = $1 AND batter_id = $2"
+		args = []any{input.InningsId, input.Player1DismissedId}
+	} else {
+		query = `
+			WITH current_innings AS (
+				SELECT total_runs, total_wickets
+				FROM innings
+				WHERE innings.id = $1			
+			)
+			INSERT INTO fall_of_wickets (innings_id, batter_id, team_runs, wicket_number) SELECT $1, $2, current_innings.total_runs, current_innings.total_wickets`
+
+		args = []any{input.InningsId, input.Player1DismissedId}
+	}
 
 	return query, args
 }

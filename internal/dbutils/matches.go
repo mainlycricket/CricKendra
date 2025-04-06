@@ -421,7 +421,7 @@ var matchInfoQuery = struct {
 				ARRAY_AGG (
 					-- order is necessary for struct scanning
 					ROW (
-						innings.innings_number, innings.batting_team_id, batting_team.name,
+						innings.id, innings.innings_number, innings.batting_team_id, batting_team.name,
 						
 						innings.total_runs, innings.total_balls, innings.total_wickets, innings.innings_end, innings.target_runs, innings.max_overs
 					)
@@ -556,7 +556,7 @@ func ReadMatchSummary(ctx context.Context, db DB_Exec, matchId int64) (responses
 				SELECT
 					bs.innings_id, bs.batter_id, batter.name AS batter_name,
 					
-					bs.runs_scored, bs.balls_faced,
+					bs.runs_scored, bs.balls_faced, bs.fours_scored, bs.sixes_scored,
 
 					ROW_NUMBER() OVER (
 						PARTITION BY
@@ -570,7 +570,7 @@ func ReadMatchSummary(ctx context.Context, db DB_Exec, matchId int64) (responses
 								END
 							) DESC,
 							bs.runs_scored DESC, bs.balls_faced ASC,
-							bs.dismissal_type IS NULL, bs.batting_position ASC
+							bs.dismissal_type IS NULL, bs.sixes_scored, bs.fours_scored, bs.batting_position ASC
 					) AS rn
 				FROM
 					batting_scorecards bs
@@ -588,7 +588,9 @@ func ReadMatchSummary(ctx context.Context, db DB_Exec, matchId int64) (responses
 						ROW (
 							top_batters.batter_id, top_batters.batter_name,
 							
-							top_batters.runs_scored, top_batters.balls_faced
+							top_batters.runs_scored, top_batters.balls_faced,
+
+							top_batters.fours_scored, top_batters.sixes_scored
 						)
 					) AS batters
 				FROM
@@ -603,6 +605,7 @@ func ReadMatchSummary(ctx context.Context, db DB_Exec, matchId int64) (responses
 					bs.innings_id, bs.bowler_id, bowler.name AS bowler_name,
 
 					bs.balls_bowled / matches.balls_per_over + bs.balls_bowled %% matches.balls_per_over * 0.1 AS overs_bowled,
+					bs.maiden_overs,
 					bs.runs_conceded, bs.wickets_taken,
 
 					ROW_NUMBER() OVER (
@@ -617,7 +620,7 @@ func ReadMatchSummary(ctx context.Context, db DB_Exec, matchId int64) (responses
 								END
 							) DESC,
 							bs.wickets_taken DESC, bs.runs_conceded ASC,
-							bs.balls_bowled / matches.balls_per_over + bs.balls_bowled %% matches.balls_per_over * 0.1 DESC, bs.bowling_position ASC
+							bs.balls_bowled / matches.balls_per_over + bs.balls_bowled %% matches.balls_per_over * 0.1 DESC, bs.maiden_overs, bs.bowling_position ASC
 					) AS rn
 				FROM
 					bowling_scorecards bs
@@ -639,7 +642,7 @@ func ReadMatchSummary(ctx context.Context, db DB_Exec, matchId int64) (responses
 						ROW (
 							top_bowlers.bowler_id, top_bowlers.bowler_name,
 							
-							top_bowlers.overs_bowled, top_bowlers.wickets_taken, top_bowlers.runs_conceded
+							top_bowlers.overs_bowled, top_bowlers.maiden_overs, top_bowlers.wickets_taken, top_bowlers.runs_conceded
 						)
 					) AS bowlers
 				FROM
@@ -651,7 +654,7 @@ func ReadMatchSummary(ctx context.Context, db DB_Exec, matchId int64) (responses
 			),
 			scorecard_summary AS (
 				SELECT
-					innings.innings_number, innings.batting_team_id, batting_team.name,
+					innings.id, innings.innings_number, innings.batting_team_id, batting_team.name,
 					
 					innings.total_runs, innings.total_wickets, innings.total_balls,
 					
@@ -667,13 +670,13 @@ func ReadMatchSummary(ctx context.Context, db DB_Exec, matchId int64) (responses
 					AND innings.innings_number IS NOT NULL
 					AND innings.is_super_over = FALSE
 				GROUP BY
-					innings.innings_number, innings.batting_team_id, batting_team.name,
+					innings.id, innings.innings_number, innings.batting_team_id, batting_team.name,
 					
 					innings.total_runs, innings.total_wickets, innings.total_balls
 			),
 			latest_commentary AS (
 				SELECT
-					deliveries.innings_delivery_number, deliveries.ball_number, deliveries.over_number,
+					deliveries.innings_id, deliveries.innings_delivery_number, deliveries.ball_number, deliveries.over_number,
 
 					deliveries.batter_id, batter.name, deliveries.bowler_id, bowler.name, deliveries.fielder1_id, fielder1.name, deliveries.fielder2_Id, fielder2.name,
 					
@@ -765,7 +768,7 @@ func ReadMatchFullScorecard(ctx context.Context, db DB_Exec, matchId int64) (res
 					ARRAY_AGG (
 						-- order is necessary for struct scanning
 						ROW (
-							innings.innings_number, innings.batting_team_id, batting_team.name,
+							innings.id, innings.innings_number, innings.batting_team_id, batting_team.name,
 
 							innings.total_runs, innings.total_balls, innings.total_wickets, innings.byes, innings.leg_byes, innings.wides, innings.noballs, innings.penalty,
 
@@ -815,6 +818,26 @@ func ReadMatchFullScorecard(ctx context.Context, db DB_Exec, matchId int64) (res
 								WHERE
 									bs.innings_id = innings.id AND
 									bs.bowling_position IS NOT NULL
+							),
+
+							(
+								SELECT
+									ARRAY_AGG (
+										-- order is necessary for struct scanning
+										ROW (
+											fow.batter_id, batter.name,
+											deliveries.ball_number, fow.team_runs, fow.wicket_number
+										)
+									)
+								FROM
+									fall_of_wickets fow
+
+									LEFT JOIN deliveries ON fow.innings_id = deliveries.innings_id AND fow.batter_id IN (deliveries.player1_dismissed_id, deliveries.player2_dismissed_id)
+									LEFT JOIN players batter ON fow.batter_id = batter.id
+
+								WHERE
+									fow.innings_id = innings.id
+							
 							)
 						)
 					)
@@ -931,7 +954,7 @@ func ReadMatchByCricsheetId(ctx context.Context, db DB_Exec, cricsheetId string)
 	 
 		ARRAY[mse.series_id], 
 		
-		main_series_id, ground_id, is_neutral_venue, current_status, final_result, home_team_id, away_team_id, match_type, playing_level, playing_format, season, is_day_night, outcome_special_method, toss_winner_team_id, toss_loser_team_id, is_toss_decision_bat, match_winner_team_id, match_loser_team_id, bowl_out_winner_id, super_over_winner_id, is_won_by_innings, is_won_by_runs, win_margin, balls_remaining_after_win, balls_per_over, is_bbb_done, match_state, match_state, description 
+		main_series_id, ground_id, is_neutral_venue, current_status, final_result, home_team_id, away_team_id, match_type, playing_level, playing_format, season, is_day_night, outcome_special_method, toss_winner_team_id, toss_loser_team_id, is_toss_decision_bat, match_winner_team_id, match_loser_team_id, bowl_out_winner_id, super_over_winner_id, is_won_by_innings, is_won_by_runs, win_margin, balls_remaining_after_win, balls_per_over, is_bbb_done, match_state, match_state_description 
 		
 		FROM matches 
 		LEFT JOIN match_series_entries mse ON mse.match_id = matches.id
@@ -943,6 +966,20 @@ func ReadMatchByCricsheetId(ctx context.Context, db DB_Exec, cricsheetId string)
 	err := row.Scan(&match.Id, &match.CricsheetId, &match.EventMatchNumber, &match.StartDate, &match.StartDateTimeUtc, &match.EndDate, &match.Team1Id, &match.Team2Id, &match.IsMale, &match.SeriesListId, &match.MainSeriesId, &match.GroundId, &match.IsNeutralVenue, &match.CurrentStatus, &match.FinalResult, &match.HomeTeamId, &match.AwayTeamId, &match.MatchType, &match.PlayingLevel, &match.PlayingFormat, &match.Season, &match.IsDayNight, &match.OutcomeSpecialMethod, &match.TossWinnerId, &match.TossLoserId, &match.IsTossDecisionBat, &match.MatchWinnerId, &match.MatchLoserId, &match.BowlOutWinnerId, &match.SuperOverWinnerId, &match.IsWonByInnings, &match.IsWonByRuns, &match.WinMargin, &match.BallsMargin, &match.BallsPerOver, &match.IsBBBDone, &match.MatchState, &match.MatchStateDescription)
 
 	return match, err
+}
+
+func SetMatchBBBDone(ctx context.Context, db DB_Exec, matchId int64) error {
+	query := `UPDATE matches SET is_bbb_done = true WHERE id = $1`
+	cmd, err := db.Exec(ctx, query, matchId)
+	if err != nil {
+		return err
+	}
+
+	if cmd.RowsAffected() < 1 {
+		return errors.New("failed to set is_bbb_done")
+	}
+
+	return nil
 }
 
 func ReadMatchesBySeriesId(ctx context.Context, db DB_Exec, seriesId int64) ([]responses.MatchInfo, error) {

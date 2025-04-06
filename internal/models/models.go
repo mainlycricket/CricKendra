@@ -306,6 +306,13 @@ type Delivery struct {
 	UpdatedAt             pgtype.Timestamptz `json:"updated_at"`
 }
 
+type FallOfWicket struct {
+	InningsId    pgtype.Int8 `json:"innings_id"`
+	BatterId     pgtype.Int8 `json:"batter_id"`
+	TeamRuns     pgtype.Int8 `json:"team_runs"`
+	WicketNumber pgtype.Int8 `json:"wicket_number"`
+}
+
 type BlogArticles struct {
 	Id             pgtype.Int8        `json:"id"`
 	Title          pgtype.Text        `json:"title"`

@@ -2,6 +2,7 @@ package dbutils
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"net/url"
 
@@ -56,6 +57,21 @@ func UpsertSeriesTeamEntries(ctx context.Context, db DB_Exec, seriesId pgtype.In
 
 	batchResults := db.SendBatch(ctx, batch)
 	return batchResults.Close()
+}
+
+func UpdateSeriesFinalResult(ctx context.Context, db DB_Exec, input *models.SeriesFinalResult) error {
+	query := `UPDATE series SET winner_team_id = $1, final_status = $2 WHERE id = $3`
+
+	cmd, err := db.Exec(ctx, query, input.WinnerTeamId, input.FinalStatus, input.SeriesId)
+	if err != nil {
+		return err
+	}
+
+	if cmd.RowsAffected() != 1 {
+		return errors.New("failed to update series final result")
+	}
+
+	return nil
 }
 
 func ReadSeries(ctx context.Context, db DB_Exec, queryMap url.Values) (responses.AllSeriesResponse, error) {

@@ -17,6 +17,7 @@ func seriesRouter() *chi.Mux {
 
 	// auth by controller
 	r.Post("/", createSeries)
+	r.Patch("/{seriesId}/final-result", updateSeriesFinalResult)
 	r.Post("/{seriesId}/squads", createSeriesSquad)
 	r.Post("/{seriesId}/squads/{squadId}/upsert-entries", upsertSeriesSquadEntries)
 
@@ -117,6 +118,37 @@ func upsertSeriesSquadEntries(w http.ResponseWriter, r *http.Request) {
 	}
 
 	responses.WriteJsonResponse(w, responses.ApiResponse{Success: true, Message: "series squad entries upserted successfully", Data: nil}, http.StatusCreated)
+}
+
+func updateSeriesFinalResult(w http.ResponseWriter, r *http.Request) {
+	_, err := utils.AuthorizeRequest(r, []string{SYSTEM_ADMIN_ROLE})
+	if err != nil {
+		responses.WriteJsonResponse(w, responses.ApiResponse{Success: false, Message: "unauthorized request", Data: err}, http.StatusUnauthorized)
+		return
+	}
+
+	rawSeriesId := r.PathValue("seriesId")
+	parsedSeriesId, err := strconv.ParseInt(rawSeriesId, 10, 64)
+	if err != nil {
+		responses.WriteJsonResponse(w, responses.ApiResponse{Success: false, Message: "invalid series id", Data: err}, http.StatusBadRequest)
+		return
+	}
+
+	var input models.SeriesFinalResult
+
+	if err := json.NewDecoder(r.Body).Decode(&input); err != nil {
+		responses.WriteJsonResponse(w, responses.ApiResponse{Success: false, Message: "error while decoding json", Data: err}, http.StatusBadRequest)
+		return
+	}
+
+	input.SeriesId.Int64, input.SeriesId.Valid = parsedSeriesId, true
+
+	if err := dbutils.UpdateSeriesFinalResult(r.Context(), DB_POOL, &input); err != nil {
+		responses.WriteJsonResponse(w, responses.ApiResponse{Success: false, Message: "error while upserting series final result", Data: err}, http.StatusBadRequest)
+		return
+	}
+
+	responses.WriteJsonResponse(w, responses.ApiResponse{Success: true, Message: "series final result updated successfully", Data: nil}, http.StatusOK)
 }
 
 func getSeries(w http.ResponseWriter, r *http.Request) {

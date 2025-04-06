@@ -25,6 +25,7 @@ type teamInnings struct {
 	bowlingTeam             *teamInfo
 	battingScorecardEntries battingScorecardEntries
 	bowlingScorecardEntries bowlingScorecardEntries
+	fallOfWickets           []models.FallOfWicket
 	currentDelivery         *models.Delivery
 	maidenOverData          struct {
 		bowlerId    string
@@ -172,13 +173,8 @@ func insertBBB(filePath string, matchInfo *matchInfo, channel chan<- error) {
 		}
 	}
 
-	stateInput := models.MatchStateInput{
-		MatchId: matchInfo.match.Id,
-		State:   pgtype.Text{String: "completed", Valid: true},
-	}
-
-	if err = dbutils.UpdateMatchStateById(context.Background(), tx, &stateInput); err != nil {
-		mainError = fmt.Errorf(`error while updating match state: %v`, err)
+	if err = dbutils.SetMatchBBBDone(context.Background(), tx, matchInfo.match.Id.Int64); err != nil {
+		mainError = fmt.Errorf(`error while setting bbb done: %v`, err)
 		return
 	}
 }
@@ -194,6 +190,10 @@ func (teamInnings *teamInnings) wrapInnings(tx pgx.Tx, isExtra bool) error {
 		if err := dbutils.InsertBowlingScorecardEntry(context.Background(), tx, &entry); err != nil {
 			return fmt.Errorf(`failed to insert bowling scorecard entry of player %d: %v`, bowlerId, err)
 		}
+	}
+
+	if err := dbutils.InsertFallOfWicketsEntries(context.Background(), tx, teamInnings.fallOfWickets); err != nil {
+		return fmt.Errorf(`failed to insert fall of wickets entries: %v`, err)
 	}
 
 	if !isExtra {
@@ -260,6 +260,7 @@ func (teamInnings *teamInnings) initializeBatting() error {
 	}
 
 	teamInnings.battingScorecardEntries = make(battingScorecardEntries, 11)
+	teamInnings.fallOfWickets = make([]models.FallOfWicket, 0, 11)
 
 	for _, batterId := range battersId {
 		teamInnings.battingScorecardEntries[batterId] = models.BattingScorecard{
@@ -369,6 +370,15 @@ func (teamInnings *teamInnings) addDismissalEntry(delivery *models.Delivery, isF
 
 	if models.IsTeamDismissal(dismissalType) {
 		teamInnings.innings.TotalWkts.Int64++
+
+		fowEntry := models.FallOfWicket{
+			InningsId:    teamInnings.innings.Id,
+			BatterId:     pgtype.Int8{Int64: batterId, Valid: true},
+			TeamRuns:     teamInnings.innings.TotalRuns,
+			WicketNumber: teamInnings.innings.TotalWkts,
+		}
+
+		teamInnings.fallOfWickets = append(teamInnings.fallOfWickets, fowEntry)
 	}
 }
 
