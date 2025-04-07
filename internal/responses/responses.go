@@ -274,9 +274,19 @@ type MatchInfo struct {
 	EventMatchNumber      pgtype.Int8 `json:"event_match_number"`
 	MatchState            pgtype.Text `json:"match_state"`
 	MatchStateDescription pgtype.Text `json:"match_state_description"`
-	// Day 1, 2, etc - Test / FC
-	// Stumps, Innings Break, Tea/Lunch/Dinner, Stopped
-	// Need 50 runs , won by 5 wkts , trail/lead by 8 runs , won the toss and chose to bat, match starts in
+
+	MatchWinnerId        pgtype.Int8 `json:"match_winner_team_id"`
+	MatchLoserId         pgtype.Int8 `json:"match_loser_team_id"`
+	IsWonByInnings       pgtype.Bool `json:"is_won_by_innings"`
+	IsWonByRuns          pgtype.Bool `json:"is_won_by_runs"`
+	WinMargin            pgtype.Int8 `json:"win_margin"`                // runs or wickets
+	BallsMargin          pgtype.Int8 `json:"balls_remaining_after_win"` // successful chases
+	SuperOverWinnerId    pgtype.Int8 `json:"super_over_winner_id"`
+	BowlOutWinnerId      pgtype.Int8 `json:"bowl_out_winner_id"`
+	OutcomeSpecialMethod pgtype.Text `json:"outcome_special_method"`
+	TossWinnerId         pgtype.Int8 `json:"toss_winner_team_id"`
+	TossLoserId          pgtype.Int8 `json:"toss_loser_team_id"`
+	IsTossDecisionBat    pgtype.Bool `json:"is_toss_decision_bat"`
 
 	Season           pgtype.Text        `json:"season"`
 	StartDate        pgtype.Date        `json:"start_date"`

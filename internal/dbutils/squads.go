@@ -47,10 +47,12 @@ func ReadSquadByMatchId(ctx context.Context, db DB_Exec, matchId int64) (respons
 
 		SELECT
 			%s,
-			ARRAY_AGG(match_squads.*) AS squads
+			(
+				SELECT ARRAY_AGG(match_squads.*)
+				FROM match_squads
+			)
 		FROM matches
 		%s
-		LEFT JOIN match_squads ON match_squads.team_id = innings.batting_team_id
 		WHERE matches.id = $1
 		GROUP BY %s
 	`,
@@ -64,6 +66,10 @@ func ReadSquadByMatchId(ctx context.Context, db DB_Exec, matchId int64) (respons
 	err := row.Scan(
 		&matchHeader.MatchId, &matchHeader.PlayingLevel, &matchHeader.PlayingFormat, &matchHeader.MatchType, &matchHeader.EventMatchNumber,
 		&matchHeader.MatchState, &matchHeader.MatchStateDescription,
+
+		&matchHeader.MatchWinnerId, &matchHeader.MatchLoserId, &matchHeader.IsWonByInnings, &matchHeader.IsWonByRuns,
+		&matchHeader.WinMargin, &matchHeader.BallsMargin, &matchHeader.SuperOverWinnerId, &matchHeader.BowlOutWinnerId, &matchHeader.OutcomeSpecialMethod, &matchHeader.TossWinnerId, &matchHeader.TossLoserId, &matchHeader.IsTossDecisionBat,
+
 		&matchHeader.Season, &matchHeader.StartDate, &matchHeader.EndDate, &matchHeader.StartDateTimeUtc, &matchHeader.IsDayNight, &matchHeader.GroundId, &matchHeader.GroundName, &matchHeader.MainSeriesId, &matchHeader.MainSeriesName,
 
 		&matchHeader.Team1Id, &matchHeader.Team1Name, &matchHeader.Team1ImageUrl, &matchHeader.Team2Id, &matchHeader.Team2Name, &matchHeader.Team2ImageUrl,

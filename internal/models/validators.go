@@ -29,3 +29,25 @@ func (in *MatchStateInput) Validate(ctx context.Context, db *pgxpool.Pool) error
 
 	return nil
 }
+
+func (in *DeliveryPlayer2DismissedInput) Validate(ctx context.Context, db *pgxpool.Pool) error {
+	if in.Player2DismissedId.Valid {
+		if !IsValidDismissal2(in.Player2DismissalType.String) {
+			return errors.New("invalid dismissal 2 type")
+		}
+
+		var player1DismissedId pgtype.Int8
+		query := `SELECT player1_dismissed_id FROM deliveries WHERE innings_id = $1 AND innings_delivery_number = $2`
+
+		err := db.QueryRow(ctx, query, in.InningsId, in.InningsDeliveryNumber).Scan(&player1DismissedId)
+		if err != nil {
+			return err
+		}
+
+		if !player1DismissedId.Valid {
+			return errors.New("no player1 wicket found for this delivery")
+		}
+	}
+
+	return nil
+}

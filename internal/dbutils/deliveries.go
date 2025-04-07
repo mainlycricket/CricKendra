@@ -60,6 +60,7 @@ func InsertDeliveryWithScoringData(ctx context.Context, db DB_Exec, input *model
 	return result.Close()
 }
 
+// will also undo previous batter & bowler scorecard entries, innings scores and then reapply new input
 func UpdateDeliveryWithScoringData(ctx context.Context, db DB_Exec, newInput *models.DeliveryScoringInput) error {
 	existingInput := models.DeliveryScoringInput{
 		InningsId:             newInput.InningsId,
@@ -147,6 +148,76 @@ func UpdateDeliveryWithScoringData(ctx context.Context, db DB_Exec, newInput *mo
 	result := db.SendBatch(ctx, &batch)
 
 	return result.Close()
+}
+
+func UpdateDeliveryPlayer2Dimissal(ctx context.Context, db DB_Exec, newInput *models.DeliveryPlayer2DismissedInput) error {
+	existingInput := models.DeliveryPlayer2DismissedInput{
+		InningsId:             newInput.InningsId,
+		InningsDeliveryNumber: newInput.InningsDeliveryNumber,
+	}
+
+	query := `
+		SELECT player2_dismissed_id, player2_dismissal_type
+		FROM deliveries
+		WHERE innings_id = $1 AND innings_delivery_number = $2`
+
+	err := db.QueryRow(ctx, query, existingInput.InningsId, existingInput.InningsDeliveryNumber).Scan(&existingInput.Player2DismissedId, &existingInput.Player2DismissalType)
+	if err != nil {
+		return err
+	}
+
+	batch := pgx.Batch{}
+
+	query = `
+		UPDATE deliveries SET
+			player2_dismissed_id = $1, player2_dismissal_type = $2
+		WHERE innings_id = $3 AND innings_delivery_number = $4
+	`
+
+	_ = batch.Queue(query, newInput.Player2DismissedId, newInput.Player2DismissalType, newInput.InningsId, newInput.InningsDeliveryNumber)
+
+	if existingInput.Player2DismissedId.Valid {
+		query = `UPDATE batting_scorecards SET
+					dismissal_type = NULL, dismissal_ball_number = NULL
+				WHERE innings_id = $1 AND batter_id = $2`
+
+		_ = batch.Queue(query, existingInput.InningsId, existingInput.Player2DismissedId)
+
+		if models.IsTeamDismissal(existingInput.Player2DismissalType.String) {
+			query = `DELETE FROM fall_of_wickets WHERE innings_id = $1 AND batter_id = $2`
+			_ = batch.Queue(query, existingInput.InningsId, existingInput.Player2DismissedId)
+
+			query = `UPDATE innings SET total_wickets = total_wickets - 1 WHERE id = $1`
+			_ = batch.Queue(query, newInput.InningsId)
+		}
+	}
+
+	if newInput.Player2DismissedId.Valid {
+		query = `UPDATE batting_scorecards SET
+					dismissal_type = $1, dismissal_ball_number = $2
+				WHERE innings_id = $3 AND batter_id = $4`
+
+		_ = batch.Queue(query, newInput.Player2DismissalType, newInput.InningsDeliveryNumber, newInput.InningsId, newInput.Player2DismissedId)
+
+		if models.IsTeamDismissal(newInput.Player2DismissalType.String) {
+			query = `UPDATE innings SET total_wickets = total_wickets + 1 WHERE id = $1`
+			_ = batch.Queue(query, newInput.InningsId)
+
+			query = `
+					WITH current_innings AS (
+						SELECT total_runs, total_wickets
+						FROM innings
+						WHERE innings.id = $1			
+					)
+					INSERT INTO fall_of_wickets (innings_id, batter_id, team_runs, wicket_number)
+					SELECT $1, $2, current_innings.total_runs, current_innings.total_wickets
+					FROM current_innings`
+
+			_ = batch.Queue(query, newInput.InningsId, newInput.Player2DismissedId)
+		}
+	}
+
+	return db.SendBatch(ctx, &batch).Close()
 }
 
 func UpdateDeliveryCommentary(ctx context.Context, db DB_Exec, input *models.DeliveryCommentaryInput) error {
@@ -251,6 +322,9 @@ func ReadDeliveriesByMatchInnings(ctx context.Context, db DB_Exec, match_id int6
 	err := rows.Scan(
 		&matchHeader.MatchId, &matchHeader.PlayingLevel, &matchHeader.PlayingFormat, &matchHeader.MatchType, &matchHeader.EventMatchNumber,
 		&matchHeader.MatchState, &matchHeader.MatchStateDescription,
+
+		&matchHeader.MatchWinnerId, &matchHeader.MatchLoserId, &matchHeader.IsWonByInnings, &matchHeader.IsWonByRuns,
+		&matchHeader.WinMargin, &matchHeader.BallsMargin, &matchHeader.SuperOverWinnerId, &matchHeader.BowlOutWinnerId, &matchHeader.OutcomeSpecialMethod, &matchHeader.TossWinnerId, &matchHeader.TossLoserId, &matchHeader.IsTossDecisionBat,
 
 		&matchHeader.Season, &matchHeader.StartDate, &matchHeader.EndDate, &matchHeader.StartDateTimeUtc, &matchHeader.IsDayNight, &matchHeader.GroundId, &matchHeader.GroundName, &matchHeader.MainSeriesId, &matchHeader.MainSeriesName,
 
@@ -429,7 +503,10 @@ func getDeliveryFallofWktTriggerBatch(input *models.DeliveryScoringInput, undoFl
 				FROM innings
 				WHERE innings.id = $1			
 			)
-			INSERT INTO fall_of_wickets (innings_id, batter_id, team_runs, wicket_number) SELECT $1, $2, current_innings.total_runs, current_innings.total_wickets`
+			INSERT INTO fall_of_wickets (innings_id, batter_id, team_runs, wicket_number)
+			SELECT $1, $2, current_innings.total_runs, current_innings.total_wickets
+			FROM current_innings
+		`
 
 		args = []any{input.InningsId, input.Player1DismissedId}
 	}

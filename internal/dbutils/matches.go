@@ -408,9 +408,11 @@ var matchInfoQuery = struct {
 	selectFields: `
 		matches.id, matches.playing_level, matches.playing_format, matches.match_type, matches.event_match_number,
 		matches.match_state, matches.match_state_description,
-		-- Day 1, 2, etc - Test / FC
-		-- Stumps, Innings Break, Tea/Lunch/Dinner, Stopped
-		-- Need 50 runs, won by 5 wkts, trail/lead by 8 runs, won the toss and chose to bat, match starts in
+		
+		matches.match_winner_team_id, matches.match_loser_team_id, matches.is_won_by_innings,
+		matches.is_won_by_runs, matches.win_margin, matches.balls_remaining_after_win,
+		matches.super_over_winner_id, matches.bowl_out_winner_id, matches.outcome_special_method,
+		matches.toss_winner_team_id, matches.toss_loser_team_id, matches.is_toss_decision_bat,
 		
 		matches.season, matches.start_date, matches.end_date, matches.start_datetime_utc, matches.is_day_night, matches.ground_id, grounds.name, matches.main_series_id, main_series.name,
 
@@ -524,6 +526,9 @@ func ReadMatches(ctx context.Context, db DB_Exec, queryMap url.Values) (response
 			&match.MatchId, &match.PlayingLevel, &match.PlayingFormat, &match.MatchType, &match.EventMatchNumber,
 
 			&match.MatchState, &match.MatchStateDescription,
+
+			&match.MatchWinnerId, &match.MatchLoserId, &match.IsWonByInnings, &match.IsWonByRuns,
+			&match.WinMargin, &match.BallsMargin, &match.SuperOverWinnerId, &match.BowlOutWinnerId, &match.OutcomeSpecialMethod, &match.TossWinnerId, &match.TossLoserId, &match.IsTossDecisionBat,
 
 			&match.Season, &match.StartDate, &match.EndDate, &match.StartDateTimeUtc, &match.IsDayNight, &match.GroundId, &match.GroundName, &match.MainSeriesId, &match.MainSeriesName,
 
@@ -742,6 +747,9 @@ func ReadMatchSummary(ctx context.Context, db DB_Exec, matchId int64) (responses
 
 		&matchHeader.MatchState, &matchHeader.MatchStateDescription,
 
+		&matchHeader.MatchWinnerId, &matchHeader.MatchLoserId, &matchHeader.IsWonByInnings, &matchHeader.IsWonByRuns,
+		&matchHeader.WinMargin, &matchHeader.BallsMargin, &matchHeader.SuperOverWinnerId, &matchHeader.BowlOutWinnerId, &matchHeader.OutcomeSpecialMethod, &matchHeader.TossWinnerId, &matchHeader.TossLoserId, &matchHeader.IsTossDecisionBat,
+
 		&matchHeader.Season, &matchHeader.StartDate, &matchHeader.EndDate, &matchHeader.StartDateTimeUtc, &matchHeader.IsDayNight, &matchHeader.GroundId, &matchHeader.GroundName, &matchHeader.MainSeriesId, &matchHeader.MainSeriesName,
 
 		&matchHeader.Team1Id, &matchHeader.Team1Name, &matchHeader.Team1ImageUrl, &matchHeader.Team2Id, &matchHeader.Team2Name, &matchHeader.Team2ImageUrl,
@@ -859,6 +867,9 @@ func ReadMatchFullScorecard(ctx context.Context, db DB_Exec, matchId int64) (res
 		&matchHeader.MatchId, &matchHeader.PlayingLevel, &matchHeader.PlayingFormat, &matchHeader.MatchType, &matchHeader.EventMatchNumber,
 
 		&matchHeader.MatchState, &matchHeader.MatchStateDescription,
+
+		&matchHeader.MatchWinnerId, &matchHeader.MatchLoserId, &matchHeader.IsWonByInnings, &matchHeader.IsWonByRuns,
+		&matchHeader.WinMargin, &matchHeader.BallsMargin, &matchHeader.SuperOverWinnerId, &matchHeader.BowlOutWinnerId, &matchHeader.OutcomeSpecialMethod, &matchHeader.TossWinnerId, &matchHeader.TossLoserId, &matchHeader.IsTossDecisionBat,
 
 		&matchHeader.Season, &matchHeader.StartDate, &matchHeader.EndDate, &matchHeader.StartDateTimeUtc, &matchHeader.IsDayNight, &matchHeader.GroundId, &matchHeader.GroundName, &matchHeader.MainSeriesId, &matchHeader.MainSeriesName,
 
@@ -980,85 +991,4 @@ func SetMatchBBBDone(ctx context.Context, db DB_Exec, matchId int64) error {
 	}
 
 	return nil
-}
-
-func ReadMatchesBySeriesId(ctx context.Context, db DB_Exec, seriesId int64) ([]responses.MatchInfo, error) {
-	query := `
-		SELECT
-			matches.id, matches.playing_level, matches.playing_format, matches.match_type, matches.event_match_number,
-			
-			-- Day 1, 2, etc - Test / FC
-			-- Stumps, Innings Break, Tea/Lunch/Dinner, Stopped
-			-- Need 50 runs, won by 5 wkts, trail/lead by 8 runs, won the toss and chose to bat, match starts in
-
-			matches.season, matches.start_date, matches.end_date, matches.start_daetime_utc, matches.is_day_night, matches.ground_id, grounds.name, matches.main_series_id, main_series.name,
-
-			matches.team1_id, team1.name, team1.image_url,
-			matches.team2_id, team2.name, team2.image_url,
-			
-			(
-				SELECT
-					ARRAY_AGG (
-						-- order is necessary for struct scanning
-						ROW (
-							innings.innings_number, innings.batting_team_id, batting_team.name,
-							
-							innings.total_runs, innings.total_balls, innings.total_wickets, innings.innings_end, innings.target_runs, innings.max_overs
-						)
-					)
-			) AS team_innings_short_info
-
-		FROM matches
-		
-		LEFT JOIN innings ON innings.match_id = matches.id
-			AND innings.innings_number IS NOT NULL
-			AND innings.is_super_over = FALSE
-
-		LEFT JOIN teams batting_team ON innings.batting_team_id = batting_team.id
-
-		LEFT JOIN match_series_entries mse ON mse.match_id = matches.id
-
-		LEFT JOIN series ON mse.series_id = series.id
-		LEFT JOIN series main_series ON matches.main_series_id = main_series.id
-
-		LEFT JOIN teams team1 ON matches.team1_id = team1.id
-		LEFT JOIN teams team2 ON matches.team2_id = team2.id
-
-		LEFT JOIN grounds ON matches.ground_id = grounds.id
-		
-		WHERE series.id = $1
-
-		GROUP BY
-			matches.id, grounds.name,
-			team1.id, team2.name, team1.image_url,
-			team2.id, team2.name, team2.image_url,
-			main_series.id, main_series.name
-
-		ORDER BY matches.start_date ASC
-	`
-
-	rows, err := db.Query(ctx, query, seriesId)
-	if err != nil {
-		return nil, err
-	}
-
-	matches, err := pgx.CollectRows(rows, func(row pgx.CollectableRow) (responses.MatchInfo, error) {
-		var match responses.MatchInfo
-
-		err := rows.Scan(
-			&match.MatchId, &match.PlayingLevel, &match.PlayingFormat, &match.MatchType, &match.EventMatchNumber,
-
-			&match.MatchState, &match.MatchStateDescription,
-
-			&match.Season, &match.StartDate, &match.EndDate, &match.StartDateTimeUtc, &match.IsDayNight, &match.GroundId, &match.GroundName, &match.MainSeriesId, &match.MainSeriesName,
-
-			&match.Team1Id, &match.Team1Name, &match.Team1ImageUrl, &match.Team2Id, &match.Team2Name, &match.Team2ImageUrl,
-
-			&match.InningsScores,
-		)
-
-		return match, err
-	})
-
-	return matches, err
 }

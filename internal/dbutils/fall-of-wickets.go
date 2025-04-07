@@ -8,7 +8,7 @@ import (
 )
 
 func InsertFallOfWicketsEntries(ctx context.Context, db DB_Exec, entries []models.FallOfWicket) error {
-	query := `INSERT INTO fall_of_wickets (innings_id, batter_id, team_runs, wicket_number) VALUES($1, $2, $3, $4, $5)`
+	query := `INSERT INTO fall_of_wickets (innings_id, batter_id, team_runs, wicket_number) VALUES($1, $2, $3, $4)`
 
 	batch := pgx.Batch{}
 

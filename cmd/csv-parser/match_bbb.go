@@ -260,7 +260,7 @@ func (teamInnings *teamInnings) initializeBatting() error {
 	}
 
 	teamInnings.battingScorecardEntries = make(battingScorecardEntries, 11)
-	teamInnings.fallOfWickets = make([]models.FallOfWicket, 0, 11)
+	teamInnings.fallOfWickets = make([]models.FallOfWicket, 0, 10)
 
 	for _, batterId := range battersId {
 		teamInnings.battingScorecardEntries[batterId] = models.BattingScorecard{

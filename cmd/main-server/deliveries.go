@@ -21,6 +21,7 @@ func deliveriesRouter() *chi.Mux {
 
 	r.Post("/scoring", createDeliveryWithScoringInput)
 	r.Patch("/{inningsDeliveryNumber}/scoring", updateDeliveryWithScoringInput)
+	r.Patch("/{inningsDeliveryNumber}/player2-dismissal", updateDeliveryPlayer2Dimissal)
 	r.Patch("/{inningsDeliveryNumber}/commentary", updateDeliveryCommentary)
 	r.Patch("/{inningsDeliveryNumber}/advance-info", updateDeliveryAdvanceInfo)
 
@@ -98,6 +99,44 @@ func updateDeliveryWithScoringInput(w http.ResponseWriter, r *http.Request) {
 	}
 
 	responses.WriteJsonResponse(w, responses.ApiResponse{Success: true, Message: "delivery with scoring input updated successfully", Data: nil}, http.StatusOK)
+}
+
+func updateDeliveryPlayer2Dimissal(w http.ResponseWriter, r *http.Request) {
+	rawInningsId, rawDeliveryNumber := r.PathValue("inningsId"), r.PathValue("inningsDeliveryNumber")
+
+	parsedInningsId, err := strconv.ParseInt(rawInningsId, 10, 64)
+	if err != nil {
+		responses.WriteJsonResponse(w, responses.ApiResponse{Success: false, Message: "invalid innings id", Data: err}, http.StatusBadRequest)
+		return
+	}
+
+	parsedDeliveryNumber, err := strconv.ParseInt(rawDeliveryNumber, 10, 64)
+	if err != nil {
+		responses.WriteJsonResponse(w, responses.ApiResponse{Success: false, Message: "invalid innings delivery number", Data: err}, http.StatusBadRequest)
+		return
+	}
+
+	var input models.DeliveryPlayer2DismissedInput
+
+	if err := json.NewDecoder(r.Body).Decode(&input); err != nil {
+		responses.WriteJsonResponse(w, responses.ApiResponse{Success: false, Message: "error while decoding json", Data: err}, http.StatusBadRequest)
+		return
+	}
+
+	input.InningsId.Int64, input.InningsId.Valid = parsedInningsId, true
+	input.InningsDeliveryNumber.Int64, input.InningsDeliveryNumber.Valid = parsedDeliveryNumber, true
+
+	if err := input.Validate(r.Context(), DB_POOL); err != nil {
+		responses.WriteJsonResponse(w, responses.ApiResponse{Success: false, Message: "request validation failed", Data: err}, http.StatusBadRequest)
+		return
+	}
+
+	if err := dbutils.UpdateDeliveryPlayer2Dimissal(r.Context(), DB_POOL, &input); err != nil {
+		responses.WriteJsonResponse(w, responses.ApiResponse{Success: false, Message: "error while updating delivery player2 dismissal", Data: err}, http.StatusBadRequest)
+		return
+	}
+
+	responses.WriteJsonResponse(w, responses.ApiResponse{Success: true, Message: "delivery player2 dismissal successfully", Data: nil}, http.StatusOK)
 }
 
 func updateDeliveryCommentary(w http.ResponseWriter, r *http.Request) {
