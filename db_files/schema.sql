@@ -127,8 +127,7 @@ CREATE TYPE public.innings_end AS ENUM (
     'all_out',
     'declared',
     'target_reached',
-    'forfeited',
-    'incomplete'
+    'forfeited'
 );
 
 
@@ -148,6 +147,20 @@ CREATE TYPE public.match_final_result AS ENUM (
 
 
 ALTER TYPE public.match_final_result OWNER TO postgres;
+
+--
+-- Name: match_state_enum; Type: TYPE; Schema: public; Owner: postgres
+--
+
+CREATE TYPE public.match_state_enum AS ENUM (
+    'upcoming',
+    'live',
+    'break',
+    'completed'
+);
+
+
+ALTER TYPE public.match_state_enum OWNER TO postgres;
 
 --
 -- Name: match_type; Type: TYPE; Schema: public; Owner: postgres
@@ -641,7 +654,6 @@ CREATE TABLE public.deliveries (
     line text,
     length text,
     ball_type text,
-    ball_speed text,
     misc text,
     ww_region text,
     foot_type text,
@@ -652,11 +664,26 @@ CREATE TABLE public.deliveries (
     created_at timestamp with time zone,
     updated_at timestamp with time zone,
     total_extras integer,
-    innings_delivery_number integer NOT NULL
+    innings_delivery_number integer NOT NULL,
+    ball_speed double precision
 );
 
 
 ALTER TABLE public.deliveries OWNER TO postgres;
+
+--
+-- Name: fall_of_wickets; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public.fall_of_wickets (
+    innings_id integer NOT NULL,
+    batter_id integer NOT NULL,
+    team_runs integer NOT NULL,
+    wicket_number integer NOT NULL
+);
+
+
+ALTER TABLE public.fall_of_wickets OWNER TO postgres;
 
 --
 -- Name: grounds; Type: TABLE; Schema: public; Owner: postgres
@@ -749,7 +776,11 @@ CREATE TABLE public.innings (
     is_super_over boolean DEFAULT false,
     innings_end public.innings_end,
     target_runs integer,
-    max_overs double precision
+    max_overs double precision,
+    striker_id integer,
+    non_striker_id integer,
+    bowler1_id integer,
+    bowler2_id integer
 );
 
 
@@ -838,7 +869,6 @@ CREATE TABLE public.matches (
     balls_per_over integer DEFAULT 6,
     event_match_number integer,
     start_date date,
-    start_time time with time zone,
     bowl_out_winner_id integer,
     super_over_winner_id integer,
     is_won_by_innings boolean,
@@ -846,7 +876,10 @@ CREATE TABLE public.matches (
     cricsheet_id text,
     is_neutral_venue boolean,
     is_bbb_done boolean DEFAULT false,
-    end_date date
+    end_date date,
+    match_state public.match_state_enum DEFAULT 'upcoming'::public.match_state_enum,
+    match_state_description text,
+    start_datetime_utc timestamp with time zone
 );
 
 
@@ -1525,11 +1558,54 @@ ALTER TABLE ONLY public.continents
 
 
 --
+-- Name: users users_email_key; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.users
+    ADD CONSTRAINT users_email_key UNIQUE (email);
+
+
+--
 -- Name: users users_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
 --
 
 ALTER TABLE ONLY public.users
     ADD CONSTRAINT users_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: deliveries_innings_id_innings_delivery_number_key; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX deliveries_innings_id_innings_delivery_number_key ON public.deliveries USING btree (innings_id, innings_delivery_number);
+
+
+--
+-- Name: fall_of_wickets_innings_id_batter_id_key; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX fall_of_wickets_innings_id_batter_id_key ON public.fall_of_wickets USING btree (innings_id, batter_id);
+
+
+--
+-- Name: fall_of_wickets_innings_id_wicket_number_key; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX fall_of_wickets_innings_id_wicket_number_key ON public.fall_of_wickets USING btree (innings_id, wicket_number);
+
+
+--
+-- Name: idx_batting_scorecards_innings_id_batter_id; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE UNIQUE INDEX idx_batting_scorecards_innings_id_batter_id ON public.batting_scorecards USING btree (innings_id, batter_id);
+
+
+--
+-- Name: idx_bowling_scorecards_innings_id_bowler_id; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE UNIQUE INDEX idx_bowling_scorecards_innings_id_bowler_id ON public.bowling_scorecards USING btree (innings_id, bowler_id);
 
 
 --
@@ -1669,6 +1745,22 @@ ALTER TABLE ONLY public.deliveries
 
 
 --
+-- Name: fall_of_wickets fall_of_wickets_batter_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.fall_of_wickets
+    ADD CONSTRAINT fall_of_wickets_batter_id_fkey FOREIGN KEY (batter_id) REFERENCES public.players(id);
+
+
+--
+-- Name: fall_of_wickets fall_of_wickets_innings_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.fall_of_wickets
+    ADD CONSTRAINT fall_of_wickets_innings_id_fkey FOREIGN KEY (innings_id) REFERENCES public.innings(id);
+
+
+--
 -- Name: grounds grounds_city_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -1693,6 +1785,22 @@ ALTER TABLE ONLY public.innings
 
 
 --
+-- Name: innings innings_bowler1_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.innings
+    ADD CONSTRAINT innings_bowler1_id_fkey FOREIGN KEY (bowler1_id) REFERENCES public.players(id);
+
+
+--
+-- Name: innings innings_bowler2_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.innings
+    ADD CONSTRAINT innings_bowler2_id_fkey FOREIGN KEY (bowler2_id) REFERENCES public.players(id);
+
+
+--
 -- Name: innings innings_bowling_team_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -1706,6 +1814,22 @@ ALTER TABLE ONLY public.innings
 
 ALTER TABLE ONLY public.innings
     ADD CONSTRAINT innings_match_id_fkey FOREIGN KEY (match_id) REFERENCES public.matches(id) ON UPDATE CASCADE ON DELETE CASCADE NOT VALID;
+
+
+--
+-- Name: innings innings_non_striker_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.innings
+    ADD CONSTRAINT innings_non_striker_id_fkey FOREIGN KEY (non_striker_id) REFERENCES public.players(id);
+
+
+--
+-- Name: innings innings_striker_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.innings
+    ADD CONSTRAINT innings_striker_id_fkey FOREIGN KEY (striker_id) REFERENCES public.players(id);
 
 
 --

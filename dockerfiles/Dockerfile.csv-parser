@@ -1,0 +1,19 @@
+FROM golang:1.24-alpine AS builder
+
+WORKDIR /app
+
+RUN apk add postgresql-client
+RUN apk add unzip
+
+ADD https://cricsheet.org/downloads/odis_male_csv2.zip /cricsheet/
+RUN unzip /cricsheet/odis_male_csv2.zip -d /cricsheet/odis_male_csv2
+
+ADD https://cricsheet.org/downloads/t20s_male_csv2.zip /cricsheet/
+RUN unzip /cricsheet/t20s_male_csv2.zip -d /cricsheet/t20is_male_csv2
+
+ADD https://cricsheet.org/downloads/ipl_male_csv2.zip /cricsheet/
+RUN unzip /cricsheet/ipl_male_csv2.zip -d /cricsheet/ipl_male_csv2
+
+COPY . .
+RUN go mod download
+RUN go build -o ./bin/csv-parser ./cmd/csv-parser

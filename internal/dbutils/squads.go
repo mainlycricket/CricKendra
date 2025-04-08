@@ -47,10 +47,12 @@ func ReadSquadByMatchId(ctx context.Context, db DB_Exec, matchId int64) (respons
 
 		SELECT
 			%s,
-			ARRAY_AGG(match_squads.*) AS squads
+			(
+				SELECT ARRAY_AGG(match_squads.*)
+				FROM match_squads
+			)
 		FROM matches
 		%s
-		LEFT JOIN match_squads ON match_squads.team_id = innings.batting_team_id
 		WHERE matches.id = $1
 		GROUP BY %s
 	`,
@@ -63,8 +65,12 @@ func ReadSquadByMatchId(ctx context.Context, db DB_Exec, matchId int64) (respons
 
 	err := row.Scan(
 		&matchHeader.MatchId, &matchHeader.PlayingLevel, &matchHeader.PlayingFormat, &matchHeader.MatchType, &matchHeader.EventMatchNumber,
+		&matchHeader.MatchState, &matchHeader.MatchStateDescription,
 
-		&matchHeader.Season, &matchHeader.StartDate, &matchHeader.EndDate, &matchHeader.StartTime, &matchHeader.IsDayNight, &matchHeader.GroundId, &matchHeader.GroundName, &matchHeader.MainSeriesId, &matchHeader.MainSeriesName,
+		&matchHeader.MatchWinnerId, &matchHeader.MatchLoserId, &matchHeader.IsWonByInnings, &matchHeader.IsWonByRuns,
+		&matchHeader.WinMargin, &matchHeader.BallsMargin, &matchHeader.SuperOverWinnerId, &matchHeader.BowlOutWinnerId, &matchHeader.OutcomeSpecialMethod, &matchHeader.TossWinnerId, &matchHeader.TossLoserId, &matchHeader.IsTossDecisionBat,
+
+		&matchHeader.Season, &matchHeader.StartDate, &matchHeader.EndDate, &matchHeader.StartDateTimeUtc, &matchHeader.IsDayNight, &matchHeader.GroundId, &matchHeader.GroundName, &matchHeader.MainSeriesId, &matchHeader.MainSeriesName,
 
 		&matchHeader.Team1Id, &matchHeader.Team1Name, &matchHeader.Team1ImageUrl, &matchHeader.Team2Id, &matchHeader.Team2Name, &matchHeader.Team2ImageUrl,
 
@@ -82,7 +88,7 @@ func ReadSquadByMatchId(ctx context.Context, db DB_Exec, matchId int64) (respons
 }
 
 func UpsertMatchSquadEntries(ctx context.Context, db DB_Exec, entries []models.MatchSquad) error {
-	query := `
+	squadEntryQuery := `
 		INSERT INTO match_squad_entries 
 			(player_id, match_id, team_id, is_captain, is_vice_captain, is_wk, is_debut, playing_status) 
 			VALUES($1, $2, $3, $4, $5, $6, $7, $8)
@@ -91,9 +97,13 @@ func UpsertMatchSquadEntries(ctx context.Context, db DB_Exec, entries []models.M
 			team_id = $3, is_captain = $4, is_vice_captain = $5, is_wk = $6, is_debut = $7, playing_status = $8
 	`
 
+	teamEntryQuery := `INSERT INTO player_team_entries (player_id, team_id) VALUES ($1, $2) ON CONFLICT (player_id, team_id) DO NOTHING`
+
 	batch := &pgx.Batch{}
 	for _, entry := range entries {
-		batch.Queue(query, &entry.PlayerId, &entry.MatchId, &entry.TeamId, &entry.IsCaptain, &entry.IsViceCaptain, &entry.IsWk, &entry.IsDebut, &entry.PlayingStatus)
+		_ = batch.Queue(squadEntryQuery, &entry.PlayerId, &entry.MatchId, &entry.TeamId, &entry.IsCaptain, &entry.IsViceCaptain, &entry.IsWk, &entry.IsDebut, &entry.PlayingStatus)
+
+		_ = batch.Queue(teamEntryQuery, &entry.PlayerId, &entry.TeamId)
 	}
 
 	batchResults := db.SendBatch(ctx, batch)
@@ -188,7 +198,18 @@ func InsertSeriesSquadEntry(ctx context.Context, db DB_Exec, entry *models.Serie
 }
 
 func UpsertSeriesSquadEntries(ctx context.Context, db DB_Exec, entries []models.SeriesSquadEntry) error {
-	query := `
+	if len(entries) == 0 {
+		return nil
+	}
+
+	var teamId int64 = -1
+	squadTeamQuery := `SELECT team_id FROM series_squads WHERE id = $1`
+	err := db.QueryRow(ctx, squadTeamQuery, entries[0].SquadId).Scan(&teamId)
+	if err != nil {
+		return err
+	}
+
+	squadEntryQuery := `
 		INSERT INTO series_squad_entries 
 			(squad_id, player_id, is_captain, is_vice_captain, is_wk, playing_status)
 			VALUES($1, $2, $3, $4, $5, $6) 
@@ -197,9 +218,13 @@ func UpsertSeriesSquadEntries(ctx context.Context, db DB_Exec, entries []models.
 			is_captain = $3, is_vice_captain = $4, is_wk = $5, playing_status = $6
 	`
 
+	teamEntryQuery := `INSERT INTO player_team_entries (player_id, team_id) VALUES ($1, $2) ON CONFLICT (player_id, team_id) DO NOTHING`
+
 	batch := &pgx.Batch{}
 	for _, entry := range entries {
-		batch.Queue(query, &entry.SquadId, &entry.PlayerId, &entry.IsCaptain, &entry.IsViceCaptain, &entry.IsWk, &entry.PlayingStatus)
+		_ = batch.Queue(squadEntryQuery, &entry.SquadId, &entry.PlayerId, &entry.IsCaptain, &entry.IsViceCaptain, &entry.IsWk, &entry.PlayingStatus)
+
+		_ = batch.Queue(teamEntryQuery, &entry.PlayerId, teamId)
 	}
 
 	batchResults := db.SendBatch(ctx, batch)

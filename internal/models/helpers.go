@@ -34,3 +34,8 @@ func IsTeamDismissal(dismissalType string) bool {
 	teamWickets := []string{"caught", "bowled", "lbw", "run out", "stumped", "hit wicket", "handled the ball", "obstructing the field", "timed out", "hit the ball twice", "caught and bowled", "retired out"}
 	return slices.Contains(teamWickets, dismissalType)
 }
+
+func IsValidDismissal2(dismissalType string) bool {
+	validDismissals := []string{"timed out", "retired hurt", "retired out", "retired not out"}
+	return slices.Contains(validDismissals, dismissalType)
+}

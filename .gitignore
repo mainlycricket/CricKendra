@@ -1,5 +1,5 @@
 .env
-/db_files/full_db.sql
+full_db.sql
 /bin/*
 !/bin/.gitkeep
 secrets.sh

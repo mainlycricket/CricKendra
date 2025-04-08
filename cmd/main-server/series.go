@@ -9,26 +9,38 @@ import (
 	"github.com/mainlycricket/CricKendra/internal/dbutils"
 	"github.com/mainlycricket/CricKendra/internal/models"
 	"github.com/mainlycricket/CricKendra/internal/responses"
+	"github.com/mainlycricket/CricKendra/internal/utils"
 )
 
 func seriesRouter() *chi.Mux {
 	r := chi.NewRouter()
-	r.Post("/", createSeries)
-	r.Get("/", getSeries)
 
+	// auth by controller
+	r.Post("/", createSeries)
+	r.Patch("/{seriesId}/final-result", updateSeriesFinalResult)
+	r.Post("/{seriesId}/squads", createSeriesSquad)
+	r.Post("/{seriesId}/squads/{squadId}/upsert-entries", upsertSeriesSquadEntries)
+
+	r.Get("/", getSeries)
 	r.Get("/{seriesId}", getSeriesOverviewById)
 	r.Get("/{seriesId}/matches", getSeriesMatchesById)
 	r.Get("/{seriesId}/teams", getSeriesTeamsById)
 	r.Get("/{seriesId}/squads-list", getSeriesSquadsListById)
 	r.Get("/{seriesId}/squads/{squadId}", getSeriesSingleSquadById)
+
 	return r
 }
 
 func createSeries(w http.ResponseWriter, r *http.Request) {
+	_, err := utils.AuthorizeRequest(r, []string{SYSTEM_ADMIN_ROLE})
+	if err != nil {
+		responses.WriteJsonResponse(w, responses.ApiResponse{Success: false, Message: "unauthorized request", Data: err}, http.StatusUnauthorized)
+		return
+	}
+
 	var series models.Series
 
-	err := json.NewDecoder(r.Body).Decode(&series)
-	if err != nil {
+	if err := json.NewDecoder(r.Body).Decode(&series); err != nil {
 		responses.WriteJsonResponse(w, responses.ApiResponse{Success: false, Message: "error while decoding json", Data: err}, http.StatusBadRequest)
 		return
 	}
@@ -40,6 +52,103 @@ func createSeries(w http.ResponseWriter, r *http.Request) {
 	}
 
 	responses.WriteJsonResponse(w, responses.ApiResponse{Success: true, Message: "series created successfully", Data: seriesId}, http.StatusCreated)
+}
+
+func createSeriesSquad(w http.ResponseWriter, r *http.Request) {
+	_, err := utils.AuthorizeRequest(r, []string{SYSTEM_ADMIN_ROLE})
+	if err != nil {
+		responses.WriteJsonResponse(w, responses.ApiResponse{Success: false, Message: "unauthorized request", Data: err}, http.StatusUnauthorized)
+		return
+	}
+
+	rawSeriesId := r.PathValue("seriesId")
+	parsedSeriesId, err := strconv.ParseInt(rawSeriesId, 10, 64)
+	if err != nil {
+		responses.WriteJsonResponse(w, responses.ApiResponse{Success: false, Message: "invalid series id", Data: err}, http.StatusBadRequest)
+		return
+	}
+
+	var squad models.SeriesSquad
+
+	if err := json.NewDecoder(r.Body).Decode(&squad); err != nil {
+		responses.WriteJsonResponse(w, responses.ApiResponse{Success: false, Message: "error while decoding json", Data: err}, http.StatusBadRequest)
+		return
+	}
+
+	squad.SeriesId.Int64, squad.SeriesId.Valid = parsedSeriesId, true
+
+	squadId, err := dbutils.InsertSeriesSquad(r.Context(), DB_POOL, &squad)
+	if err != nil {
+		responses.WriteJsonResponse(w, responses.ApiResponse{Success: false, Message: "error while inserting series squad", Data: err}, http.StatusBadRequest)
+		return
+	}
+
+	responses.WriteJsonResponse(w, responses.ApiResponse{Success: true, Message: "series squad created successfully", Data: squadId}, http.StatusCreated)
+}
+
+func upsertSeriesSquadEntries(w http.ResponseWriter, r *http.Request) {
+	_, err := utils.AuthorizeRequest(r, []string{SYSTEM_ADMIN_ROLE})
+	if err != nil {
+		responses.WriteJsonResponse(w, responses.ApiResponse{Success: false, Message: "unauthorized request", Data: err}, http.StatusUnauthorized)
+		return
+	}
+
+	rawSquadId := r.PathValue("squadId")
+	parsedSquadId, err := strconv.ParseInt(rawSquadId, 10, 64)
+	if err != nil {
+		responses.WriteJsonResponse(w, responses.ApiResponse{Success: false, Message: "invalid squad id", Data: err}, http.StatusBadRequest)
+		return
+	}
+
+	var entries []models.SeriesSquadEntry
+
+	if err := json.NewDecoder(r.Body).Decode(&entries); err != nil {
+		responses.WriteJsonResponse(w, responses.ApiResponse{Success: false, Message: "error while decoding json", Data: err}, http.StatusBadRequest)
+		return
+	}
+
+	for idx, entry := range entries {
+		entry.SquadId.Int64, entry.SquadId.Valid = parsedSquadId, true
+		entries[idx] = entry
+	}
+
+	if err := dbutils.UpsertSeriesSquadEntries(r.Context(), DB_POOL, entries); err != nil {
+		responses.WriteJsonResponse(w, responses.ApiResponse{Success: false, Message: "error while upserting series squad entries", Data: err}, http.StatusBadRequest)
+		return
+	}
+
+	responses.WriteJsonResponse(w, responses.ApiResponse{Success: true, Message: "series squad entries upserted successfully", Data: nil}, http.StatusCreated)
+}
+
+func updateSeriesFinalResult(w http.ResponseWriter, r *http.Request) {
+	_, err := utils.AuthorizeRequest(r, []string{SYSTEM_ADMIN_ROLE})
+	if err != nil {
+		responses.WriteJsonResponse(w, responses.ApiResponse{Success: false, Message: "unauthorized request", Data: err}, http.StatusUnauthorized)
+		return
+	}
+
+	rawSeriesId := r.PathValue("seriesId")
+	parsedSeriesId, err := strconv.ParseInt(rawSeriesId, 10, 64)
+	if err != nil {
+		responses.WriteJsonResponse(w, responses.ApiResponse{Success: false, Message: "invalid series id", Data: err}, http.StatusBadRequest)
+		return
+	}
+
+	var input models.SeriesFinalResult
+
+	if err := json.NewDecoder(r.Body).Decode(&input); err != nil {
+		responses.WriteJsonResponse(w, responses.ApiResponse{Success: false, Message: "error while decoding json", Data: err}, http.StatusBadRequest)
+		return
+	}
+
+	input.SeriesId.Int64, input.SeriesId.Valid = parsedSeriesId, true
+
+	if err := dbutils.UpdateSeriesFinalResult(r.Context(), DB_POOL, &input); err != nil {
+		responses.WriteJsonResponse(w, responses.ApiResponse{Success: false, Message: "error while upserting series final result", Data: err}, http.StatusBadRequest)
+		return
+	}
+
+	responses.WriteJsonResponse(w, responses.ApiResponse{Success: true, Message: "series final result updated successfully", Data: nil}, http.StatusOK)
 }
 
 func getSeries(w http.ResponseWriter, r *http.Request) {

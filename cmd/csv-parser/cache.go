@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"net/url"
 	"reflect"
+	"slices"
 	"strconv"
 	"strings"
 	"sync"
@@ -287,31 +288,36 @@ type seriesKey struct {
 	playing_format string
 }
 
+type seriesValue struct {
+	seriesId pgtype.Int8
+	teamsId  []pgtype.Int8
+}
+
 type seriesCache struct {
-	cacheMap[seriesKey, *cacheValue[pgtype.Int8]]
+	cacheMap[seriesKey, *cacheValue[seriesValue]]
 }
 
 func (cache *seriesCache) loadOrStore(key seriesKey, team1Id, team2Id int64, tourFlag string) (pgtype.Int8, error) {
-	teamsId := []pgtype.Int8{{Int64: team1Id, Valid: true}, {Int64: team2Id, Valid: true}}
+	value, loaded := cache.LoadOrStore(key, &cacheValue[seriesValue]{})
+	seriesValue := value.(*cacheValue[seriesValue])
 
-	value, loaded := cache.LoadOrStore(key, &cacheValue[pgtype.Int8]{})
-	seriesValue := value.(*cacheValue[pgtype.Int8])
-
-	if loaded && seriesValue.data.Valid {
-		if err := dbutils.UpsertSeriesTeamEntries(context.Background(), DB_POOL, seriesValue.data, teamsId); err != nil {
+	if loaded && seriesValue.data.seriesId.Valid {
+		if err := handleSeriesTeamsEntries(seriesValue.data, team1Id, team2Id); err != nil {
 			return pgtype.Int8{}, fmt.Errorf(`error while upserting series team entries: %v`, err)
 		}
-		return seriesValue.data, nil
+
+		return seriesValue.data.seriesId, nil
 	}
 
 	seriesValue.lock.Lock()
 	defer seriesValue.lock.Unlock()
 
-	if seriesValue, ok := cache.get(key); ok && seriesValue.data.Valid {
-		if err := dbutils.UpsertSeriesTeamEntries(context.Background(), DB_POOL, seriesValue.data, teamsId); err != nil {
+	if seriesValue, ok := cache.get(key); ok && seriesValue.data.seriesId.Valid {
+		if err := handleSeriesTeamsEntries(seriesValue.data, team1Id, team2Id); err != nil {
 			return pgtype.Int8{}, fmt.Errorf(`error while upserting series team entries: %v`, err)
 		}
-		return seriesValue.data, nil
+
+		return seriesValue.data.seriesId, nil
 	}
 
 	filters := cache.getFiltersFromKey(key)
@@ -321,12 +327,17 @@ func (cache *seriesCache) loadOrStore(key seriesKey, team1Id, team2Id int64, tou
 	}
 
 	if len(dbResponse.Series) > 0 {
-		seriesValue.data = dbResponse.Series[0].Id
-		if err := dbutils.UpsertSeriesTeamEntries(context.Background(), DB_POOL, seriesValue.data, teamsId); err != nil {
+		seriesValue.data.seriesId = dbResponse.Series[0].Id
+		for _, team := range dbResponse.Series[0].Teams {
+			seriesValue.data.teamsId = append(seriesValue.data.teamsId, team.Id)
+		}
+
+		if err := handleSeriesTeamsEntries(seriesValue.data, team1Id, team2Id); err != nil {
 			return pgtype.Int8{}, fmt.Errorf(`error while upserting series team entries: %v`, err)
 		}
+
 		cache.set(key, seriesValue)
-		return seriesValue.data, nil
+		return seriesValue.data.seriesId, nil
 	}
 
 	// check if series is a part of a tournament
@@ -349,7 +360,7 @@ func (cache *seriesCache) loadOrStore(key seriesKey, team1Id, team2Id int64, tou
 
 	newSeries := models.Series{
 		Name:          pgtype.Text{String: key.name, Valid: true},
-		TeamsId:       teamsId,
+		TeamsId:       []pgtype.Int8{{Int64: team1Id, Valid: true}, {Int64: team2Id, Valid: true}},
 		TourFlag:      pgtype.Text{String: tourFlag, Valid: tourFlag != ""},
 		Season:        pgtype.Text{String: key.season, Valid: true},
 		IsMale:        pgtype.Bool{Bool: key.is_male, Valid: true},
@@ -363,9 +374,10 @@ func (cache *seriesCache) loadOrStore(key seriesKey, team1Id, team2Id int64, tou
 		return pgtype.Int8{}, err
 	}
 
-	seriesValue.data = pgtype.Int8{Int64: seriesId, Valid: true}
+	seriesValue.data.seriesId = pgtype.Int8{Int64: seriesId, Valid: true}
+	seriesValue.data.teamsId = newSeries.TeamsId
 	cache.set(key, seriesValue)
-	return seriesValue.data, nil
+	return seriesValue.data.seriesId, nil
 }
 
 // Series Squad
@@ -693,4 +705,23 @@ func defaultTeamShortName(teamName string) string {
 	}
 
 	return shortName
+}
+
+func handleSeriesTeamsEntries(sv seriesValue, team1Id, team2Id int64) error {
+	var teamsId []pgtype.Int8
+
+	if !slices.Contains(sv.teamsId, pgtype.Int8{Int64: team1Id, Valid: true}) {
+		teamsId = append(teamsId, pgtype.Int8{Int64: team1Id, Valid: true})
+	}
+
+	if !slices.Contains(sv.teamsId, pgtype.Int8{Int64: team2Id, Valid: true}) {
+		teamsId = append(teamsId, pgtype.Int8{Int64: team2Id, Valid: true})
+	}
+
+	if len(teamsId) == 0 {
+		return nil
+	}
+
+	err := dbutils.UpsertSeriesTeamEntries(context.Background(), DB_POOL, sv.seriesId, teamsId)
+	return err
 }

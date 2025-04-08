@@ -1,0 +1,9 @@
+FROM postgres:17.3-alpine
+
+COPY ./db_files/schema.sql /schema.sql
+COPY ./db_files/seed_data/*.csv /seed_data/
+COPY ./db_files/init.sh /docker-entrypoint-initdb.d/init.sh
+
+RUN chmod +x docker-entrypoint-initdb.d/init.sh
+
+CMD [ "postgres" ]

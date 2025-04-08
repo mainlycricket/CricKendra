@@ -1,0 +1,42 @@
+services:
+  db:
+    build: 
+      context: ../
+      dockerfile: ./dockerfiles/Dockerfile.db.csv-parser
+    networks:
+      - crickendra_network
+    env_file:
+      - ".env"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+  
+  csv-parser:
+    build: 
+      context: ../
+      dockerfile: ./dockerfiles/Dockerfile.csv-parser
+    networks:
+      - crickendra_network
+    env_file:
+      - ".env"
+    depends_on:
+      db:
+        condition: service_healthy
+    volumes:
+      - ./db_files:/app/db_files
+    command: >
+      sh -c "
+        # Run the CSV parser
+        ./bin/csv-parser
+
+        # Dump the database to the mounted volume
+        pg_dump -h db -U postgres crickendra > /app/db_files/full_db.sql
+        echo DB dumped, stop the process
+      "
+  
+networks:
+  crickendra_network:
+    driver: bridge
+    

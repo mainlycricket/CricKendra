@@ -267,24 +267,36 @@ type SeriesHeader struct {
 // Matches
 
 type MatchInfo struct {
-	MatchId          pgtype.Int8 `json:"match_id"`
-	PlayingLevel     pgtype.Text `json:"playing_level"`
-	PlayingFormat    pgtype.Text `json:"playing_format"`
-	MatchType        pgtype.Text `json:"match_type"`
-	EventMatchNumber pgtype.Int8 `json:"event_match_number"`
-	// Day 1, 2, etc - Test / FC
-	// Stumps, Innings Break, Tea/Lunch/Dinner, Stopped
-	// Need 50 runs , won by 5 wkts , trail/lead by 8 runs , won the toss and chose to bat, match starts in
+	MatchId               pgtype.Int8 `json:"match_id"`
+	PlayingLevel          pgtype.Text `json:"playing_level"`
+	PlayingFormat         pgtype.Text `json:"playing_format"`
+	MatchType             pgtype.Text `json:"match_type"`
+	EventMatchNumber      pgtype.Int8 `json:"event_match_number"`
+	MatchState            pgtype.Text `json:"match_state"`
+	MatchStateDescription pgtype.Text `json:"match_state_description"`
 
-	Season         pgtype.Text        `json:"season"`
-	StartDate      pgtype.Date        `json:"start_date"`
-	EndDate        pgtype.Date        `json:"end_date"`
-	StartTime      pgtype.Timestamptz `json:"start_time"`
-	IsDayNight     pgtype.Bool        `json:"is_day_night"`
-	GroundId       pgtype.Int8        `json:"ground_id"`
-	GroundName     pgtype.Text        `json:"ground_name"`
-	MainSeriesId   pgtype.Int8        `json:"main_series_id"`
-	MainSeriesName pgtype.Text        `json:"main_series_name"`
+	MatchWinnerId        pgtype.Int8 `json:"match_winner_team_id"`
+	MatchLoserId         pgtype.Int8 `json:"match_loser_team_id"`
+	IsWonByInnings       pgtype.Bool `json:"is_won_by_innings"`
+	IsWonByRuns          pgtype.Bool `json:"is_won_by_runs"`
+	WinMargin            pgtype.Int8 `json:"win_margin"`                // runs or wickets
+	BallsMargin          pgtype.Int8 `json:"balls_remaining_after_win"` // successful chases
+	SuperOverWinnerId    pgtype.Int8 `json:"super_over_winner_id"`
+	BowlOutWinnerId      pgtype.Int8 `json:"bowl_out_winner_id"`
+	OutcomeSpecialMethod pgtype.Text `json:"outcome_special_method"`
+	TossWinnerId         pgtype.Int8 `json:"toss_winner_team_id"`
+	TossLoserId          pgtype.Int8 `json:"toss_loser_team_id"`
+	IsTossDecisionBat    pgtype.Bool `json:"is_toss_decision_bat"`
+
+	Season           pgtype.Text        `json:"season"`
+	StartDate        pgtype.Date        `json:"start_date"`
+	EndDate          pgtype.Date        `json:"end_date"`
+	StartDateTimeUtc pgtype.Timestamptz `json:"start_datetime_utc"`
+	IsDayNight       pgtype.Bool        `json:"is_day_night"`
+	GroundId         pgtype.Int8        `json:"ground_id"`
+	GroundName       pgtype.Text        `json:"ground_name"`
+	MainSeriesId     pgtype.Int8        `json:"main_series_id"`
+	MainSeriesName   pgtype.Text        `json:"main_series_name"`
 
 	Team1Id       pgtype.Int8 `json:"team1_id"`
 	Team1Name     pgtype.Text `json:"team1_name"`
@@ -297,6 +309,7 @@ type MatchInfo struct {
 }
 
 type TeamInningsShortInfo struct {
+	InningsId       pgtype.Int8 `json:"innings_id"`
 	InningsNumber   pgtype.Int8 `json:"innings_number"`
 	BattingTeamId   pgtype.Int8 `json:"batting_team_id"`
 	BattingTeamName pgtype.Text `json:"batting_team_name"`
@@ -332,12 +345,13 @@ type PlayerAwardInfo struct {
 // Match Summary
 
 type MatchSummary struct {
-	MatchHeader      MatchHeader              `json:"match_header"`
-	ScorecardSummary *[]ScorecardSummaryEntry `json:"scorecard_summary,omitempty"`
-	LatestCommentary []InningsBbbCommentary   `json:"latest_commentary"`
+	MatchHeader      MatchHeader             `json:"match_header"`
+	ScorecardSummary []ScorecardSummaryEntry `json:"scorecard_summary,omitempty"`
+	LatestCommentary []InningsBbbCommentary  `json:"latest_commentary"`
 }
 
 type ScorecardSummaryEntry struct {
+	InningsId       pgtype.Int8 `json:"innings_id"`
 	InningsNumber   pgtype.Int8 `json:"innings_number"`
 	BattingTeamId   pgtype.Int8 `json:"batting_team_id"`
 	BattingTeamName pgtype.Text `json:"batting_team_name"`
@@ -347,16 +361,19 @@ type ScorecardSummaryEntry struct {
 	TotalOvers   pgtype.Float8 `json:"total_overs"`
 
 	TopBatters []struct {
-		BatterId   pgtype.Int8 `json:"batter_id"`
-		BatterName pgtype.Text `json:"batter_name"`
-		RunsScored pgtype.Int8 `json:"runs_scored"`
-		BallsFaced pgtype.Int8 `json:"balls_faced"`
+		BatterId    pgtype.Int8 `json:"batter_id"`
+		BatterName  pgtype.Text `json:"batter_name"`
+		RunsScored  pgtype.Int8 `json:"runs_scored"`
+		BallsFaced  pgtype.Int8 `json:"balls_faced"`
+		FourScored  pgtype.Int8 `json:"fours_scored"`
+		SixesScored pgtype.Int8 `json:"sixes_scored"`
 	} `json:"top_batters"`
 
 	TopBowlers []struct {
 		BolwerId     pgtype.Int8   `json:"bowler_id"`
 		BowlerName   pgtype.Text   `json:"bowler_name"`
 		OversBowled  pgtype.Float8 `json:"overs_bowled"`
+		MaidenOvers  pgtype.Int8   `json:"maiden_overs"`
 		WicketsTaken pgtype.Int8   `json:"wickets_taken"`
 		RunsConceded pgtype.Int8   `json:"runs_conceded"`
 	} `json:"top_bowlers"`
@@ -370,6 +387,7 @@ type MatchScorecardResponse struct {
 }
 
 type TeamInningsScorecard struct {
+	InningsId       pgtype.Int8 `json:"innings_id"`
 	InningsNumber   pgtype.Int8 `json:"innings_number"`
 	BattingTeamId   pgtype.Int8 `json:"batting_team_id"`
 	BattingTeamName pgtype.Text `json:"batting_team_name"`
@@ -389,7 +407,7 @@ type TeamInningsScorecard struct {
 
 	BatterScorecardEntries []BatterScorecardEntry `json:"batter_scorecard_entries"`
 	BowlerScorecardEntries []BowlerScorecardEntry `json:"bowler_scorecard_entries"`
-	// TODO fall of wickets
+	FallOfWickets          []FallOfWickets        `json:"fall_of_wickets"`
 }
 
 type BatterScorecardEntry struct {
@@ -428,6 +446,14 @@ type BowlerScorecardEntry struct {
 	NoballsConceded pgtype.Int8   `json:"noballs_conceded"`
 }
 
+type FallOfWickets struct {
+	BatterId     pgtype.Int8   `json:"batter_id"`
+	BatterName   pgtype.Text   `json:"batter_name"`
+	BallNumber   pgtype.Float8 `json:"ball_number"`
+	TeamRuns     pgtype.Int8   `json:"team_runs"`
+	WicketNumber pgtype.Int8   `json:"wicket_number"`
+}
+
 // Match Squad
 
 type MatchSquadResponse struct {
@@ -461,6 +487,7 @@ type MatchCommentaryResponse struct {
 }
 
 type InningsBbbCommentary struct {
+	InningsId             pgtype.Int8   `json:"innings_id"`
 	InningsDeliveryNumber pgtype.Int8   `json:"innings_delivery_number"`
 	BallNumber            pgtype.Float8 `json:"ball_number"`
 	OverNumber            pgtype.Int8   `json:"over_number"`

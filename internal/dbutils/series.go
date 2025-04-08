@@ -2,6 +2,7 @@ package dbutils
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"net/url"
 
@@ -56,6 +57,21 @@ func UpsertSeriesTeamEntries(ctx context.Context, db DB_Exec, seriesId pgtype.In
 
 	batchResults := db.SendBatch(ctx, batch)
 	return batchResults.Close()
+}
+
+func UpdateSeriesFinalResult(ctx context.Context, db DB_Exec, input *models.SeriesFinalResult) error {
+	query := `UPDATE series SET winner_team_id = $1, final_status = $2 WHERE id = $3`
+
+	cmd, err := db.Exec(ctx, query, input.WinnerTeamId, input.FinalStatus, input.SeriesId)
+	if err != nil {
+		return err
+	}
+
+	if cmd.RowsAffected() != 1 {
+		return errors.New("failed to update series final result")
+	}
+
+	return nil
 }
 
 func ReadSeries(ctx context.Context, db DB_Exec, queryMap url.Values) (responses.AllSeriesResponse, error) {
@@ -231,7 +247,7 @@ func ReadSeriesOverviewById(ctx context.Context, db DB_Exec, seriesId int64) (re
 			%s
 			WHERE mse.series_id = $1 AND matches.final_result IS NULL
 			GROUP BY %s
-			ORDER BY matches.start_date ASC, matches.start_time ASC
+			ORDER BY matches.start_datetime_utc ASC
 			FETCH FIRST 10 ROWS ONLY
 		),
 		result_matches AS (
@@ -241,7 +257,7 @@ func ReadSeriesOverviewById(ctx context.Context, db DB_Exec, seriesId int64) (re
 			%s
 			WHERE mse.series_id = $1 AND matches.final_result IS NOT NULL
 			GROUP BY %s
-			ORDER BY matches.start_date DESC, matches.start_time DESC
+			ORDER BY matches.start_datetime_utc DESC
 			FETCH FIRST 10 ROWS ONLY
 		)
 		SELECT 
@@ -290,7 +306,7 @@ func ReadSeriesMatchesById(ctx context.Context, db DB_Exec, seriesId int64) (res
 			%s
 			WHERE mse.series_id = $1
 			GROUP BY %s
-			ORDER BY matches.start_date ASC, matches.start_time ASC
+			ORDER BY matches.start_datetime_utc ASC
 		)
 		SELECT 
 			%s,

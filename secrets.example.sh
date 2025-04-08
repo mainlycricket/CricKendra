@@ -6,3 +6,6 @@ export DB_USER=postgres
 export PGPASSWORD=password
 export DB_NAME=crickendra
 export POSTMAN_COLLECTION_ID=collection_id
+export JWT_KEY=jwt-key
+export ADMIN_EMAIL=system_admin@crickendra.com
+export ADMIN_PASSWORD=secret

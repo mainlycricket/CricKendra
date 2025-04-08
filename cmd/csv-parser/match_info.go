@@ -363,6 +363,7 @@ func (input *matchInfoInput) initalizeMatch(channel chan<- match_init_response) 
 	match.WinMargin = pgtype.Int8{Int64: input.win_margin, Valid: input.match_winner_name != ""}
 	match.BallsPerOver = pgtype.Int8{Int64: input.balls_per_over, Valid: true}
 	match.IsBBBDone = pgtype.Bool{Bool: false, Valid: true}
+	match.MatchState = pgtype.Text{String: "completed", Valid: true}
 
 	matchId, err := dbutils.UpsertCricsheetMatch(context.Background(), DB_POOL, match)
 	if err != nil {

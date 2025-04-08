@@ -25,6 +25,7 @@ type teamInnings struct {
 	bowlingTeam             *teamInfo
 	battingScorecardEntries battingScorecardEntries
 	bowlingScorecardEntries bowlingScorecardEntries
+	fallOfWickets           []models.FallOfWicket
 	currentDelivery         *models.Delivery
 	maidenOverData          struct {
 		bowlerId    string
@@ -191,6 +192,10 @@ func (teamInnings *teamInnings) wrapInnings(tx pgx.Tx, isExtra bool) error {
 		}
 	}
 
+	if err := dbutils.InsertFallOfWicketsEntries(context.Background(), tx, teamInnings.fallOfWickets); err != nil {
+		return fmt.Errorf(`failed to insert fall of wickets entries: %v`, err)
+	}
+
 	if !isExtra {
 		if teamInnings.innings.TotalWkts.Int64 == 10 {
 			teamInnings.innings.InningsEnd = pgtype.Text{String: "all_out", Valid: true}
@@ -255,6 +260,7 @@ func (teamInnings *teamInnings) initializeBatting() error {
 	}
 
 	teamInnings.battingScorecardEntries = make(battingScorecardEntries, 11)
+	teamInnings.fallOfWickets = make([]models.FallOfWicket, 0, 10)
 
 	for _, batterId := range battersId {
 		teamInnings.battingScorecardEntries[batterId] = models.BattingScorecard{
@@ -352,6 +358,10 @@ func (teamInnings *teamInnings) addDismissalEntry(delivery *models.Delivery, isF
 	updatedEntry.DismissalType = pgtype.Text{String: dismissalType, Valid: true}
 	updatedEntry.DismissalBallNumber = delivery.InningsDeliveryNumber
 
+	if isFirst {
+		updatedEntry.Fielder1Id, updatedEntry.Fielder2Id = delivery.Fielder1Id, delivery.Fielder2Id
+	}
+
 	if models.IsBowlerDismissal(dismissalType) {
 		updatedEntry.DismissedById = pgtype.Int8{Int64: delivery.BowlerId.Int64, Valid: true}
 	}
@@ -360,6 +370,15 @@ func (teamInnings *teamInnings) addDismissalEntry(delivery *models.Delivery, isF
 
 	if models.IsTeamDismissal(dismissalType) {
 		teamInnings.innings.TotalWkts.Int64++
+
+		fowEntry := models.FallOfWicket{
+			InningsId:    teamInnings.innings.Id,
+			BatterId:     pgtype.Int8{Int64: batterId, Valid: true},
+			TeamRuns:     teamInnings.innings.TotalRuns,
+			WicketNumber: teamInnings.innings.TotalWkts,
+		}
+
+		teamInnings.fallOfWickets = append(teamInnings.fallOfWickets, fowEntry)
 	}
 }
 
