@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"os"
+	"time"
 
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgconn"
@@ -22,6 +23,10 @@ type DB_Exec interface {
 }
 
 func Connect(ctx context.Context, connectionUrl string) (*pgxpool.Pool, error) {
+	if os.Getenv("ENV") == "DOCKER" {
+		time.Sleep(5 * time.Second)
+	}
+
 	config, err := pgxpool.ParseConfig(connectionUrl)
 	if err != nil {
 		return nil, fmt.Errorf("unable to parse config: %w", err)

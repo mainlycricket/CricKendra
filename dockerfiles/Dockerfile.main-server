@@ -1,0 +1,10 @@
+FROM golang:1.24-alpine AS builder
+
+WORKDIR /app
+COPY . .
+RUN go mod download
+RUN go build -o ./bin/main-server ./cmd/main-server
+
+FROM scratch AS final
+COPY --from=builder /app/bin/main-server /main-server
+CMD [ "/main-server" ]

@@ -20,8 +20,7 @@ const SYSTEM_ADMIN_ROLE string = "system_admin"
 var DB_POOL *pgxpool.Pool
 
 func main() {
-	err := initDB()
-	if err != nil {
+	if err := initDB(); err != nil {
 		log.Fatalf("db init failed: %v", err)
 	}
 
