@@ -11,6 +11,7 @@ import (
 func BattingStatsRouter() *chi.Mux {
 	r := chi.NewRouter()
 
+	r.Get("/overall/summary", Get_Overall_Batting_Summary_Stats)
 	r.Get("/overall/batters", Get_Overall_Batting_Batters_Stats)
 	r.Get("/overall/team-innings", Get_Overall_Batting_TeamInnings_Stats)
 	r.Get("/overall/matches", Get_Overall_Batting_Matches_Stats)
@@ -40,6 +41,17 @@ func BattingStatsRouter() *chi.Mux {
 }
 
 // Function Names are in Get_Overall_Batting_x_Stats format, x represents grouping
+
+func Get_Overall_Batting_Summary_Stats(w http.ResponseWriter, r *http.Request) {
+	response, err := dbutils.Read_Overall_Batting_Summary_Stats(r.Context(), DB_POOL, r.URL.Query())
+
+	if err != nil {
+		responses.WriteJsonResponse(w, responses.ApiResponse{Success: false, Message: "error while reading overall batting summary stats", Data: err}, http.StatusBadRequest)
+		return
+	}
+
+	responses.WriteJsonResponse(w, responses.ApiResponse{Success: true, Message: "fetched overall batters stats successfully", Data: response}, http.StatusOK)
+}
 
 func Get_Overall_Batting_Batters_Stats(w http.ResponseWriter, r *http.Request) {
 	response, err := dbutils.Read_Overall_Batting_Batters_Stats(r.Context(), DB_POOL, r.URL.Query())

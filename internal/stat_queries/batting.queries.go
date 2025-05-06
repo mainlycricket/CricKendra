@@ -9,6 +9,391 @@ import (
 
 // Function Names are in Query_Overall_Batting_x format, x represents grouping
 
+func Query_Overall_Batting_Summary(params *url.Values) (string, []any, error) {
+	commonSqlWhere := newSqlWhere(batting_stats, -1)
+	commonSqlWhere.applyFilters(params)
+	commonSqlWhere.matchQuery.ensureHostNation()
+	commonSqlWhere.matchQuery.ensureContinent()
+	commonMatchQuery := commonSqlWhere.matchQuery.prepareQuery()
+	commonInningsCondition := commonSqlWhere.inningsFilters.getClause()
+
+	seriesSqlWhere := newSqlWhere(batting_stats, -1)
+	seriesSqlWhere.applyFilters(params)
+	seriesSqlWhere.matchQuery.ensureSeries()
+	seriesMatchQuery := seriesSqlWhere.matchQuery.prepareQuery()
+
+	tournamentSqlWhere := newSqlWhere(batting_stats, -1)
+	tournamentSqlWhere.applyFilters(params)
+	tournamentSqlWhere.matchQuery.ensureTournament()
+	tournamentMatchQuery := tournamentSqlWhere.matchQuery.prepareQuery()
+
+	query := fmt.Sprintf(`
+		WITH common_matches AS (
+			%s
+		),
+		
+		series_matches AS (
+			%s
+		), series_teams AS (
+			SELECT series_matches.series_id, 
+				(CASE
+					WHEN COUNT(DISTINCT series_team_entries.team_id) = 2 THEN '2'
+					WHEN COUNT(DISTINCT series_team_entries.team_id) > 4 THEN '5+'
+					ELSE '3-4'
+				END) AS teams_count
+			FROM series_matches
+			JOIN series_team_entries ON series_matches.series_id = series_team_entries.series_id
+			GROUP BY series_matches.series_id
+		),
+		
+		tournament_matches AS (
+			%s
+		),
+		
+		teams_summary AS (
+			SELECT innings.batting_team_id AS team_id,
+			teams.name AS team_name,
+			COUNT(DISTINCT mse.player_id) AS players_count,
+			MIN(matches.start_date) AS min_date,
+			MAX(matches.start_date) AS max_date,
+			%s
+			FROM common_matches matches
+			%s
+			LEFT JOIN teams ON innings.batting_team_id = teams.id
+			%s
+			GROUP BY innings.batting_team_id,
+				teams.name
+		),
+
+		opposition_summary AS (
+			SELECT innings.bowling_team_id AS team_id,
+			teams.name AS team_name,
+			COUNT(DISTINCT mse.player_id) AS players_count,
+			MIN(matches.start_date) AS min_date,
+			MAX(matches.start_date) AS max_date,
+			%s
+			FROM common_matches matches
+			%s
+			LEFT JOIN players ON batting_scorecards.batter_id = players.id
+			LEFT JOIN teams ON innings.bowling_team_id  = teams.id
+			%s
+			GROUP BY innings.bowling_team_id,
+				teams.name
+		),
+		
+		host_nations_summary AS (
+			SELECT
+				matches.host_nation_id,
+				matches.host_nation_name,
+				COUNT(DISTINCT mse.player_id),
+				MIN(matches.start_date),
+				MAX(matches.start_date),
+				%s
+			FROM common_matches matches
+			%s
+			%s
+			GROUP BY matches.host_nation_id,
+			matches.host_nation_name
+		),
+
+		continents_summary AS (
+			SELECT matches.continent_id,
+			matches.continent_name,
+			COUNT(DISTINCT mse.player_id) AS players_count,
+			MIN(matches.start_date) AS min_date,
+			MAX(matches.start_date) AS max_date,
+			%s
+			FROM common_matches matches
+			%s
+			%s
+			GROUP BY matches.continent_id,
+				matches.continent_name
+		),
+
+		years_summary AS (
+			SELECT date_part('year', matches.start_date)::int AS match_year,
+			COUNT(DISTINCT mse.player_id) AS players_count,
+				%s
+			FROM common_matches matches
+			%s
+			%s
+			GROUP BY date_part('year', matches.start_date)::int
+		),
+
+		seasons_summary AS (
+			SELECT matches.season,
+			COUNT(DISTINCT mse.player_id) AS players_count,
+				%s
+			FROM common_matches matches
+			%s
+			%s
+			GROUP BY matches.season
+		),
+
+		home_away_summary AS (
+			SELECT (CASE 
+				WHEN matches.is_neutral_venue THEN 'neutral'
+				WHEN innings.batting_team_id = matches.home_team_id THEN 'home'
+				WHEN innings.batting_team_id = matches.away_team_id THEN 'away'
+				ELSE 'unknown' END
+			),
+			COUNT(DISTINCT mse.player_id) AS players_count,
+				MIN(matches.start_date) AS min_date,
+				MAX(matches.start_date) AS max_date,
+				%s
+			FROM common_matches matches
+			%s
+			%s
+			GROUP BY (CASE 
+				WHEN matches.is_neutral_venue THEN 'neutral'
+				WHEN innings.batting_team_id = matches.home_team_id THEN 'home'
+				WHEN innings.batting_team_id = matches.away_team_id THEN 'away'
+				ELSE 'unknown' END
+			)
+		),
+
+		toss_won_lost_summary AS (
+			SELECT (CASE 
+				WHEN innings.batting_team_id = matches.toss_winner_team_id THEN 'won'
+				WHEN innings.batting_team_id = matches.toss_loser_team_id THEN 'lost'
+				END
+			),
+			COUNT(DISTINCT mse.player_id) AS players_count,
+				MIN(matches.start_date) AS min_date,
+				MAX(matches.start_date) AS max_date,
+				%s
+			FROM common_matches matches
+			%s
+			%s
+			GROUP BY (CASE 
+				WHEN innings.batting_team_id = matches.toss_winner_team_id THEN 'won'
+				WHEN innings.batting_team_id = matches.toss_loser_team_id THEN 'lost'
+				END
+			)
+		),
+
+		toss_decision_summary AS (
+			SELECT (CASE 
+				WHEN innings.batting_team_id = matches.toss_winner_team_id THEN 'won'
+				WHEN innings.batting_team_id = matches.toss_loser_team_id THEN 'lost'
+				END
+			), matches.is_toss_decision_bat,
+			COUNT(DISTINCT mse.player_id) AS players_count,
+				MIN(matches.start_date) AS min_date,
+				MAX(matches.start_date) AS max_date,
+				%s
+			FROM common_matches matches
+			%s
+			%s
+			GROUP BY (CASE 
+				WHEN innings.batting_team_id = matches.toss_winner_team_id THEN 'won'
+				WHEN innings.batting_team_id = matches.toss_loser_team_id THEN 'lost'
+				END
+			), matches.is_toss_decision_bat
+		),
+
+		bat_bowl_first_summary AS (
+			SELECT (CASE 
+				WHEN (innings.batting_team_id = matches.toss_winner_team_id AND matches.is_toss_decision_bat
+					OR innings.batting_team_id = matches.toss_loser_team_id AND matches.is_toss_decision_bat = FALSE)
+					THEN 'bat'
+				WHEN (innings.batting_team_id = matches.toss_winner_team_id AND matches.is_toss_decision_bat = FALSE
+					OR innings.batting_team_id = matches.toss_loser_team_id AND matches.is_toss_decision_bat)
+					THEN 'bowl'
+				END
+			),
+			COUNT(DISTINCT mse.player_id) AS players_count,
+				MIN(matches.start_date) AS min_date,
+				MAX(matches.start_date) AS max_date,
+				%s
+			FROM common_matches matches
+			%s
+			%s
+			GROUP BY (CASE 
+				WHEN (innings.batting_team_id = matches.toss_winner_team_id AND matches.is_toss_decision_bat
+					OR innings.batting_team_id = matches.toss_loser_team_id AND matches.is_toss_decision_bat = FALSE)
+					THEN 'bat'
+				WHEN (innings.batting_team_id = matches.toss_winner_team_id AND matches.is_toss_decision_bat = FALSE
+					OR innings.batting_team_id = matches.toss_loser_team_id AND matches.is_toss_decision_bat)
+					THEN 'bowl'
+				END
+			)
+		),
+
+		innings_number_summary AS (
+			SELECT innings.innings_number,
+			COUNT(DISTINCT mse.player_id) AS players_count,
+				MIN(matches.start_date) AS min_date,
+				MAX(matches.start_date) AS max_date,
+				%s
+			FROM common_matches matches
+			%s
+			%s
+			GROUP BY innings.innings_number
+		),
+
+		match_result_summary AS (
+			SELECT (CASE 
+				WHEN matches.final_result = 'tie' THEN 'tied'
+				WHEN matches.final_result = 'draw' THEN 'drawn'
+				WHEN matches.final_result = 'no result' THEN 'no result'
+				WHEN innings.batting_team_id = matches.match_winner_team_id THEN 'won'
+				WHEN innings.batting_team_id = matches.match_loser_team_id THEN 'lost'
+				END
+			),
+			COUNT(DISTINCT mse.player_id) AS players_count,
+				MIN(matches.start_date) AS min_date,
+				MAX(matches.start_date) AS max_date,
+				%s
+			FROM common_matches matches
+			%s
+			%s
+			GROUP BY (CASE 
+				WHEN matches.final_result = 'tie' THEN 'tied'
+				WHEN matches.final_result = 'draw' THEN 'drawn'
+				WHEN matches.final_result = 'no result' THEN 'no result'
+				WHEN innings.batting_team_id = matches.match_winner_team_id THEN 'won'
+				WHEN innings.batting_team_id = matches.match_loser_team_id THEN 'lost'
+				END
+			)
+		),
+
+		match_result_bat_bowl_first_summary AS (
+			SELECT (CASE 
+				WHEN matches.final_result = 'tie' THEN 'tied'
+				WHEN matches.final_result = 'draw' THEN 'drawn'
+				WHEN matches.final_result = 'no result' THEN 'no result'
+				WHEN innings.batting_team_id = matches.match_winner_team_id THEN 'won'
+				WHEN innings.batting_team_id = matches.match_loser_team_id THEN 'lost'
+				END
+			),
+			(CASE 
+				WHEN (innings.batting_team_id = matches.toss_winner_team_id AND matches.is_toss_decision_bat
+					OR innings.batting_team_id = matches.toss_loser_team_id AND matches.is_toss_decision_bat = FALSE)
+					THEN 'bat'
+				WHEN (innings.batting_team_id = matches.toss_winner_team_id AND matches.is_toss_decision_bat = FALSE
+					OR innings.batting_team_id = matches.toss_loser_team_id AND matches.is_toss_decision_bat)
+					THEN 'bowl'
+				END
+			),
+			COUNT(DISTINCT mse.player_id) AS players_count,
+				MIN(matches.start_date) AS min_date,
+				MAX(matches.start_date) AS max_date,
+				%s
+			FROM common_matches matches
+			%s
+			%s
+			GROUP BY (CASE 
+				WHEN matches.final_result = 'tie' THEN 'tied'
+				WHEN matches.final_result = 'draw' THEN 'drawn'
+				WHEN matches.final_result = 'no result' THEN 'no result'
+				WHEN innings.batting_team_id = matches.match_winner_team_id THEN 'won'
+				WHEN innings.batting_team_id = matches.match_loser_team_id THEN 'lost'
+				END
+			),
+			(CASE 
+				WHEN (innings.batting_team_id = matches.toss_winner_team_id AND matches.is_toss_decision_bat
+					OR innings.batting_team_id = matches.toss_loser_team_id AND matches.is_toss_decision_bat = FALSE)
+					THEN 'bat'
+				WHEN (innings.batting_team_id = matches.toss_winner_team_id AND matches.is_toss_decision_bat = FALSE
+					OR innings.batting_team_id = matches.toss_loser_team_id AND matches.is_toss_decision_bat)
+					THEN 'bowl'
+				END
+			)
+		),
+
+		series_teams_count_summary AS (
+			SELECT series_teams.teams_count,
+				COUNT(DISTINCT mse.player_id) AS players_count,
+				MIN(matches.start_date) AS min_date,
+				MAX(matches.start_date) AS max_date,
+				%s
+			FROM series_matches matches
+			%s
+			JOIN series_teams ON series_teams.series_id = matches.series_id
+			%s
+			GROUP BY series_teams.teams_count
+		),
+
+		series_match_number_summary AS (
+			SELECT matches.event_match_number,
+				COUNT(DISTINCT mse.player_id) AS players_count,
+				MIN(matches.start_date) AS min_date,
+				MAX(matches.start_date) AS max_date,
+				%s
+			FROM series_matches matches
+			%s
+			JOIN series_teams ON series_teams.series_id = matches.series_id AND series_teams.teams_count = '2'
+			%s
+			GROUP BY matches.event_match_number
+		),
+
+		tournament_summary AS (
+			SELECT matches.tournament_id, matches.tournament_name,
+				COUNT(DISTINCT mse.player_id) AS players_count,
+				MIN(matches.start_date) AS min_date,
+				MAX(matches.start_date) AS max_date,
+				%s
+			FROM tournament_matches matches
+			%s
+			%s
+			GROUP BY matches.tournament_id, matches.tournament_name
+		),
+
+		batting_position_summary AS (
+			SELECT batting_scorecards.batting_position,
+				COUNT(DISTINCT mse.player_id) AS players_count,
+				MIN(matches.start_date) AS min_date,
+				MAX(matches.start_date) AS max_date,
+				%s
+			FROM common_matches matches
+			%s
+			%s
+			GROUP BY batting_scorecards.batting_position
+		)
+
+		SELECT
+			(SELECT ARRAY_AGG(teams_summary.*) FROM teams_summary),
+			(SELECT ARRAY_AGG(opposition_summary.*) FROM opposition_summary),
+			(SELECT ARRAY_AGG(host_nations_summary.*) FROM host_nations_summary),
+			(SELECT ARRAY_AGG(continents_summary.*) FROM continents_summary),
+			(SELECT ARRAY_AGG(years_summary.*) FROM years_summary),
+			(SELECT ARRAY_AGG(seasons_summary.*) FROM seasons_summary),
+			(SELECT ARRAY_AGG(home_away_summary.*) FROM home_away_summary),
+			(SELECT ARRAY_AGG(toss_won_lost_summary.*) FROM toss_won_lost_summary),
+			(SELECT ARRAY_AGG(toss_decision_summary.*) FROM toss_decision_summary),
+			(SELECT ARRAY_AGG(bat_bowl_first_summary.*) FROM bat_bowl_first_summary),
+			(SELECT ARRAY_AGG(innings_number_summary.*) FROM innings_number_summary),
+			(SELECT ARRAY_AGG(match_result_summary.*) FROM match_result_summary),
+			(SELECT ARRAY_AGG(match_result_bat_bowl_first_summary.*) FROM match_result_bat_bowl_first_summary),
+			(SELECT ARRAY_AGG(series_teams_count_summary.*) FROM series_teams_count_summary),
+			(SELECT ARRAY_AGG(series_match_number_summary.*) FROM series_match_number_summary),
+			(SELECT ARRAY_AGG(tournament_summary.*) FROM tournament_summary),
+			(SELECT ARRAY_AGG(batting_position_summary.*) FROM batting_position_summary)
+		;
+		`, commonMatchQuery, seriesMatchQuery, tournamentMatchQuery,
+		batting_numbers_query, batting_common_joins, commonInningsCondition,
+		batting_numbers_query, batting_common_joins, commonInningsCondition,
+		batting_numbers_query, batting_common_joins, commonInningsCondition,
+		batting_numbers_query, batting_common_joins, commonInningsCondition,
+		batting_numbers_query, batting_common_joins, commonInningsCondition,
+		batting_numbers_query, batting_common_joins, commonInningsCondition,
+		batting_numbers_query, batting_common_joins, commonInningsCondition,
+		batting_numbers_query, batting_common_joins, commonInningsCondition,
+		batting_numbers_query, batting_common_joins, commonInningsCondition,
+		batting_numbers_query, batting_common_joins, commonInningsCondition,
+		batting_numbers_query, batting_common_joins, commonInningsCondition,
+		batting_numbers_query, batting_common_joins, commonInningsCondition,
+		batting_numbers_query, batting_common_joins, commonInningsCondition,
+		batting_numbers_query, batting_common_joins, commonInningsCondition,
+		batting_numbers_query, batting_common_joins, commonInningsCondition,
+		batting_numbers_query, batting_common_joins, commonInningsCondition,
+		batting_numbers_query, batting_common_joins, commonInningsCondition,
+	)
+
+	return query, commonSqlWhere.args, nil
+}
+
 func Query_Overall_Batting_Batters(params *url.Values) (string, []any, int, error) {
 	sqlWhere := newSqlWhere(batting_stats, overall_players_group)
 

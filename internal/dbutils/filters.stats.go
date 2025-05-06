@@ -18,7 +18,7 @@ func Read_Stat_Filter_Options(ctx context.Context, db DB_Exec, queryMap url.Valu
 		return statFilters, fmt.Errorf(`failed to parse query: %v`, err)
 	}
 
-	err = db.QueryRow(ctx, query, args...).Scan(&statFilters.Teams, &statFilters.HostNations, &statFilters.Continents, &statFilters.Grounds, &statFilters.MinDate, &statFilters.MaxDate, &statFilters.Seasons, &statFilters.Series, &statFilters.Tournaments)
+	err = db.QueryRow(ctx, query, args...).Scan(&statFilters.PrimaryTeams, &statFilters.OppositionTeams, &statFilters.HostNations, &statFilters.Continents, &statFilters.Grounds, &statFilters.MinDate, &statFilters.MaxDate, &statFilters.Seasons, &statFilters.Series, &statFilters.Tournaments)
 
 	if err != nil {
 		log.Println(query)

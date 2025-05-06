@@ -15,7 +15,7 @@ I am building `CricKendra` out of my passion for cricket and programming.
     - Teams Stats ✅
 - Single Match & Single Series routes ✅
 - Live Scoring System ✅
-- Single Player, Series, Tournaments Stats Tool ⏳
+- Single Player, Series, Tournaments Stats Tool ✅
 - Frontend ⏳
 - All-round & Partnership in Stats Tools ⏳
 - Content Management System ⏳

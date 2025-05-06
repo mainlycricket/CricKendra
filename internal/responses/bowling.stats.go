@@ -4,6 +4,453 @@ import "github.com/jackc/pgx/v5/pgtype"
 
 /* Overall Stats */
 
+type Overall_Bowling_Summary_Group struct {
+	Teams []struct {
+		TeamId       pgtype.Int8 `json:"team_id"`
+		TeamName     pgtype.Text `json:"team_name"`
+		PlayersCount pgtype.Int8 `json:"players_count"`
+		MinDate      pgtype.Date `json:"min_date"`
+		MaxDate      pgtype.Date `json:"max_date"`
+
+		MatchesPlayed   pgtype.Int8   `json:"matches_played"`
+		InningsBowled   pgtype.Int8   `json:"innings_bowled"`
+		OversBowled     pgtype.Float8 `json:"overs_bowled"`
+		MaidenOvers     pgtype.Int8   `json:"maiden_overs"`
+		RunsConceded    pgtype.Int8   `json:"runs_conceded"`
+		WicketsTaken    pgtype.Int8   `json:"wickets_taken"`
+		Average         pgtype.Float8 `json:"average"`
+		StrikeRate      pgtype.Float8 `json:"strike_rate"`
+		Economy         pgtype.Float8 `json:"economy"`
+		FourWktHauls    pgtype.Int8   `json:"four_wicket_hauls"`
+		FiveWktHauls    pgtype.Int8   `json:"five_wicket_hauls"`
+		TenWktHauls     pgtype.Int8   `json:"ten_wicket_hauls"`
+		BestMatchWkts   pgtype.Int8   `json:"best_match_wickets"`
+		BestMatchRuns   pgtype.Int8   `json:"best_match_runs"`
+		BestInningsWkts pgtype.Int8   `json:"best_innings_wickets"`
+		BestInningsRuns pgtype.Int8   `json:"best_innings_runs"`
+		FoursConceded   pgtype.Int8   `json:"fours_conceded"`
+		SixesConceded   pgtype.Int8   `json:"sixes_conceded"`
+	} `json:"teams"`
+
+	Oppositions []struct {
+		OppositionTeamId   pgtype.Int8 `json:"opposition_team_id"`
+		OppositionTeamName pgtype.Text `json:"opposition_team_name"`
+		PlayersCount       pgtype.Int8 `json:"players_count"`
+		MinDate            pgtype.Date `json:"min_date"`
+		MaxDate            pgtype.Date `json:"max_date"`
+
+		MatchesPlayed   pgtype.Int8   `json:"matches_played"`
+		InningsBowled   pgtype.Int8   `json:"innings_bowled"`
+		OversBowled     pgtype.Float8 `json:"overs_bowled"`
+		MaidenOvers     pgtype.Int8   `json:"maiden_overs"`
+		RunsConceded    pgtype.Int8   `json:"runs_conceded"`
+		WicketsTaken    pgtype.Int8   `json:"wickets_taken"`
+		Average         pgtype.Float8 `json:"average"`
+		StrikeRate      pgtype.Float8 `json:"strike_rate"`
+		Economy         pgtype.Float8 `json:"economy"`
+		FourWktHauls    pgtype.Int8   `json:"four_wicket_hauls"`
+		FiveWktHauls    pgtype.Int8   `json:"five_wicket_hauls"`
+		TenWktHauls     pgtype.Int8   `json:"ten_wicket_hauls"`
+		BestMatchWkts   pgtype.Int8   `json:"best_match_wickets"`
+		BestMatchRuns   pgtype.Int8   `json:"best_match_runs"`
+		BestInningsWkts pgtype.Int8   `json:"best_innings_wickets"`
+		BestInningsRuns pgtype.Int8   `json:"best_innings_runs"`
+		FoursConceded   pgtype.Int8   `json:"fours_conceded"`
+		SixesConceded   pgtype.Int8   `json:"sixes_conceded"`
+	} `json:"oppositions"`
+
+	HostNations []struct {
+		HostNationId   pgtype.Int8 `json:"host_nation_id"`
+		HostNationName pgtype.Text `json:"host_nation_name"`
+		PlayersCount   pgtype.Int8 `json:"players_count"`
+		MinDate        pgtype.Date `json:"min_date"`
+		MaxDate        pgtype.Date `json:"max_date"`
+
+		MatchesPlayed   pgtype.Int8   `json:"matches_played"`
+		InningsBowled   pgtype.Int8   `json:"innings_bowled"`
+		OversBowled     pgtype.Float8 `json:"overs_bowled"`
+		MaidenOvers     pgtype.Int8   `json:"maiden_overs"`
+		RunsConceded    pgtype.Int8   `json:"runs_conceded"`
+		WicketsTaken    pgtype.Int8   `json:"wickets_taken"`
+		Average         pgtype.Float8 `json:"average"`
+		StrikeRate      pgtype.Float8 `json:"strike_rate"`
+		Economy         pgtype.Float8 `json:"economy"`
+		FourWktHauls    pgtype.Int8   `json:"four_wicket_hauls"`
+		FiveWktHauls    pgtype.Int8   `json:"five_wicket_hauls"`
+		TenWktHauls     pgtype.Int8   `json:"ten_wicket_hauls"`
+		BestMatchWkts   pgtype.Int8   `json:"best_match_wickets"`
+		BestMatchRuns   pgtype.Int8   `json:"best_match_runs"`
+		BestInningsWkts pgtype.Int8   `json:"best_innings_wickets"`
+		BestInningsRuns pgtype.Int8   `json:"best_innings_runs"`
+		FoursConceded   pgtype.Int8   `json:"fours_conceded"`
+		SixesConceded   pgtype.Int8   `json:"sixes_conceded"`
+	} `json:"host_nations"`
+
+	Continents []struct {
+		ContinentId   pgtype.Int8 `json:"continent_id"`
+		ContinentName pgtype.Text `json:"continent_name"`
+		PlayersCount  pgtype.Int8 `json:"players_count"`
+		MinDate       pgtype.Date `json:"min_date"`
+		MaxDate       pgtype.Date `json:"max_date"`
+
+		MatchesPlayed   pgtype.Int8   `json:"matches_played"`
+		InningsBowled   pgtype.Int8   `json:"innings_bowled"`
+		OversBowled     pgtype.Float8 `json:"overs_bowled"`
+		MaidenOvers     pgtype.Int8   `json:"maiden_overs"`
+		RunsConceded    pgtype.Int8   `json:"runs_conceded"`
+		WicketsTaken    pgtype.Int8   `json:"wickets_taken"`
+		Average         pgtype.Float8 `json:"average"`
+		StrikeRate      pgtype.Float8 `json:"strike_rate"`
+		Economy         pgtype.Float8 `json:"economy"`
+		FourWktHauls    pgtype.Int8   `json:"four_wicket_hauls"`
+		FiveWktHauls    pgtype.Int8   `json:"five_wicket_hauls"`
+		TenWktHauls     pgtype.Int8   `json:"ten_wicket_hauls"`
+		BestMatchWkts   pgtype.Int8   `json:"best_match_wickets"`
+		BestMatchRuns   pgtype.Int8   `json:"best_match_runs"`
+		BestInningsWkts pgtype.Int8   `json:"best_innings_wickets"`
+		BestInningsRuns pgtype.Int8   `json:"best_innings_runs"`
+		FoursConceded   pgtype.Int8   `json:"fours_conceded"`
+		SixesConceded   pgtype.Int8   `json:"sixes_conceded"`
+	} `json:"continents"`
+
+	Years []struct {
+		Year         pgtype.Int8 `json:"Year"`
+		PlayersCount pgtype.Int8 `json:"players_count"`
+
+		MatchesPlayed   pgtype.Int8   `json:"matches_played"`
+		InningsBowled   pgtype.Int8   `json:"innings_bowled"`
+		OversBowled     pgtype.Float8 `json:"overs_bowled"`
+		MaidenOvers     pgtype.Int8   `json:"maiden_overs"`
+		RunsConceded    pgtype.Int8   `json:"runs_conceded"`
+		WicketsTaken    pgtype.Int8   `json:"wickets_taken"`
+		Average         pgtype.Float8 `json:"average"`
+		StrikeRate      pgtype.Float8 `json:"strike_rate"`
+		Economy         pgtype.Float8 `json:"economy"`
+		FourWktHauls    pgtype.Int8   `json:"four_wicket_hauls"`
+		FiveWktHauls    pgtype.Int8   `json:"five_wicket_hauls"`
+		TenWktHauls     pgtype.Int8   `json:"ten_wicket_hauls"`
+		BestMatchWkts   pgtype.Int8   `json:"best_match_wickets"`
+		BestMatchRuns   pgtype.Int8   `json:"best_match_runs"`
+		BestInningsWkts pgtype.Int8   `json:"best_innings_wickets"`
+		BestInningsRuns pgtype.Int8   `json:"best_innings_runs"`
+		FoursConceded   pgtype.Int8   `json:"fours_conceded"`
+		SixesConceded   pgtype.Int8   `json:"sixes_conceded"`
+	} `json:"years"`
+
+	Seasons []struct {
+		Season       pgtype.Text `json:"season"`
+		PlayersCount pgtype.Int8 `json:"players_count"`
+
+		MatchesPlayed   pgtype.Int8   `json:"matches_played"`
+		InningsBowled   pgtype.Int8   `json:"innings_bowled"`
+		OversBowled     pgtype.Float8 `json:"overs_bowled"`
+		MaidenOvers     pgtype.Int8   `json:"maiden_overs"`
+		RunsConceded    pgtype.Int8   `json:"runs_conceded"`
+		WicketsTaken    pgtype.Int8   `json:"wickets_taken"`
+		Average         pgtype.Float8 `json:"average"`
+		StrikeRate      pgtype.Float8 `json:"strike_rate"`
+		Economy         pgtype.Float8 `json:"economy"`
+		FourWktHauls    pgtype.Int8   `json:"four_wicket_hauls"`
+		FiveWktHauls    pgtype.Int8   `json:"five_wicket_hauls"`
+		TenWktHauls     pgtype.Int8   `json:"ten_wicket_hauls"`
+		BestMatchWkts   pgtype.Int8   `json:"best_match_wickets"`
+		BestMatchRuns   pgtype.Int8   `json:"best_match_runs"`
+		BestInningsWkts pgtype.Int8   `json:"best_innings_wickets"`
+		BestInningsRuns pgtype.Int8   `json:"best_innings_runs"`
+		FoursConceded   pgtype.Int8   `json:"fours_conceded"`
+		SixesConceded   pgtype.Int8   `json:"sixes_conceded"`
+	} `json:"seasons"`
+
+	HomeAway []struct {
+		Label        pgtype.Text `json:"label"`
+		PlayersCount pgtype.Int8 `json:"players_count"`
+		MinDate      pgtype.Date `json:"min_date"`
+		MaxDate      pgtype.Date `json:"max_date"`
+
+		MatchesPlayed   pgtype.Int8   `json:"matches_played"`
+		InningsBowled   pgtype.Int8   `json:"innings_bowled"`
+		OversBowled     pgtype.Float8 `json:"overs_bowled"`
+		MaidenOvers     pgtype.Int8   `json:"maiden_overs"`
+		RunsConceded    pgtype.Int8   `json:"runs_conceded"`
+		WicketsTaken    pgtype.Int8   `json:"wickets_taken"`
+		Average         pgtype.Float8 `json:"average"`
+		StrikeRate      pgtype.Float8 `json:"strike_rate"`
+		Economy         pgtype.Float8 `json:"economy"`
+		FourWktHauls    pgtype.Int8   `json:"four_wicket_hauls"`
+		FiveWktHauls    pgtype.Int8   `json:"five_wicket_hauls"`
+		TenWktHauls     pgtype.Int8   `json:"ten_wicket_hauls"`
+		BestMatchWkts   pgtype.Int8   `json:"best_match_wickets"`
+		BestMatchRuns   pgtype.Int8   `json:"best_match_runs"`
+		BestInningsWkts pgtype.Int8   `json:"best_innings_wickets"`
+		BestInningsRuns pgtype.Int8   `json:"best_innings_runs"`
+		FoursConceded   pgtype.Int8   `json:"fours_conceded"`
+		SixesConceded   pgtype.Int8   `json:"sixes_conceded"`
+	} `json:"home_away"`
+
+	TossWonLost []struct {
+		Result       pgtype.Text `json:"result"`
+		PlayersCount pgtype.Int8 `json:"players_count"`
+		MinDate      pgtype.Date `json:"min_date"`
+		MaxDate      pgtype.Date `json:"max_date"`
+
+		MatchesPlayed   pgtype.Int8   `json:"matches_played"`
+		InningsBowled   pgtype.Int8   `json:"innings_bowled"`
+		OversBowled     pgtype.Float8 `json:"overs_bowled"`
+		MaidenOvers     pgtype.Int8   `json:"maiden_overs"`
+		RunsConceded    pgtype.Int8   `json:"runs_conceded"`
+		WicketsTaken    pgtype.Int8   `json:"wickets_taken"`
+		Average         pgtype.Float8 `json:"average"`
+		StrikeRate      pgtype.Float8 `json:"strike_rate"`
+		Economy         pgtype.Float8 `json:"economy"`
+		FourWktHauls    pgtype.Int8   `json:"four_wicket_hauls"`
+		FiveWktHauls    pgtype.Int8   `json:"five_wicket_hauls"`
+		TenWktHauls     pgtype.Int8   `json:"ten_wicket_hauls"`
+		BestMatchWkts   pgtype.Int8   `json:"best_match_wickets"`
+		BestMatchRuns   pgtype.Int8   `json:"best_match_runs"`
+		BestInningsWkts pgtype.Int8   `json:"best_innings_wickets"`
+		BestInningsRuns pgtype.Int8   `json:"best_innings_runs"`
+		FoursConceded   pgtype.Int8   `json:"fours_conceded"`
+		SixesConceded   pgtype.Int8   `json:"sixes_conceded"`
+	} `json:"toss_won_lost"`
+
+	TossDecision []struct {
+		Result            pgtype.Text `json:"result"`
+		IsTossDecisionBat pgtype.Bool `json:"is_toss_decision_bat"`
+		PlayersCount      pgtype.Int8 `json:"players_count"`
+		MinDate           pgtype.Date `json:"min_date"`
+		MaxDate           pgtype.Date `json:"max_date"`
+
+		MatchesPlayed   pgtype.Int8   `json:"matches_played"`
+		InningsBowled   pgtype.Int8   `json:"innings_bowled"`
+		OversBowled     pgtype.Float8 `json:"overs_bowled"`
+		MaidenOvers     pgtype.Int8   `json:"maiden_overs"`
+		RunsConceded    pgtype.Int8   `json:"runs_conceded"`
+		WicketsTaken    pgtype.Int8   `json:"wickets_taken"`
+		Average         pgtype.Float8 `json:"average"`
+		StrikeRate      pgtype.Float8 `json:"strike_rate"`
+		Economy         pgtype.Float8 `json:"economy"`
+		FourWktHauls    pgtype.Int8   `json:"four_wicket_hauls"`
+		FiveWktHauls    pgtype.Int8   `json:"five_wicket_hauls"`
+		TenWktHauls     pgtype.Int8   `json:"ten_wicket_hauls"`
+		BestMatchWkts   pgtype.Int8   `json:"best_match_wickets"`
+		BestMatchRuns   pgtype.Int8   `json:"best_match_runs"`
+		BestInningsWkts pgtype.Int8   `json:"best_innings_wickets"`
+		BestInningsRuns pgtype.Int8   `json:"best_innings_runs"`
+		FoursConceded   pgtype.Int8   `json:"fours_conceded"`
+		SixesConceded   pgtype.Int8   `json:"sixes_conceded"`
+	} `json:"toss_decision"`
+
+	BatBowlFirst []struct {
+		First        pgtype.Text `json:"first"`
+		PlayersCount pgtype.Int8 `json:"players_count"`
+		MinDate      pgtype.Date `json:"min_date"`
+		MaxDate      pgtype.Date `json:"max_date"`
+
+		MatchesPlayed   pgtype.Int8   `json:"matches_played"`
+		InningsBowled   pgtype.Int8   `json:"innings_bowled"`
+		OversBowled     pgtype.Float8 `json:"overs_bowled"`
+		MaidenOvers     pgtype.Int8   `json:"maiden_overs"`
+		RunsConceded    pgtype.Int8   `json:"runs_conceded"`
+		WicketsTaken    pgtype.Int8   `json:"wickets_taken"`
+		Average         pgtype.Float8 `json:"average"`
+		StrikeRate      pgtype.Float8 `json:"strike_rate"`
+		Economy         pgtype.Float8 `json:"economy"`
+		FourWktHauls    pgtype.Int8   `json:"four_wicket_hauls"`
+		FiveWktHauls    pgtype.Int8   `json:"five_wicket_hauls"`
+		TenWktHauls     pgtype.Int8   `json:"ten_wicket_hauls"`
+		BestMatchWkts   pgtype.Int8   `json:"best_match_wickets"`
+		BestMatchRuns   pgtype.Int8   `json:"best_match_runs"`
+		BestInningsWkts pgtype.Int8   `json:"best_innings_wickets"`
+		BestInningsRuns pgtype.Int8   `json:"best_innings_runs"`
+		FoursConceded   pgtype.Int8   `json:"fours_conceded"`
+		SixesConceded   pgtype.Int8   `json:"sixes_conceded"`
+	} `json:"bat_bowl_first"`
+
+	InningsNumber []struct {
+		InningsNumber pgtype.Int8 `json:"innings_number"`
+		PlayersCount  pgtype.Int8 `json:"players_count"`
+		MinDate       pgtype.Date `json:"min_date"`
+		MaxDate       pgtype.Date `json:"max_date"`
+
+		MatchesPlayed   pgtype.Int8   `json:"matches_played"`
+		InningsBowled   pgtype.Int8   `json:"innings_bowled"`
+		OversBowled     pgtype.Float8 `json:"overs_bowled"`
+		MaidenOvers     pgtype.Int8   `json:"maiden_overs"`
+		RunsConceded    pgtype.Int8   `json:"runs_conceded"`
+		WicketsTaken    pgtype.Int8   `json:"wickets_taken"`
+		Average         pgtype.Float8 `json:"average"`
+		StrikeRate      pgtype.Float8 `json:"strike_rate"`
+		Economy         pgtype.Float8 `json:"economy"`
+		FourWktHauls    pgtype.Int8   `json:"four_wicket_hauls"`
+		FiveWktHauls    pgtype.Int8   `json:"five_wicket_hauls"`
+		TenWktHauls     pgtype.Int8   `json:"ten_wicket_hauls"`
+		BestMatchWkts   pgtype.Int8   `json:"best_match_wickets"`
+		BestMatchRuns   pgtype.Int8   `json:"best_match_runs"`
+		BestInningsWkts pgtype.Int8   `json:"best_innings_wickets"`
+		BestInningsRuns pgtype.Int8   `json:"best_innings_runs"`
+		FoursConceded   pgtype.Int8   `json:"fours_conceded"`
+		SixesConceded   pgtype.Int8   `json:"sixes_conceded"`
+	} `json:"innings_number"`
+
+	MatchResult []struct {
+		Result       pgtype.Text `json:"result"`
+		PlayersCount pgtype.Int8 `json:"players_count"`
+		MinDate      pgtype.Date `json:"min_date"`
+		MaxDate      pgtype.Date `json:"max_date"`
+
+		MatchesPlayed   pgtype.Int8   `json:"matches_played"`
+		InningsBowled   pgtype.Int8   `json:"innings_bowled"`
+		OversBowled     pgtype.Float8 `json:"overs_bowled"`
+		MaidenOvers     pgtype.Int8   `json:"maiden_overs"`
+		RunsConceded    pgtype.Int8   `json:"runs_conceded"`
+		WicketsTaken    pgtype.Int8   `json:"wickets_taken"`
+		Average         pgtype.Float8 `json:"average"`
+		StrikeRate      pgtype.Float8 `json:"strike_rate"`
+		Economy         pgtype.Float8 `json:"economy"`
+		FourWktHauls    pgtype.Int8   `json:"four_wicket_hauls"`
+		FiveWktHauls    pgtype.Int8   `json:"five_wicket_hauls"`
+		TenWktHauls     pgtype.Int8   `json:"ten_wicket_hauls"`
+		BestMatchWkts   pgtype.Int8   `json:"best_match_wickets"`
+		BestMatchRuns   pgtype.Int8   `json:"best_match_runs"`
+		BestInningsWkts pgtype.Int8   `json:"best_innings_wickets"`
+		BestInningsRuns pgtype.Int8   `json:"best_innings_runs"`
+		FoursConceded   pgtype.Int8   `json:"fours_conceded"`
+		SixesConceded   pgtype.Int8   `json:"sixes_conceded"`
+	} `json:"match_result"`
+
+	MatchResultBatBowlFirst []struct {
+		Result       pgtype.Text `json:"result"`
+		First        pgtype.Text `json:"first"`
+		PlayersCount pgtype.Int8 `json:"players_count"`
+		MinDate      pgtype.Date `json:"min_date"`
+		MaxDate      pgtype.Date `json:"max_date"`
+
+		MatchesPlayed   pgtype.Int8   `json:"matches_played"`
+		InningsBowled   pgtype.Int8   `json:"innings_bowled"`
+		OversBowled     pgtype.Float8 `json:"overs_bowled"`
+		MaidenOvers     pgtype.Int8   `json:"maiden_overs"`
+		RunsConceded    pgtype.Int8   `json:"runs_conceded"`
+		WicketsTaken    pgtype.Int8   `json:"wickets_taken"`
+		Average         pgtype.Float8 `json:"average"`
+		StrikeRate      pgtype.Float8 `json:"strike_rate"`
+		Economy         pgtype.Float8 `json:"economy"`
+		FourWktHauls    pgtype.Int8   `json:"four_wicket_hauls"`
+		FiveWktHauls    pgtype.Int8   `json:"five_wicket_hauls"`
+		TenWktHauls     pgtype.Int8   `json:"ten_wicket_hauls"`
+		BestMatchWkts   pgtype.Int8   `json:"best_match_wickets"`
+		BestMatchRuns   pgtype.Int8   `json:"best_match_runs"`
+		BestInningsWkts pgtype.Int8   `json:"best_innings_wickets"`
+		BestInningsRuns pgtype.Int8   `json:"best_innings_runs"`
+		FoursConceded   pgtype.Int8   `json:"fours_conceded"`
+		SixesConceded   pgtype.Int8   `json:"sixes_conceded"`
+	} `json:"match_result_bat_bowl_first"`
+
+	SeriesTeamsCount []struct {
+		TeamsCount   pgtype.Text `json:"teams_count"`
+		PlayersCount pgtype.Int8 `json:"players_count"`
+		MinDate      pgtype.Date `json:"min_date"`
+		MaxDate      pgtype.Date `json:"max_date"`
+
+		MatchesPlayed   pgtype.Int8   `json:"matches_played"`
+		InningsBowled   pgtype.Int8   `json:"innings_bowled"`
+		OversBowled     pgtype.Float8 `json:"overs_bowled"`
+		MaidenOvers     pgtype.Int8   `json:"maiden_overs"`
+		RunsConceded    pgtype.Int8   `json:"runs_conceded"`
+		WicketsTaken    pgtype.Int8   `json:"wickets_taken"`
+		Average         pgtype.Float8 `json:"average"`
+		StrikeRate      pgtype.Float8 `json:"strike_rate"`
+		Economy         pgtype.Float8 `json:"economy"`
+		FourWktHauls    pgtype.Int8   `json:"four_wicket_hauls"`
+		FiveWktHauls    pgtype.Int8   `json:"five_wicket_hauls"`
+		TenWktHauls     pgtype.Int8   `json:"ten_wicket_hauls"`
+		BestMatchWkts   pgtype.Int8   `json:"best_match_wickets"`
+		BestMatchRuns   pgtype.Int8   `json:"best_match_runs"`
+		BestInningsWkts pgtype.Int8   `json:"best_innings_wickets"`
+		BestInningsRuns pgtype.Int8   `json:"best_innings_runs"`
+		FoursConceded   pgtype.Int8   `json:"fours_conceded"`
+		SixesConceded   pgtype.Int8   `json:"sixes_conceded"`
+	} `json:"series_teams_count"`
+
+	SeriesEventMatchNumber []struct {
+		EventMatchNumber pgtype.Int8 `json:"event_match_number"`
+		PlayersCount     pgtype.Int8 `json:"players_count"`
+		MinDate          pgtype.Date `json:"min_date"`
+		MaxDate          pgtype.Date `json:"max_date"`
+
+		MatchesPlayed   pgtype.Int8   `json:"matches_played"`
+		InningsBowled   pgtype.Int8   `json:"innings_bowled"`
+		OversBowled     pgtype.Float8 `json:"overs_bowled"`
+		MaidenOvers     pgtype.Int8   `json:"maiden_overs"`
+		RunsConceded    pgtype.Int8   `json:"runs_conceded"`
+		WicketsTaken    pgtype.Int8   `json:"wickets_taken"`
+		Average         pgtype.Float8 `json:"average"`
+		StrikeRate      pgtype.Float8 `json:"strike_rate"`
+		Economy         pgtype.Float8 `json:"economy"`
+		FourWktHauls    pgtype.Int8   `json:"four_wicket_hauls"`
+		FiveWktHauls    pgtype.Int8   `json:"five_wicket_hauls"`
+		TenWktHauls     pgtype.Int8   `json:"ten_wicket_hauls"`
+		BestMatchWkts   pgtype.Int8   `json:"best_match_wickets"`
+		BestMatchRuns   pgtype.Int8   `json:"best_match_runs"`
+		BestInningsWkts pgtype.Int8   `json:"best_innings_wickets"`
+		BestInningsRuns pgtype.Int8   `json:"best_innings_runs"`
+		FoursConceded   pgtype.Int8   `json:"fours_conceded"`
+		SixesConceded   pgtype.Int8   `json:"sixes_conceded"`
+	} `json:"series_event_match_number"`
+
+	Tournaments []struct {
+		TournamentId   pgtype.Int8 `json:"tournament_id"`
+		TournamentName pgtype.Text `json:"tournament_name"`
+		PlayersCount   pgtype.Int8 `json:"players_count"`
+		MinDate        pgtype.Date `json:"min_date"`
+		MaxDate        pgtype.Date `json:"max_date"`
+
+		MatchesPlayed   pgtype.Int8   `json:"matches_played"`
+		InningsBowled   pgtype.Int8   `json:"innings_bowled"`
+		OversBowled     pgtype.Float8 `json:"overs_bowled"`
+		MaidenOvers     pgtype.Int8   `json:"maiden_overs"`
+		RunsConceded    pgtype.Int8   `json:"runs_conceded"`
+		WicketsTaken    pgtype.Int8   `json:"wickets_taken"`
+		Average         pgtype.Float8 `json:"average"`
+		StrikeRate      pgtype.Float8 `json:"strike_rate"`
+		Economy         pgtype.Float8 `json:"economy"`
+		FourWktHauls    pgtype.Int8   `json:"four_wicket_hauls"`
+		FiveWktHauls    pgtype.Int8   `json:"five_wicket_hauls"`
+		TenWktHauls     pgtype.Int8   `json:"ten_wicket_hauls"`
+		BestMatchWkts   pgtype.Int8   `json:"best_match_wickets"`
+		BestMatchRuns   pgtype.Int8   `json:"best_match_runs"`
+		BestInningsWkts pgtype.Int8   `json:"best_innings_wickets"`
+		BestInningsRuns pgtype.Int8   `json:"best_innings_runs"`
+		FoursConceded   pgtype.Int8   `json:"fours_conceded"`
+		SixesConceded   pgtype.Int8   `json:"sixes_conceded"`
+	} `json:"tournaments"`
+
+	BowlingPositions []struct {
+		BowlingPosition pgtype.Int8 `json:"bowling_position"`
+		PlayersCount    pgtype.Int8 `json:"players_count"`
+		MinDate         pgtype.Date `json:"min_date"`
+		MaxDate         pgtype.Date `json:"max_date"`
+
+		MatchesPlayed   pgtype.Int8   `json:"matches_played"`
+		InningsBowled   pgtype.Int8   `json:"innings_bowled"`
+		OversBowled     pgtype.Float8 `json:"overs_bowled"`
+		MaidenOvers     pgtype.Int8   `json:"maiden_overs"`
+		RunsConceded    pgtype.Int8   `json:"runs_conceded"`
+		WicketsTaken    pgtype.Int8   `json:"wickets_taken"`
+		Average         pgtype.Float8 `json:"average"`
+		StrikeRate      pgtype.Float8 `json:"strike_rate"`
+		Economy         pgtype.Float8 `json:"economy"`
+		FourWktHauls    pgtype.Int8   `json:"four_wicket_hauls"`
+		FiveWktHauls    pgtype.Int8   `json:"five_wicket_hauls"`
+		TenWktHauls     pgtype.Int8   `json:"ten_wicket_hauls"`
+		BestMatchWkts   pgtype.Int8   `json:"best_match_wickets"`
+		BestMatchRuns   pgtype.Int8   `json:"best_match_runs"`
+		BestInningsWkts pgtype.Int8   `json:"best_innings_wickets"`
+		BestInningsRuns pgtype.Int8   `json:"best_innings_runs"`
+		FoursConceded   pgtype.Int8   `json:"fours_conceded"`
+		SixesConceded   pgtype.Int8   `json:"sixes_conceded"`
+	} `json:"bowling_positions"`
+}
+
 type Overall_Bowling_Bowler_Group struct {
 	BowlerId         pgtype.Int8   `json:"bowler_id"`
 	BowlerName       pgtype.Text   `json:"bowler_name"`

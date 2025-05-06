@@ -174,7 +174,7 @@ func parseMatchInfoFile(filePath, playingFormat string, channel chan<- info_pars
 			continue
 		}
 
-		if row[1] == "neutral_venue" {
+		if row[1] == "neutralvenue" {
 			infoInput.is_neutral_venue = row[2] == "true"
 			continue
 		}

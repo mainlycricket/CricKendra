@@ -562,13 +562,14 @@ type StatsResponse[T any] struct {
 }
 
 type StatsFilters struct {
-	Teams       []TeamAsForeignField       `json:"teams"`
-	HostNations []HostNationAsForeignField `json:"host_nations"`
-	Continents  []ContinentAsForeignField  `json:"continents"`
-	Grounds     []GroundAsForeignField     `json:"grounds"`
-	MinDate     pgtype.Date                `json:"min_date"`
-	MaxDate     pgtype.Date                `json:"max_date"`
-	Seasons     []pgtype.Text              `json:"seasons"`
-	Series      []SeriesAsForeignField     `json:"series"`
-	Tournaments []TournamentAsForeignField `json:"tournaments"`
+	PrimaryTeams    []TeamAsForeignField       `json:"primary_teams"`
+	OppositionTeams []TeamAsForeignField       `json:"opposition_teams"`
+	HostNations     []HostNationAsForeignField `json:"host_nations"`
+	Continents      []ContinentAsForeignField  `json:"continents"`
+	Grounds         []GroundAsForeignField     `json:"grounds"`
+	MinDate         pgtype.Date                `json:"min_date"`
+	MaxDate         pgtype.Date                `json:"max_date"`
+	Seasons         []pgtype.Text              `json:"seasons"`
+	Series          []SeriesAsForeignField     `json:"series"`
+	Tournaments     []TournamentAsForeignField `json:"tournaments"`
 }

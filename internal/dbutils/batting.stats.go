@@ -12,6 +12,24 @@ import (
 
 // Function Names are in Read_Overall_Batting_x_Stats format, x represents grouping
 
+func Read_Overall_Batting_Summary_Stats(ctx context.Context, db DB_Exec, queryMap url.Values) (responses.Overall_Batting_Summary_Group, error) {
+	var response responses.Overall_Batting_Summary_Group
+
+	query, args, err := statqueries.Query_Overall_Batting_Summary(&queryMap)
+	if err != nil {
+		return response, err
+	}
+
+	err = db.QueryRow(ctx, query, args...).Scan(&response.Teams, &response.Oppositions, &response.HostNations, &response.Continents, &response.Years, &response.Seasons, &response.HomeAway, &response.TossWonLost, &response.TossDecision, &response.BatBowlFirst, &response.InningsNumber, &response.MatchResult, &response.MatchResultBatBowlFirst, &response.SeriesTeamsCount, &response.SeriesEventMatchNumber, &response.Tournaments, &response.BattingPositions)
+
+	if err != nil {
+		log.Println(query)
+		return response, err
+	}
+
+	return response, nil
+}
+
 func Read_Overall_Batting_Batters_Stats(ctx context.Context, db DB_Exec, queryMap url.Values) (responses.StatsResponse[responses.Overall_Batting_Batter_Group], error) {
 	var response responses.StatsResponse[responses.Overall_Batting_Batter_Group]
 

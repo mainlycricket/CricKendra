@@ -4,6 +4,402 @@ import "github.com/jackc/pgx/v5/pgtype"
 
 /* Overall Stats */
 
+type Overall_Batting_Summary_Group struct {
+	Teams []struct {
+		TeamId       pgtype.Int8 `json:"team_id"`
+		TeamName     pgtype.Text `json:"team_name"`
+		PlayersCount pgtype.Int8 `json:"players_count"`
+		MinDate      pgtype.Date `json:"min_date"`
+		MaxDate      pgtype.Date `json:"max_date"`
+
+		MatchesPlayed      pgtype.Int8   `json:"matches_played"`
+		InningsBatted      pgtype.Int8   `json:"innings_batted"`
+		RunsScored         pgtype.Int8   `json:"runs_scored"`
+		BallsFaced         pgtype.Int8   `json:"balls_faced"`
+		NotOuts            pgtype.Int8   `json:"not_outs"`
+		Average            pgtype.Float8 `json:"average"`
+		StrikeRate         pgtype.Float8 `json:"strike_rate"`
+		HighestScore       pgtype.Int8   `json:"highest_score"`
+		HighestNotOutScore pgtype.Int8   `json:"highest_not_out_score"`
+		Centuries          pgtype.Int8   `json:"centuries"`
+		HalfCenturies      pgtype.Int8   `json:"half_centuries"`
+		FiftyPlusScores    pgtype.Int8   `json:"fifty_plus_scores"`
+		Ducks              pgtype.Int8   `json:"ducks"`
+		FoursScored        pgtype.Int8   `json:"fours_scored"`
+		SixesScored        pgtype.Int8   `json:"sixes_scored"`
+	} `json:"teams"`
+
+	Oppositions []struct {
+		OppositionTeamId   pgtype.Int8 `json:"opposition_team_id"`
+		OppositionTeamName pgtype.Text `json:"opposition_team_name"`
+		PlayersCount       pgtype.Int8 `json:"players_count"`
+		MinDate            pgtype.Date `json:"min_date"`
+		MaxDate            pgtype.Date `json:"max_date"`
+
+		MatchesPlayed      pgtype.Int8   `json:"matches_played"`
+		InningsBatted      pgtype.Int8   `json:"innings_batted"`
+		RunsScored         pgtype.Int8   `json:"runs_scored"`
+		BallsFaced         pgtype.Int8   `json:"balls_faced"`
+		NotOuts            pgtype.Int8   `json:"not_outs"`
+		Average            pgtype.Float8 `json:"average"`
+		StrikeRate         pgtype.Float8 `json:"strike_rate"`
+		HighestScore       pgtype.Int8   `json:"highest_score"`
+		HighestNotOutScore pgtype.Int8   `json:"highest_not_out_score"`
+		Centuries          pgtype.Int8   `json:"centuries"`
+		HalfCenturies      pgtype.Int8   `json:"half_centuries"`
+		FiftyPlusScores    pgtype.Int8   `json:"fifty_plus_scores"`
+		Ducks              pgtype.Int8   `json:"ducks"`
+		FoursScored        pgtype.Int8   `json:"fours_scored"`
+		SixesScored        pgtype.Int8   `json:"sixes_scored"`
+	} `json:"oppositions"`
+
+	HostNations []struct {
+		HostNationId   pgtype.Int8 `json:"host_nation_id"`
+		HostNationName pgtype.Text `json:"host_nation_name"`
+		PlayersCount   pgtype.Int8 `json:"players_count"`
+		MinDate        pgtype.Date `json:"min_date"`
+		MaxDate        pgtype.Date `json:"max_date"`
+
+		MatchesPlayed      pgtype.Int8   `json:"matches_played"`
+		InningsBatted      pgtype.Int8   `json:"innings_batted"`
+		RunsScored         pgtype.Int8   `json:"runs_scored"`
+		BallsFaced         pgtype.Int8   `json:"balls_faced"`
+		NotOuts            pgtype.Int8   `json:"not_outs"`
+		Average            pgtype.Float8 `json:"average"`
+		StrikeRate         pgtype.Float8 `json:"strike_rate"`
+		HighestScore       pgtype.Int8   `json:"highest_score"`
+		HighestNotOutScore pgtype.Int8   `json:"highest_not_out_score"`
+		Centuries          pgtype.Int8   `json:"centuries"`
+		HalfCenturies      pgtype.Int8   `json:"half_centuries"`
+		FiftyPlusScores    pgtype.Int8   `json:"fifty_plus_scores"`
+		Ducks              pgtype.Int8   `json:"ducks"`
+		FoursScored        pgtype.Int8   `json:"fours_scored"`
+		SixesScored        pgtype.Int8   `json:"sixes_scored"`
+	} `json:"host_nations"`
+
+	Continents []struct {
+		ContinentId   pgtype.Int8 `json:"continent_id"`
+		ContinentName pgtype.Text `json:"continent_name"`
+		PlayersCount  pgtype.Int8 `json:"players_count"`
+		MinDate       pgtype.Date `json:"min_date"`
+		MaxDate       pgtype.Date `json:"max_date"`
+
+		MatchesPlayed      pgtype.Int8   `json:"matches_played"`
+		InningsBatted      pgtype.Int8   `json:"innings_batted"`
+		RunsScored         pgtype.Int8   `json:"runs_scored"`
+		BallsFaced         pgtype.Int8   `json:"balls_faced"`
+		NotOuts            pgtype.Int8   `json:"not_outs"`
+		Average            pgtype.Float8 `json:"average"`
+		StrikeRate         pgtype.Float8 `json:"strike_rate"`
+		HighestScore       pgtype.Int8   `json:"highest_score"`
+		HighestNotOutScore pgtype.Int8   `json:"highest_not_out_score"`
+		Centuries          pgtype.Int8   `json:"centuries"`
+		HalfCenturies      pgtype.Int8   `json:"half_centuries"`
+		FiftyPlusScores    pgtype.Int8   `json:"fifty_plus_scores"`
+		Ducks              pgtype.Int8   `json:"ducks"`
+		FoursScored        pgtype.Int8   `json:"fours_scored"`
+		SixesScored        pgtype.Int8   `json:"sixes_scored"`
+	} `json:"continents"`
+
+	Years []struct {
+		Year         pgtype.Int8 `json:"year"`
+		PlayersCount pgtype.Int8 `json:"players_count"`
+
+		MatchesPlayed      pgtype.Int8   `json:"matches_played"`
+		InningsBatted      pgtype.Int8   `json:"innings_batted"`
+		RunsScored         pgtype.Int8   `json:"runs_scored"`
+		BallsFaced         pgtype.Int8   `json:"balls_faced"`
+		NotOuts            pgtype.Int8   `json:"not_outs"`
+		Average            pgtype.Float8 `json:"average"`
+		StrikeRate         pgtype.Float8 `json:"strike_rate"`
+		HighestScore       pgtype.Int8   `json:"highest_score"`
+		HighestNotOutScore pgtype.Int8   `json:"highest_not_out_score"`
+		Centuries          pgtype.Int8   `json:"centuries"`
+		HalfCenturies      pgtype.Int8   `json:"half_centuries"`
+		FiftyPlusScores    pgtype.Int8   `json:"fifty_plus_scores"`
+		Ducks              pgtype.Int8   `json:"ducks"`
+		FoursScored        pgtype.Int8   `json:"fours_scored"`
+		SixesScored        pgtype.Int8   `json:"sixes_scored"`
+	} `json:"years"`
+
+	Seasons []struct {
+		Season       pgtype.Text `json:"season"`
+		PlayersCount pgtype.Int8 `json:"players_count"`
+
+		MatchesPlayed      pgtype.Int8   `json:"matches_played"`
+		InningsBatted      pgtype.Int8   `json:"innings_batted"`
+		RunsScored         pgtype.Int8   `json:"runs_scored"`
+		BallsFaced         pgtype.Int8   `json:"balls_faced"`
+		NotOuts            pgtype.Int8   `json:"not_outs"`
+		Average            pgtype.Float8 `json:"average"`
+		StrikeRate         pgtype.Float8 `json:"strike_rate"`
+		HighestScore       pgtype.Int8   `json:"highest_score"`
+		HighestNotOutScore pgtype.Int8   `json:"highest_not_out_score"`
+		Centuries          pgtype.Int8   `json:"centuries"`
+		HalfCenturies      pgtype.Int8   `json:"half_centuries"`
+		FiftyPlusScores    pgtype.Int8   `json:"fifty_plus_scores"`
+		Ducks              pgtype.Int8   `json:"ducks"`
+		FoursScored        pgtype.Int8   `json:"fours_scored"`
+		SixesScored        pgtype.Int8   `json:"sixes_scored"`
+	} `json:"seasons"`
+
+	HomeAway []struct {
+		Label        pgtype.Text `json:"label"`
+		PlayersCount pgtype.Int8 `json:"players_count"`
+		MinDate      pgtype.Date `json:"min_date"`
+		MaxDate      pgtype.Date `json:"max_date"`
+
+		MatchesPlayed      pgtype.Int8   `json:"matches_played"`
+		InningsBatted      pgtype.Int8   `json:"innings_batted"`
+		RunsScored         pgtype.Int8   `json:"runs_scored"`
+		BallsFaced         pgtype.Int8   `json:"balls_faced"`
+		NotOuts            pgtype.Int8   `json:"not_outs"`
+		Average            pgtype.Float8 `json:"average"`
+		StrikeRate         pgtype.Float8 `json:"strike_rate"`
+		HighestScore       pgtype.Int8   `json:"highest_score"`
+		HighestNotOutScore pgtype.Int8   `json:"highest_not_out_score"`
+		Centuries          pgtype.Int8   `json:"centuries"`
+		HalfCenturies      pgtype.Int8   `json:"half_centuries"`
+		FiftyPlusScores    pgtype.Int8   `json:"fifty_plus_scores"`
+		Ducks              pgtype.Int8   `json:"ducks"`
+		FoursScored        pgtype.Int8   `json:"fours_scored"`
+		SixesScored        pgtype.Int8   `json:"sixes_scored"`
+	} `json:"home_away"`
+
+	TossWonLost []struct {
+		Result       pgtype.Text `json:"result"`
+		PlayersCount pgtype.Int8 `json:"players_count"`
+		MinDate      pgtype.Date `json:"min_date"`
+		MaxDate      pgtype.Date `json:"max_date"`
+
+		MatchesPlayed      pgtype.Int8   `json:"matches_played"`
+		InningsBatted      pgtype.Int8   `json:"innings_batted"`
+		RunsScored         pgtype.Int8   `json:"runs_scored"`
+		BallsFaced         pgtype.Int8   `json:"balls_faced"`
+		NotOuts            pgtype.Int8   `json:"not_outs"`
+		Average            pgtype.Float8 `json:"average"`
+		StrikeRate         pgtype.Float8 `json:"strike_rate"`
+		HighestScore       pgtype.Int8   `json:"highest_score"`
+		HighestNotOutScore pgtype.Int8   `json:"highest_not_out_score"`
+		Centuries          pgtype.Int8   `json:"centuries"`
+		HalfCenturies      pgtype.Int8   `json:"half_centuries"`
+		FiftyPlusScores    pgtype.Int8   `json:"fifty_plus_scores"`
+		Ducks              pgtype.Int8   `json:"ducks"`
+		FoursScored        pgtype.Int8   `json:"fours_scored"`
+		SixesScored        pgtype.Int8   `json:"sixes_scored"`
+	} `json:"toss_won_lost"`
+
+	TossDecision []struct {
+		Result            pgtype.Text `json:"result"`
+		IsTossDecisionBat pgtype.Bool `json:"is_toss_decision_bat"`
+		PlayersCount      pgtype.Int8 `json:"players_count"`
+		MinDate           pgtype.Date `json:"min_date"`
+		MaxDate           pgtype.Date `json:"max_date"`
+
+		MatchesPlayed      pgtype.Int8   `json:"matches_played"`
+		InningsBatted      pgtype.Int8   `json:"innings_batted"`
+		RunsScored         pgtype.Int8   `json:"runs_scored"`
+		BallsFaced         pgtype.Int8   `json:"balls_faced"`
+		NotOuts            pgtype.Int8   `json:"not_outs"`
+		Average            pgtype.Float8 `json:"average"`
+		StrikeRate         pgtype.Float8 `json:"strike_rate"`
+		HighestScore       pgtype.Int8   `json:"highest_score"`
+		HighestNotOutScore pgtype.Int8   `json:"highest_not_out_score"`
+		Centuries          pgtype.Int8   `json:"centuries"`
+		HalfCenturies      pgtype.Int8   `json:"half_centuries"`
+		FiftyPlusScores    pgtype.Int8   `json:"fifty_plus_scores"`
+		Ducks              pgtype.Int8   `json:"ducks"`
+		FoursScored        pgtype.Int8   `json:"fours_scored"`
+		SixesScored        pgtype.Int8   `json:"sixes_scored"`
+	} `json:"toss_decision"`
+
+	BatBowlFirst []struct {
+		First        pgtype.Text `json:"first"`
+		PlayersCount pgtype.Int8 `json:"players_count"`
+		MinDate      pgtype.Date `json:"min_date"`
+		MaxDate      pgtype.Date `json:"max_date"`
+
+		MatchesPlayed      pgtype.Int8   `json:"matches_played"`
+		InningsBatted      pgtype.Int8   `json:"innings_batted"`
+		RunsScored         pgtype.Int8   `json:"runs_scored"`
+		BallsFaced         pgtype.Int8   `json:"balls_faced"`
+		NotOuts            pgtype.Int8   `json:"not_outs"`
+		Average            pgtype.Float8 `json:"average"`
+		StrikeRate         pgtype.Float8 `json:"strike_rate"`
+		HighestScore       pgtype.Int8   `json:"highest_score"`
+		HighestNotOutScore pgtype.Int8   `json:"highest_not_out_score"`
+		Centuries          pgtype.Int8   `json:"centuries"`
+		HalfCenturies      pgtype.Int8   `json:"half_centuries"`
+		FiftyPlusScores    pgtype.Int8   `json:"fifty_plus_scores"`
+		Ducks              pgtype.Int8   `json:"ducks"`
+		FoursScored        pgtype.Int8   `json:"fours_scored"`
+		SixesScored        pgtype.Int8   `json:"sixes_scored"`
+	} `json:"bat_bowl_first"`
+
+	InningsNumber []struct {
+		InningsNumber pgtype.Int8 `json:"innings_number"`
+		PlayersCount  pgtype.Int8 `json:"players_count"`
+		MinDate       pgtype.Date `json:"min_date"`
+		MaxDate       pgtype.Date `json:"max_date"`
+
+		MatchesPlayed      pgtype.Int8   `json:"matches_played"`
+		InningsBatted      pgtype.Int8   `json:"innings_batted"`
+		RunsScored         pgtype.Int8   `json:"runs_scored"`
+		BallsFaced         pgtype.Int8   `json:"balls_faced"`
+		NotOuts            pgtype.Int8   `json:"not_outs"`
+		Average            pgtype.Float8 `json:"average"`
+		StrikeRate         pgtype.Float8 `json:"strike_rate"`
+		HighestScore       pgtype.Int8   `json:"highest_score"`
+		HighestNotOutScore pgtype.Int8   `json:"highest_not_out_score"`
+		Centuries          pgtype.Int8   `json:"centuries"`
+		HalfCenturies      pgtype.Int8   `json:"half_centuries"`
+		FiftyPlusScores    pgtype.Int8   `json:"fifty_plus_scores"`
+		Ducks              pgtype.Int8   `json:"ducks"`
+		FoursScored        pgtype.Int8   `json:"fours_scored"`
+		SixesScored        pgtype.Int8   `json:"sixes_scored"`
+	} `json:"innings_number"`
+
+	MatchResult []struct {
+		Result       pgtype.Text `json:"result"`
+		PlayersCount pgtype.Int8 `json:"players_count"`
+		MinDate      pgtype.Date `json:"min_date"`
+		MaxDate      pgtype.Date `json:"max_date"`
+
+		MatchesPlayed      pgtype.Int8   `json:"matches_played"`
+		InningsBatted      pgtype.Int8   `json:"innings_batted"`
+		RunsScored         pgtype.Int8   `json:"runs_scored"`
+		BallsFaced         pgtype.Int8   `json:"balls_faced"`
+		NotOuts            pgtype.Int8   `json:"not_outs"`
+		Average            pgtype.Float8 `json:"average"`
+		StrikeRate         pgtype.Float8 `json:"strike_rate"`
+		HighestScore       pgtype.Int8   `json:"highest_score"`
+		HighestNotOutScore pgtype.Int8   `json:"highest_not_out_score"`
+		Centuries          pgtype.Int8   `json:"centuries"`
+		HalfCenturies      pgtype.Int8   `json:"half_centuries"`
+		FiftyPlusScores    pgtype.Int8   `json:"fifty_plus_scores"`
+		Ducks              pgtype.Int8   `json:"ducks"`
+		FoursScored        pgtype.Int8   `json:"fours_scored"`
+		SixesScored        pgtype.Int8   `json:"sixes_scored"`
+	} `json:"match_result"`
+
+	MatchResultBatBowlFirst []struct {
+		Result       pgtype.Text `json:"result"`
+		First        pgtype.Text `json:"first"`
+		PlayersCount pgtype.Int8 `json:"players_count"`
+		MinDate      pgtype.Date `json:"min_date"`
+		MaxDate      pgtype.Date `json:"max_date"`
+
+		MatchesPlayed      pgtype.Int8   `json:"matches_played"`
+		InningsBatted      pgtype.Int8   `json:"innings_batted"`
+		RunsScored         pgtype.Int8   `json:"runs_scored"`
+		BallsFaced         pgtype.Int8   `json:"balls_faced"`
+		NotOuts            pgtype.Int8   `json:"not_outs"`
+		Average            pgtype.Float8 `json:"average"`
+		StrikeRate         pgtype.Float8 `json:"strike_rate"`
+		HighestScore       pgtype.Int8   `json:"highest_score"`
+		HighestNotOutScore pgtype.Int8   `json:"highest_not_out_score"`
+		Centuries          pgtype.Int8   `json:"centuries"`
+		HalfCenturies      pgtype.Int8   `json:"half_centuries"`
+		FiftyPlusScores    pgtype.Int8   `json:"fifty_plus_scores"`
+		Ducks              pgtype.Int8   `json:"ducks"`
+		FoursScored        pgtype.Int8   `json:"fours_scored"`
+		SixesScored        pgtype.Int8   `json:"sixes_scored"`
+	} `json:"match_result_bat_bowl_first"`
+
+	SeriesTeamsCount []struct {
+		TeamsCount   pgtype.Text `json:"teams_count"`
+		PlayersCount pgtype.Int8 `json:"players_count"`
+		MinDate      pgtype.Date `json:"min_date"`
+		MaxDate      pgtype.Date `json:"max_date"`
+
+		MatchesPlayed      pgtype.Int8   `json:"matches_played"`
+		InningsBatted      pgtype.Int8   `json:"innings_batted"`
+		RunsScored         pgtype.Int8   `json:"runs_scored"`
+		BallsFaced         pgtype.Int8   `json:"balls_faced"`
+		NotOuts            pgtype.Int8   `json:"not_outs"`
+		Average            pgtype.Float8 `json:"average"`
+		StrikeRate         pgtype.Float8 `json:"strike_rate"`
+		HighestScore       pgtype.Int8   `json:"highest_score"`
+		HighestNotOutScore pgtype.Int8   `json:"highest_not_out_score"`
+		Centuries          pgtype.Int8   `json:"centuries"`
+		HalfCenturies      pgtype.Int8   `json:"half_centuries"`
+		FiftyPlusScores    pgtype.Int8   `json:"fifty_plus_scores"`
+		Ducks              pgtype.Int8   `json:"ducks"`
+		FoursScored        pgtype.Int8   `json:"fours_scored"`
+		SixesScored        pgtype.Int8   `json:"sixes_scored"`
+	} `json:"series_teams_count"`
+
+	SeriesEventMatchNumber []struct {
+		EventMatchNumber pgtype.Int8 `json:"event_match_number"`
+		PlayersCount     pgtype.Int8 `json:"players_count"`
+		MinDate          pgtype.Date `json:"min_date"`
+		MaxDate          pgtype.Date `json:"max_date"`
+
+		MatchesPlayed      pgtype.Int8   `json:"matches_played"`
+		InningsBatted      pgtype.Int8   `json:"innings_batted"`
+		RunsScored         pgtype.Int8   `json:"runs_scored"`
+		BallsFaced         pgtype.Int8   `json:"balls_faced"`
+		NotOuts            pgtype.Int8   `json:"not_outs"`
+		Average            pgtype.Float8 `json:"average"`
+		StrikeRate         pgtype.Float8 `json:"strike_rate"`
+		HighestScore       pgtype.Int8   `json:"highest_score"`
+		HighestNotOutScore pgtype.Int8   `json:"highest_not_out_score"`
+		Centuries          pgtype.Int8   `json:"centuries"`
+		HalfCenturies      pgtype.Int8   `json:"half_centuries"`
+		FiftyPlusScores    pgtype.Int8   `json:"fifty_plus_scores"`
+		Ducks              pgtype.Int8   `json:"ducks"`
+		FoursScored        pgtype.Int8   `json:"fours_scored"`
+		SixesScored        pgtype.Int8   `json:"sixes_scored"`
+	} `json:"series_event_match_number"`
+
+	Tournaments []struct {
+		TournamentId   pgtype.Int8 `json:"tournament_id"`
+		TournamentName pgtype.Text `json:"tournament_name"`
+		PlayersCount   pgtype.Int8 `json:"players_count"`
+		MinDate        pgtype.Date `json:"min_date"`
+		MaxDate        pgtype.Date `json:"max_date"`
+
+		MatchesPlayed      pgtype.Int8   `json:"matches_played"`
+		InningsBatted      pgtype.Int8   `json:"innings_batted"`
+		RunsScored         pgtype.Int8   `json:"runs_scored"`
+		BallsFaced         pgtype.Int8   `json:"balls_faced"`
+		NotOuts            pgtype.Int8   `json:"not_outs"`
+		Average            pgtype.Float8 `json:"average"`
+		StrikeRate         pgtype.Float8 `json:"strike_rate"`
+		HighestScore       pgtype.Int8   `json:"highest_score"`
+		HighestNotOutScore pgtype.Int8   `json:"highest_not_out_score"`
+		Centuries          pgtype.Int8   `json:"centuries"`
+		HalfCenturies      pgtype.Int8   `json:"half_centuries"`
+		FiftyPlusScores    pgtype.Int8   `json:"fifty_plus_scores"`
+		Ducks              pgtype.Int8   `json:"ducks"`
+		FoursScored        pgtype.Int8   `json:"fours_scored"`
+		SixesScored        pgtype.Int8   `json:"sixes_scored"`
+	} `json:"tournaments"`
+
+	BattingPositions []struct {
+		BattingPosition pgtype.Int8 `json:"batting_position"`
+		PlayersCount    pgtype.Int8 `json:"players_count"`
+		MinDate         pgtype.Date `json:"min_date"`
+		MaxDate         pgtype.Date `json:"max_date"`
+
+		MatchesPlayed      pgtype.Int8   `json:"matches_played"`
+		InningsBatted      pgtype.Int8   `json:"innings_batted"`
+		RunsScored         pgtype.Int8   `json:"runs_scored"`
+		BallsFaced         pgtype.Int8   `json:"balls_faced"`
+		NotOuts            pgtype.Int8   `json:"not_outs"`
+		Average            pgtype.Float8 `json:"average"`
+		StrikeRate         pgtype.Float8 `json:"strike_rate"`
+		HighestScore       pgtype.Int8   `json:"highest_score"`
+		HighestNotOutScore pgtype.Int8   `json:"highest_not_out_score"`
+		Centuries          pgtype.Int8   `json:"centuries"`
+		HalfCenturies      pgtype.Int8   `json:"half_centuries"`
+		FiftyPlusScores    pgtype.Int8   `json:"fifty_plus_scores"`
+		Ducks              pgtype.Int8   `json:"ducks"`
+		FoursScored        pgtype.Int8   `json:"fours_scored"`
+		SixesScored        pgtype.Int8   `json:"sixes_scored"`
+	} `json:"batting_positions"`
+}
+
 type Overall_Batting_Batter_Group struct {
 	BatterId         pgtype.Int8   `json:"batter_id"`
 	BatterName       pgtype.Text   `json:"batter_name"`

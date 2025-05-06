@@ -449,6 +449,7 @@ func (teamInnings *teamInnings) handleDelivery(tx pgx.Tx, scoringInput *scoringI
 	striker := strikerValue.data
 	delivery.BatterId = striker.Id
 	delivery.IsBatterRHB = striker.IsRHB
+	teamInnings.setBatPosition(striker.Id.Int64)
 
 	// non striker
 	nonStrikerValue, ok := cachedPlayers.get(playerKey{cricsheet_id: scoringInput.nonStrikerId})

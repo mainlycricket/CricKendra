@@ -14,6 +14,7 @@ const match_continents_join string = `JOIN continents ON host_nations.continent_
 const match_seriesEntires_join string = `JOIN match_series_entries ON match_series_entries.match_id = matches.id`
 const match_series_join string = `JOIN series ON match_series_entries.series_id = series.id`
 const match_tournaments_join string = `JOIN tournaments ON series.tournament_id = tournaments.id`
+const match_players_join string = `JOIN match_squad_entries ON match_squad_entries.match_id = matches.id AND match_squad_entries.playing_status IN ('playing_xi', 'impact_player', 'substitute')` // player_id IN (...) will be added dynamically
 
 type matchQuery struct {
 	tableQuery
@@ -25,7 +26,7 @@ func newMatchQuery() *matchQuery {
 	matchQuery.tableName = "matches"
 
 	matchQuery.fields = []string{
-		"matches.id", "matches.start_date", "matches.season",
+		"matches.id", "matches.event_match_number", "matches.start_date", "matches.season",
 		"matches.team1_id", "matches.team2_id",
 		"matches.home_team_id", "matches.away_team_id", "matches.is_neutral_venue",
 		"matches.toss_winner_team_id", "matches.toss_loser_team_id", "matches.is_toss_decision_bat",
@@ -61,6 +62,8 @@ func (mq *matchQuery) applyMatchFilters(params *url.Values) {
 
 	mq.series((*params)["series"])
 	mq.tournament((*params)["tournament"])
+
+	mq.involvingPlayers((*params)["involving_player"])
 }
 
 func (mq *matchQuery) playingFormat(playing_format string) {
@@ -279,6 +282,23 @@ func (mq *matchQuery) tournament(tournaments []string) {
 		mq.joins[match_tournaments_join] = len(mq.joins)
 
 		mq.conditions = append(mq.conditions, fmt.Sprintf(`tournaments.id IN (%s)`, strings.Join(placeholders, ", ")))
+	}
+}
+
+func (mq *matchQuery) involvingPlayers(players []string) {
+	var placeholders []string
+
+	for _, player := range players {
+		mq.args = append(mq.args, player)
+		mq.placeholdersCount++
+		placeholders = append(placeholders, fmt.Sprintf(`$%d`, mq.placeholdersCount))
+	}
+
+	if len(placeholders) > 0 {
+		join := fmt.Sprintf(`%s AND match_squad_entries.player_id IN (%s)`, match_players_join, strings.Join(placeholders, ", "))
+		mq.joins[join] = len(mq.joins)
+
+		mq.fields = append(mq.fields, "ARRAY[match_squad_entries.team_id] AS players_team_id")
 	}
 }
 

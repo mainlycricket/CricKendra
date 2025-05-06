@@ -12,6 +12,50 @@ import (
 	"github.com/mainlycricket/CricKendra/internal/responses"
 )
 
+func TestRead_Overall_Batting_Summary_Stats(t *testing.T) {
+	ctx, DB_URL := context.Background(), os.Getenv("TEST_DB_URL")
+	DB_POOL, err := Connect(ctx, DB_URL)
+	if err != nil {
+		log.Fatalf("failed to connect to database: %v", err)
+	}
+
+	type args struct {
+		ctx      context.Context
+		db       DB_Exec
+		queryMap url.Values
+	}
+	tests := []struct {
+		name    string
+		args    args
+		wantErr bool
+	}{
+		{
+			name: "simple batting summary read",
+			args: args{
+				ctx: ctx,
+				db:  DB_POOL,
+				queryMap: url.Values{
+					"playing_format": []string{"ODI"},
+					"is_male":        []string{"true"},
+					"min_start_date": []string{"2008-01-01"},
+					"max_start_date": []string{"2023-12-31"},
+					"batter":         []string{"114"},
+				},
+			},
+			wantErr: false,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			_, err := Read_Overall_Batting_Summary_Stats(tt.args.ctx, tt.args.db, tt.args.queryMap)
+			if (err != nil) != tt.wantErr {
+				t.Errorf("Read_Overall_Batting_Summary_Stats() error = %v, wantErr %v", err, tt.wantErr)
+				return
+			}
+		})
+	}
+}
+
 func TestRead_Overall_Batting_Batters_Stats(t *testing.T) {
 	ctx, DB_URL := context.Background(), os.Getenv("TEST_DB_URL")
 	DB_POOL, err := Connect(ctx, DB_URL)

@@ -394,8 +394,8 @@ var renamedVenues = map[venue]venue{
 		groundName: "Bharat Ratna Shri Atal Bihari Vajpayee Ekana Cricket Stadium, Lucknow",
 		cityName:   "Lucknow",
 	}: {
-		groundName: "Bert Sutcliffe Oval",
-		cityName:   "Lincoln",
+		groundName: "Bharat Ratna Shri Atal Bihari Vajpayee Ekana Cricket Stadium",
+		cityName:   "Lucknow",
 	},
 	{
 		groundName: "Wankhede Stadium, Mumbai",

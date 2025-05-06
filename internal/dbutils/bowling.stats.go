@@ -12,6 +12,24 @@ import (
 
 // Function Names are in Read_Overall_Bowling_x_Stats format, x represents grouping
 
+func Read_Overall_Bowling_Summary_Stats(ctx context.Context, db DB_Exec, queryMap url.Values) (responses.Overall_Bowling_Summary_Group, error) {
+	var response responses.Overall_Bowling_Summary_Group
+
+	query, args, err := statqueries.Query_Overall_Bowling_Summary(&queryMap)
+	if err != nil {
+		return response, err
+	}
+
+	err = db.QueryRow(ctx, query, args...).Scan(&response.Teams, &response.Oppositions, &response.HostNations, &response.Continents, &response.Years, &response.Seasons, &response.HomeAway, &response.TossWonLost, &response.TossDecision, &response.BatBowlFirst, &response.InningsNumber, &response.MatchResult, &response.MatchResultBatBowlFirst, &response.SeriesTeamsCount, &response.SeriesEventMatchNumber, &response.Tournaments, &response.BowlingPositions)
+
+	if err != nil {
+		log.Println(query)
+		return response, err
+	}
+
+	return response, nil
+}
+
 func Read_Overall_Bowling_Bowlers_Stats(ctx context.Context, db DB_Exec, queryMap url.Values) (responses.StatsResponse[responses.Overall_Bowling_Bowler_Group], error) {
 	var response responses.StatsResponse[responses.Overall_Bowling_Bowler_Group]
 

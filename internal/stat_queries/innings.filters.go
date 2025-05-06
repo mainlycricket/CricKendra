@@ -46,12 +46,14 @@ func (filters *inningsFilters) applyInningsFilters(params *url.Values, stats_typ
 	switch stats_type {
 	case batting_stats:
 		filters.conditions = append(filters.conditions, "batting_scorecards.batting_position IS NOT NULL")
+		filters.setBatters((*params)["batter"])
 		filters.setBatterRunsRange(params.Get("min__innings_runs_scored"), params.Get("max__innings_runs_scored"))
 		filters.setBatterPositionRange(params.Get("min__innings_batting_position"), params.Get("min__innings_batting_position"))
 		filters.setBatterIsDismissed(params.Get("innings_is_batter_dismissed"))
 		filters.setBatterDismissalTypes((*params)["innings_batter_dismissal_type"])
 	case bowling_stats:
 		filters.conditions = append(filters.conditions, "bowling_scorecards.bowling_position IS NOT NULL")
+		filters.setBowlers((*params)["bowler"])
 		filters.setBowlerBallsRange(params.Get("min__innings_balls_bowled"), params.Get("max__innings_balls_bowled"))
 		filters.setBowlerRunsRange(params.Get("min__innings_runs_conceded"), params.Get("max__innings_runs_conceded"))
 		filters.setBowlerWicketsRange(params.Get("min__innings_wickets_taken"), params.Get("max__innings_wickets_taken"))
@@ -185,6 +187,20 @@ func (filters *inningsFilters) setInningsNumber(inningsNumbers []string) {
 
 /* Batting Scorecard Filters */
 
+func (filters *inningsFilters) setBatters(batters []string) {
+	var placeholders []string
+
+	for _, batter := range batters {
+		filters.args = append(filters.args, batter)
+		filters.placeholdersCount++
+		placeholders = append(placeholders, fmt.Sprintf("$%d", filters.placeholdersCount))
+	}
+
+	if len(placeholders) > 0 {
+		filters.conditions = append(filters.conditions, fmt.Sprintf(`batting_scorecards.batter_id IN (%s)`, strings.Join(placeholders, ",")))
+	}
+}
+
 func (filters *inningsFilters) setBatterRunsRange(minRuns, maxRuns string) {
 	if minRuns != "" {
 		filters.args = append(filters.args, minRuns)
@@ -240,6 +256,20 @@ func (filters *inningsFilters) setBatterDismissalTypes(dismissalTypes []string) 
 }
 
 /* Bowling Scorecard Filters */
+
+func (filters *inningsFilters) setBowlers(bowlers []string) {
+	var placeholders []string
+
+	for _, bowler := range bowlers {
+		filters.args = append(filters.args, bowler)
+		filters.placeholdersCount++
+		placeholders = append(placeholders, fmt.Sprintf("$%d", filters.placeholdersCount))
+	}
+
+	if len(placeholders) > 0 {
+		filters.conditions = append(filters.conditions, fmt.Sprintf(`bowling_scorecards.bowler_id IN (%s)`, strings.Join(placeholders, ",")))
+	}
+}
 
 func (filters *inningsFilters) setBowlerBallsRange(minBalls, maxBalls string) {
 	if minBalls != "" {
