@@ -2,8 +2,8 @@
 -- PostgreSQL database dump
 --
 
--- Dumped from database version 14.17 (Ubuntu 14.17-0ubuntu0.22.04.1)
--- Dumped by pg_dump version 14.17 (Ubuntu 14.17-0ubuntu0.22.04.1)
+-- Dumped from database version 14.18 (Ubuntu 14.18-0ubuntu0.22.04.1)
+-- Dumped by pg_dump version 14.18 (Ubuntu 14.18-0ubuntu0.22.04.1)
 
 SET statement_timeout = 0;
 SET lock_timeout = 0;
@@ -679,7 +679,9 @@ CREATE TABLE public.fall_of_wickets (
     innings_id integer NOT NULL,
     batter_id integer NOT NULL,
     team_runs integer NOT NULL,
-    wicket_number integer NOT NULL
+    wicket_number integer NOT NULL,
+    dismissal_type public.dismissal_type NOT NULL,
+    innings_delivery_number integer NOT NULL
 );
 
 
@@ -1581,20 +1583,6 @@ CREATE INDEX deliveries_innings_id_innings_delivery_number_key ON public.deliver
 
 
 --
--- Name: fall_of_wickets_innings_id_batter_id_key; Type: INDEX; Schema: public; Owner: postgres
---
-
-CREATE INDEX fall_of_wickets_innings_id_batter_id_key ON public.fall_of_wickets USING btree (innings_id, batter_id);
-
-
---
--- Name: fall_of_wickets_innings_id_wicket_number_key; Type: INDEX; Schema: public; Owner: postgres
---
-
-CREATE INDEX fall_of_wickets_innings_id_wicket_number_key ON public.fall_of_wickets USING btree (innings_id, wicket_number);
-
-
---
 -- Name: idx_batting_scorecards_innings_id_batter_id; Type: INDEX; Schema: public; Owner: postgres
 --
 
@@ -1606,6 +1594,20 @@ CREATE UNIQUE INDEX idx_batting_scorecards_innings_id_batter_id ON public.battin
 --
 
 CREATE UNIQUE INDEX idx_bowling_scorecards_innings_id_bowler_id ON public.bowling_scorecards USING btree (innings_id, bowler_id);
+
+
+--
+-- Name: unique_innings_batter_non_retired; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE UNIQUE INDEX unique_innings_batter_non_retired ON public.fall_of_wickets USING btree (innings_id, batter_id) WHERE (dismissal_type <> ALL (ARRAY['retired hurt'::public.dismissal_type, 'retired not out'::public.dismissal_type]));
+
+
+--
+-- Name: unique_innings_wicket_number_non_retired; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE UNIQUE INDEX unique_innings_wicket_number_non_retired ON public.fall_of_wickets USING btree (innings_id, wicket_number) WHERE (dismissal_type <> ALL (ARRAY['retired hurt'::public.dismissal_type, 'retired not out'::public.dismissal_type]));
 
 
 --
@@ -1806,6 +1808,14 @@ ALTER TABLE ONLY public.innings
 
 ALTER TABLE ONLY public.innings
     ADD CONSTRAINT innings_bowling_team_id_fkey FOREIGN KEY (bowling_team_id) REFERENCES public.teams(id) ON UPDATE CASCADE ON DELETE CASCADE NOT VALID;
+
+
+--
+-- Name: fall_of_wickets innings_id_innings_delivery_number_key; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.fall_of_wickets
+    ADD CONSTRAINT innings_id_innings_delivery_number_key FOREIGN KEY (innings_id, innings_delivery_number) REFERENCES public.deliveries(innings_id, innings_delivery_number);
 
 
 --

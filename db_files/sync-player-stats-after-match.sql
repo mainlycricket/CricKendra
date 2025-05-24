@@ -91,10 +91,9 @@ WITH
 					END
 				),
 				COALESCE(SUM(bs.runs_scored), 0),
-				COUNT(
-					CASE
-						WHEN bs.dismissal_type IS NULL
-						OR bs.dismissal_type IN ('retired hurt', 'retired not out') THEN 1
+				COUNT(DISTINCT CASE
+						WHEN bs.has_batted AND (bs.dismissal_type IS NULL
+						OR bs.dismissal_type IN ('retired hurt', 'retired not out')) THEN i.id
 					END
 				),
 				COALESCE(SUM(bs.balls_faced), 0),

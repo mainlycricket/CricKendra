@@ -834,13 +834,15 @@ func ReadMatchFullScorecard(ctx context.Context, db DB_Exec, matchId int64) (res
 										-- order is necessary for struct scanning
 										ROW (
 											fow.batter_id, batter.name,
-											deliveries.ball_number, fow.team_runs, fow.wicket_number
+											deliveries.ball_number, fow.team_runs, fow.wicket_number, fow.dismissal_type
 										)
 									)
 								FROM
 									fall_of_wickets fow
 
-									LEFT JOIN deliveries ON fow.innings_id = deliveries.innings_id AND fow.batter_id IN (deliveries.player1_dismissed_id, deliveries.player2_dismissed_id)
+									LEFT JOIN deliveries ON fow.innings_id = deliveries.innings_id
+										AND fow.innings_delivery_number = deliveries.innings_delivery_number
+										AND fow.batter_id IN (deliveries.player1_dismissed_id, deliveries.player2_dismissed_id)
 									LEFT JOIN players batter ON fow.batter_id = batter.id
 
 								WHERE

@@ -307,10 +307,12 @@ type Delivery struct {
 }
 
 type FallOfWicket struct {
-	InningsId    pgtype.Int8 `json:"innings_id"`
-	BatterId     pgtype.Int8 `json:"batter_id"`
-	TeamRuns     pgtype.Int8 `json:"team_runs"`
-	WicketNumber pgtype.Int8 `json:"wicket_number"`
+	InningsId             pgtype.Int8 `json:"innings_id"`
+	InningsDeliveryNumber pgtype.Int8 `json:"innings_delivery_number"`
+	BatterId              pgtype.Int8 `json:"batter_id"`
+	TeamRuns              pgtype.Int8 `json:"team_runs"`
+	WicketNumber          pgtype.Int8 `json:"wicket_number"`
+	DismissalType         pgtype.Text `json:"dismissal_type"`
 }
 
 type BlogArticles struct {

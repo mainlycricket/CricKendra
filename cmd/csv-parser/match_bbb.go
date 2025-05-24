@@ -370,16 +370,18 @@ func (teamInnings *teamInnings) addDismissalEntry(delivery *models.Delivery, isF
 
 	if models.IsTeamDismissal(dismissalType) {
 		teamInnings.innings.TotalWkts.Int64++
-
-		fowEntry := models.FallOfWicket{
-			InningsId:    teamInnings.innings.Id,
-			BatterId:     pgtype.Int8{Int64: batterId, Valid: true},
-			TeamRuns:     teamInnings.innings.TotalRuns,
-			WicketNumber: teamInnings.innings.TotalWkts,
-		}
-
-		teamInnings.fallOfWickets = append(teamInnings.fallOfWickets, fowEntry)
 	}
+
+	fowEntry := models.FallOfWicket{
+		InningsId:             teamInnings.innings.Id,
+		InningsDeliveryNumber: delivery.InningsDeliveryNumber,
+		BatterId:              pgtype.Int8{Int64: batterId, Valid: true},
+		TeamRuns:              teamInnings.innings.TotalRuns,
+		WicketNumber:          teamInnings.innings.TotalWkts,
+		DismissalType:         pgtype.Text{String: dismissalType, Valid: true},
+	}
+
+	teamInnings.fallOfWickets = append(teamInnings.fallOfWickets, fowEntry)
 }
 
 func (teamInnings *teamInnings) setBowlPosition(bowlerId int64) {

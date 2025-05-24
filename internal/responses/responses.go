@@ -447,11 +447,12 @@ type BowlerScorecardEntry struct {
 }
 
 type FallOfWickets struct {
-	BatterId     pgtype.Int8   `json:"batter_id"`
-	BatterName   pgtype.Text   `json:"batter_name"`
-	BallNumber   pgtype.Float8 `json:"ball_number"`
-	TeamRuns     pgtype.Int8   `json:"team_runs"`
-	WicketNumber pgtype.Int8   `json:"wicket_number"`
+	BatterId      pgtype.Int8   `json:"batter_id"`
+	BatterName    pgtype.Text   `json:"batter_name"`
+	BallNumber    pgtype.Float8 `json:"ball_number"`
+	TeamRuns      pgtype.Int8   `json:"team_runs"`
+	WicketNumber  pgtype.Int8   `json:"wicket_number"`
+	DismissalType pgtype.Text   `json:"dismissal_type"`
 }
 
 // Match Squad

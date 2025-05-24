@@ -51,7 +51,7 @@ func InsertDeliveryWithScoringData(ctx context.Context, db DB_Exec, input *model
 	_ = batch.Queue(inningsQuery, inningsArgs...)
 
 	// update FoW entry
-	if input.Player1DismissedId.Valid && models.IsTeamDismissal(input.Player1DismissalType.String) {
+	if input.Player1DismissedId.Valid {
 		query, args := getDeliveryFallofWktTriggerBatch(input, false)
 		_ = batch.Queue(query, args...)
 	}
@@ -104,7 +104,7 @@ func UpdateDeliveryWithScoringData(ctx context.Context, db DB_Exec, newInput *mo
 	_ = batch.Queue(inningsQuery, inningsArgs...)
 
 	// undo FoW entry
-	if existingInput.Player1DismissedId.Valid && models.IsTeamDismissal(existingInput.Player1DismissalType.String) {
+	if existingInput.Player1DismissedId.Valid {
 		query, args := getDeliveryFallofWktTriggerBatch(&existingInput, true)
 		_ = batch.Queue(query, args...)
 	}
@@ -140,7 +140,7 @@ func UpdateDeliveryWithScoringData(ctx context.Context, db DB_Exec, newInput *mo
 	_ = batch.Queue(inningsQuery1, inningsArgs1...)
 
 	// update FoW entry
-	if newInput.Player1DismissedId.Valid && models.IsTeamDismissal(newInput.Player1DismissalType.String) {
+	if newInput.Player1DismissedId.Valid {
 		query, args := getDeliveryFallofWktTriggerBatch(newInput, false)
 		_ = batch.Queue(query, args...)
 	}
@@ -183,10 +183,12 @@ func UpdateDeliveryPlayer2Dimissal(ctx context.Context, db DB_Exec, newInput *mo
 
 		_ = batch.Queue(query, existingInput.InningsId, existingInput.Player2DismissedId)
 
-		if models.IsTeamDismissal(existingInput.Player2DismissalType.String) {
-			query = `DELETE FROM fall_of_wickets WHERE innings_id = $1 AND batter_id = $2`
-			_ = batch.Queue(query, existingInput.InningsId, existingInput.Player2DismissedId)
+		if existingInput.Player2DismissalType.String != "" {
+			query = `DELETE FROM fall_of_wickets WHERE innings_id = $1 AND innings_delivery_number = $2 AND batter_id = $3`
+			_ = batch.Queue(query, existingInput.InningsId, existingInput.InningsDeliveryNumber, existingInput.Player2DismissedId)
+		}
 
+		if models.IsTeamDismissal(existingInput.Player2DismissalType.String) {
 			query = `UPDATE innings SET total_wickets = total_wickets - 1 WHERE id = $1`
 			_ = batch.Queue(query, newInput.InningsId)
 		}
@@ -202,19 +204,19 @@ func UpdateDeliveryPlayer2Dimissal(ctx context.Context, db DB_Exec, newInput *mo
 		if models.IsTeamDismissal(newInput.Player2DismissalType.String) {
 			query = `UPDATE innings SET total_wickets = total_wickets + 1 WHERE id = $1`
 			_ = batch.Queue(query, newInput.InningsId)
-
-			query = `
-					WITH current_innings AS (
-						SELECT total_runs, total_wickets
-						FROM innings
-						WHERE innings.id = $1			
-					)
-					INSERT INTO fall_of_wickets (innings_id, batter_id, team_runs, wicket_number)
-					SELECT $1, $2, current_innings.total_runs, current_innings.total_wickets
-					FROM current_innings`
-
-			_ = batch.Queue(query, newInput.InningsId, newInput.Player2DismissedId)
 		}
+
+		query = `
+				WITH current_innings AS (
+					SELECT total_runs, total_wickets
+					FROM innings
+					WHERE innings.id = $1			
+				)
+				INSERT INTO fall_of_wickets (innings_id, innings_delivery_number, batter_id, dismissal_type, team_runs, wicket_number)
+				SELECT $1, $2, $3, $4, current_innings.total_runs, current_innings.total_wickets
+				FROM current_innings`
+
+		_ = batch.Queue(query, newInput.InningsId, newInput.InningsDeliveryNumber, newInput.Player2DismissedId, newInput.Player2DismissalType)
 	}
 
 	return db.SendBatch(ctx, &batch).Close()
@@ -494,21 +496,21 @@ func getDeliveryFallofWktTriggerBatch(input *models.DeliveryScoringInput, undoFl
 	)
 
 	if undoFlag {
-		query = "DELETE FROM fall_of_wickets WHERE innings_id = $1 AND batter_id = $2"
-		args = []any{input.InningsId, input.Player1DismissedId}
+		query = "DELETE FROM fall_of_wickets WHERE innings_id = $1 AND innings_delivery_number = $2 AND batter_id = $3"
+		args = []any{input.InningsId, input.InningsDeliveryNumber, input.Player1DismissedId}
 	} else {
 		query = `
 			WITH current_innings AS (
 				SELECT total_runs, total_wickets
 				FROM innings
-				WHERE innings.id = $1			
+				WHERE innings.id = $1
 			)
-			INSERT INTO fall_of_wickets (innings_id, batter_id, team_runs, wicket_number)
-			SELECT $1, $2, current_innings.total_runs, current_innings.total_wickets
+			INSERT INTO fall_of_wickets (innings_id, innings_delivery_number, batter_id, dismissal_type, team_runs, wicket_number)
+			SELECT $1, $2, $3, $4, current_innings.total_runs, current_innings.total_wickets
 			FROM current_innings
 		`
 
-		args = []any{input.InningsId, input.Player1DismissedId}
+		args = []any{input.InningsId, input.InningsDeliveryNumber, input.Player1DismissedId, input.Player1DismissalType}
 	}
 
 	return query, args
