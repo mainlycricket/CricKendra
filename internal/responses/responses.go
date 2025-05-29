@@ -447,11 +447,50 @@ type BowlerScorecardEntry struct {
 }
 
 type FallOfWickets struct {
-	BatterId     pgtype.Int8   `json:"batter_id"`
-	BatterName   pgtype.Text   `json:"batter_name"`
-	BallNumber   pgtype.Float8 `json:"ball_number"`
-	TeamRuns     pgtype.Int8   `json:"team_runs"`
-	WicketNumber pgtype.Int8   `json:"wicket_number"`
+	BatterId      pgtype.Int8   `json:"batter_id"`
+	BatterName    pgtype.Text   `json:"batter_name"`
+	BallNumber    pgtype.Float8 `json:"ball_number"`
+	TeamRuns      pgtype.Int8   `json:"team_runs"`
+	WicketNumber  pgtype.Int8   `json:"wicket_number"`
+	DismissalType pgtype.Text   `json:"dismissal_type"`
+}
+
+// Match Stats
+
+type MatchStatsResponse struct {
+	MatchHeader MatchHeader `json:"match_header"`
+
+	Innings []struct {
+		InningsId       pgtype.Int8 `json:"innings_id"`
+		InningsNumber   pgtype.Int8 `json:"innings_number"`
+		BattingTeamId   pgtype.Int8 `json:"batting_team_id"`
+		BattingTeamName pgtype.Text `json:"batting_team_name"`
+
+		Partnerships []struct {
+			ForWicket        pgtype.Int8   `json:"for_wicket"`
+			IsUnbeaten       pgtype.Bool   `json:"is_unbeaten"`
+			StartBallNumber  pgtype.Float8 `json:"start_ball_number"`
+			EndBallNumber    pgtype.Float8 `json:"end_ball_number"`
+			PartnershipsRuns pgtype.Int8   `json:"partnership_runs"`
+
+			Batter1Id    pgtype.Int8 `json:"batter1_id"`
+			Batter1Name  pgtype.Text `json:"batter1_name"`
+			Batter1Runs  pgtype.Int8 `json:"batter1_runs"`
+			Batter1Balls pgtype.Int8 `json:"batter1_balls"`
+
+			Batter2Id    pgtype.Int8 `json:"batter2_id"`
+			Batter2Name  pgtype.Text `json:"batter2_name"`
+			Batter2Runs  pgtype.Int8 `json:"batter2_runs"`
+			Batter2Balls pgtype.Int8 `json:"batter2_balls"`
+		} `json:"partnerships"`
+
+		Overs []struct {
+			OverNumber pgtype.Int8 `json:"over_number"`
+			Runs       pgtype.Int8 `json:"runs"`
+			Balls      pgtype.Int8 `json:"balls"`
+			Wickets    pgtype.Int8 `json:"wickets"`
+		} `json:"overs"`
+	} `json:"innings"`
 }
 
 // Match Squad

@@ -1134,7 +1134,7 @@ func Query_Individual_Team_Seasons(params *url.Values) (string, []any, int, erro
 
 func teamTotalForAgainst(value string) (team_total_for, team_total_against string) {
 	team_total_for, team_total_against = "batting_team_id", "bowling_team_id"
-	if value == "bowling_team_id" {
+	if value == "bowling" {
 		team_total_for, team_total_against = "bowling_team_id", "batting_team_id"
 	}
 	return

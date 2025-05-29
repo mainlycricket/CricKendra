@@ -26,6 +26,8 @@ type teamInnings struct {
 	battingScorecardEntries battingScorecardEntries
 	bowlingScorecardEntries bowlingScorecardEntries
 	fallOfWickets           []models.FallOfWicket
+	battingPartnerships     []models.BattingPartnership
+	startPartnershipFlag    bool
 	currentDelivery         *models.Delivery
 	maidenOverData          struct {
 		bowlerId    string
@@ -196,6 +198,11 @@ func (teamInnings *teamInnings) wrapInnings(tx pgx.Tx, isExtra bool) error {
 		return fmt.Errorf(`failed to insert fall of wickets entries: %v`, err)
 	}
 
+	teamInnings.endPartnership(teamInnings.currentDelivery, true)
+	if err := dbutils.InsertBattingPartnershipEntries(context.Background(), tx, teamInnings.battingPartnerships); err != nil {
+		return fmt.Errorf(`failed to insert batting partnerships entries: %v`, err)
+	}
+
 	if !isExtra {
 		if teamInnings.innings.TotalWkts.Int64 == 10 {
 			teamInnings.innings.InningsEnd = pgtype.Text{String: "all_out", Valid: true}
@@ -250,6 +257,8 @@ func (teamInnings *teamInnings) startInnings(tx pgx.Tx, inningsNumber, battingTe
 		InningsDeliveryNumber: pgtype.Int8{Int64: 0, Valid: true},
 	}
 
+	teamInnings.startPartnershipFlag = true
+
 	return nil
 }
 
@@ -261,6 +270,7 @@ func (teamInnings *teamInnings) initializeBatting() error {
 
 	teamInnings.battingScorecardEntries = make(battingScorecardEntries, 11)
 	teamInnings.fallOfWickets = make([]models.FallOfWicket, 0, 10)
+	teamInnings.battingPartnerships = make([]models.BattingPartnership, 0, 10)
 
 	for _, batterId := range battersId {
 		teamInnings.battingScorecardEntries[batterId] = models.BattingScorecard{
@@ -340,6 +350,56 @@ func (teamInnings *teamInnings) updateStrikerScores(batterId int64, scoringInput
 	teamInnings.battingScorecardEntries[batterId] = updatedEntry
 }
 
+func (teamInnings *teamInnings) startPartnership(delivery *models.Delivery, batter1Id, batter2Id int64) {
+	batter1Entry := teamInnings.battingScorecardEntries[batter1Id]
+	batter2Entry := teamInnings.battingScorecardEntries[batter2Id]
+
+	partnershipEntry := models.BattingPartnership{
+		InningsId:                  teamInnings.innings.Id,
+		WicketNumber:               pgtype.Int8{Int64: teamInnings.innings.TotalWkts.Int64 + 1, Valid: true},
+		StartInningsDeliveryNumber: delivery.InningsDeliveryNumber,
+		Batter1Id:                  batter1Entry.BatterId,
+		Batter1Runs:                batter1Entry.RunsScored,
+		Batter1Balls:               batter1Entry.BallsFaced,
+		Batter2Id:                  batter2Entry.BatterId,
+		Batter2Runs:                batter2Entry.RunsScored,
+		Batter2Balls:               batter2Entry.BallsFaced,
+		StartTeamRuns:              teamInnings.innings.TotalRuns,
+		StartBallNumber:            teamInnings.currentDelivery.BallNumber,
+		IsUnbeaten:                 pgtype.Bool{Bool: true, Valid: true},
+	}
+
+	teamInnings.battingPartnerships = append(teamInnings.battingPartnerships, partnershipEntry)
+	teamInnings.startPartnershipFlag = false
+}
+
+func (teamInnings *teamInnings) endPartnership(delivery *models.Delivery, isUnbeaten bool) {
+	partnershipIdx := len(teamInnings.battingPartnerships) - 1
+	if partnershipIdx < 0 {
+		return
+	}
+
+	currentPartnership := teamInnings.battingPartnerships[partnershipIdx]
+
+	if !currentPartnership.EndInningsDeliveryNumber.Valid {
+		batter1Entry := teamInnings.battingScorecardEntries[currentPartnership.Batter1Id.Int64]
+		batter2Entry := teamInnings.battingScorecardEntries[currentPartnership.Batter2Id.Int64]
+
+		currentPartnership.Batter1Runs.Int64 = batter1Entry.RunsScored.Int64 - currentPartnership.Batter1Runs.Int64
+		currentPartnership.Batter1Balls.Int64 = batter1Entry.BallsFaced.Int64 - currentPartnership.Batter1Balls.Int64
+		currentPartnership.Batter2Runs.Int64 = batter2Entry.RunsScored.Int64 - currentPartnership.Batter2Runs.Int64
+		currentPartnership.Batter2Balls.Int64 = batter2Entry.BallsFaced.Int64 - currentPartnership.Batter2Balls.Int64
+		currentPartnership.EndInningsDeliveryNumber = delivery.InningsDeliveryNumber
+		currentPartnership.EndTeamRuns = teamInnings.innings.TotalRuns
+		currentPartnership.EndBallNumber = delivery.BallNumber
+		currentPartnership.IsUnbeaten.Bool = isUnbeaten
+
+		teamInnings.battingPartnerships[partnershipIdx] = currentPartnership
+	}
+
+	teamInnings.startPartnershipFlag = true
+}
+
 func (teamInnings *teamInnings) addDismissalEntry(delivery *models.Delivery, isFirst bool) {
 	var batterId int64
 	var dismissalType string
@@ -370,16 +430,21 @@ func (teamInnings *teamInnings) addDismissalEntry(delivery *models.Delivery, isF
 
 	if models.IsTeamDismissal(dismissalType) {
 		teamInnings.innings.TotalWkts.Int64++
-
-		fowEntry := models.FallOfWicket{
-			InningsId:    teamInnings.innings.Id,
-			BatterId:     pgtype.Int8{Int64: batterId, Valid: true},
-			TeamRuns:     teamInnings.innings.TotalRuns,
-			WicketNumber: teamInnings.innings.TotalWkts,
-		}
-
-		teamInnings.fallOfWickets = append(teamInnings.fallOfWickets, fowEntry)
 	}
+
+	fowEntry := models.FallOfWicket{
+		InningsId:             teamInnings.innings.Id,
+		InningsDeliveryNumber: delivery.InningsDeliveryNumber,
+		BatterId:              pgtype.Int8{Int64: batterId, Valid: true},
+		BallNumber:            delivery.BallNumber,
+		TeamRuns:              teamInnings.innings.TotalRuns,
+		WicketNumber:          teamInnings.innings.TotalWkts,
+		DismissalType:         pgtype.Text{String: dismissalType, Valid: true},
+	}
+
+	teamInnings.fallOfWickets = append(teamInnings.fallOfWickets, fowEntry)
+
+	teamInnings.endPartnership(delivery, false)
 }
 
 func (teamInnings *teamInnings) setBowlPosition(bowlerId int64) {
@@ -461,6 +526,11 @@ func (teamInnings *teamInnings) handleDelivery(tx pgx.Tx, scoringInput *scoringI
 	delivery.IsNonStrikerRHB = nonStriker.IsRHB
 	teamInnings.setBatPosition(nonStriker.Id.Int64)
 
+	// partnership - position is very crucial
+	if teamInnings.startPartnershipFlag {
+		teamInnings.startPartnership(delivery, delivery.BatterId.Int64, delivery.NonStrikerId.Int64)
+	}
+
 	// bowler
 	bowlerValue, ok := cachedPlayers.get(playerKey{cricsheet_id: scoringInput.bowlerId})
 	if !ok {
@@ -531,6 +601,15 @@ func (teamInnings *teamInnings) handleDelivery(tx pgx.Tx, scoringInput *scoringI
 	}
 
 	if dismissalInput.dismissedPlayer2Id != "" {
+		if delivery.Player2DismissedId != delivery.BatterId && delivery.Player2DismissedId != delivery.NonStrikerId {
+			batter2Id := delivery.BatterId
+			if delivery.Player1DismissedId == batter2Id {
+				batter2Id = delivery.NonStrikerId
+			}
+
+			teamInnings.startPartnership(delivery, delivery.Player2DismissedId.Int64, batter2Id.Int64)
+		}
+
 		teamInnings.addDismissalEntry(delivery, false)
 	}
 

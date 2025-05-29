@@ -2,8 +2,8 @@
 -- PostgreSQL database dump
 --
 
--- Dumped from database version 14.17 (Ubuntu 14.17-0ubuntu0.22.04.1)
--- Dumped by pg_dump version 14.17 (Ubuntu 14.17-0ubuntu0.22.04.1)
+-- Dumped from database version 14.18 (Ubuntu 14.18-0ubuntu0.22.04.1)
+-- Dumped by pg_dump version 14.18 (Ubuntu 14.18-0ubuntu0.22.04.1)
 
 SET statement_timeout = 0;
 SET lock_timeout = 0;
@@ -429,9 +429,164 @@ $$;
 
 ALTER FUNCTION public.combine_career_stats(stats1 public.career_stats, stats2 public.career_stats) OWNER TO postgres;
 
+--
+-- Name: sync_fow_partnership(integer); Type: FUNCTION; Schema: public; Owner: postgres
+--
+
+CREATE FUNCTION public.sync_fow_partnership(p_innings_id integer) RETURNS void
+    LANGUAGE plpgsql
+    AS $$
+DECLARE
+	delivery_record RECORD;
+	TOTAL_RUN INTEGER := 0;
+	TOTAL_WKTS INTEGER := 0;
+	BATTER1_ID INTEGER := 0;
+	BATTER2_ID INTEGER := 0;
+	BATTER1_RUN INTEGER := 0;
+	BATTER2_RUN INTEGER := 0;
+	BATTER1_BALL INTEGER := 0;
+	BATTER2_BALL INTEGER := 0;
+	START_PARTNERSHIP BOOLEAN := TRUE;
+BEGIN
+	DELETE FROM fall_of_wickets WHERE innings_id = p_innings_id;
+	DELETE FROM batting_partnerships WHERE innings_id = p_innings_id;
+
+	FOR delivery_record IN
+		SELECT batter_id, non_striker_id, batter_runs, wides, total_runs, ball_number, innings_delivery_number, 
+			player1_dismissed_id, player1_dismissal_type, player2_dismissed_id, player2_dismissal_type
+		FROM deliveries
+		WHERE innings_id = p_innings_id ORDER BY innings_delivery_number
+		LOOP
+			IF START_PARTNERSHIP THEN
+				BATTER1_ID := delivery_record.batter_id;
+				BATTER2_ID := delivery_record.non_striker_id;
+				BATTER1_RUN := 0;
+				BATTER2_RUN := 0;
+				BATTER1_BALL := 0;
+				BATTER2_BALL := 0;
+				INSERT INTO batting_partnerships(innings_id, wicket_number, start_innings_delivery_number, end_innings_delivery_number, 
+					batter1_id, batter1_runs, batter1_balls, batter2_id, batter2_runs, batter2_balls, 
+					start_team_runs, end_team_runs, start_ball_number, end_ball_number, is_unbeaten
+				) VALUES (p_innings_id, TOTAL_WKTS + 1, delivery_record.innings_delivery_number, 
+				delivery_record.innings_delivery_number, delivery_record.batter_id, 0, 0, 
+				delivery_record.non_striker_id, 0, 0,
+					TOTAL_RUN, TOTAL_RUN, delivery_record.ball_number, delivery_record.ball_number, TRUE 
+				);
+				START_PARTNERSHIP := FALSE;
+			END IF;
+			
+			IF delivery_record.batter_id = BATTER1_ID THEN
+				BATTER1_RUN := BATTER1_RUN + delivery_record.batter_runs;
+				IF delivery_record.wides = 0 THEN
+					BATTER1_BALL := BATTER1_BALL + 1;
+				END IF;
+			ELSE
+				BATTER2_RUN := BATTER2_RUN + delivery_record.batter_runs;
+				IF delivery_record.wides = 0 THEN
+					BATTER2_BALL := BATTER2_BALL + 1;
+				END IF;
+			END IF;
+		
+			TOTAL_RUN := TOTAL_RUN + delivery_record.total_runs;
+			IF delivery_record.player1_dismissed_id IS NOT NULL THEN
+				IF delivery_record.player1_dismissal_type NOT IN ('retired hurt', 'retired not out') THEN
+					TOTAL_WKTS := TOTAL_WKTS + 1;
+				END IF;
+				INSERT INTO fall_of_wickets (innings_id, batter_id, team_runs, wicket_number, 
+					dismissal_type, innings_delivery_number, ball_number
+					) VALUES (p_innings_id, delivery_record.player1_dismissed_id, TOTAL_RUN, TOTAL_WKTS,
+					delivery_record.player1_dismissal_type, delivery_record.innings_delivery_number, delivery_record.ball_number);
+				UPDATE batting_partnerships SET
+					end_innings_delivery_number = delivery_record.innings_delivery_number, is_unbeaten = FALSE,
+					batter1_runs = BATTER1_RUN, batter1_balls = BATTER1_BALL,
+					batter2_runs = BATTER2_RUN, batter2_balls = BATTER2_BALL,
+					end_team_runs = TOTAL_RUN, end_ball_number = delivery_record.ball_number
+				WHERE innings_id = p_innings_id AND is_unbeaten = TRUE;
+
+				START_PARTNERSHIP := TRUE;
+			END IF;
+			IF delivery_record.player2_dismissed_id IS NOT NULL THEN
+				IF delivery_record.player2_dismissal_type NOT IN ('retired hurt', 'retired not out') THEN
+ 					TOTAL_WKTS := TOTAL_WKTS + 1;
+				END IF;
+
+				IF delivery_record.player2_dismissed_id != delivery_record.batter_id AND delivery_record.player2_dismissed_id != delivery_record.non_striker_id THEN
+					BATTER1_ID := delivery_record.player2_dismissed_id;
+					IF delivery_record.player1_dismissed_id = delivery_record.batter_id THEN
+						BATTER2_ID := delivery_record.non_striker_id;
+					ELSE
+						BATTER2_ID := delivery_record.batter_id;
+					END IF;
+
+					INSERT INTO batting_partnerships(innings_id, wicket_number, start_innings_delivery_number, end_innings_delivery_number, 
+					batter1_id, batter1_runs, batter1_balls, batter2_id, batter2_runs, batter2_balls, 
+					start_team_runs, end_team_runs, start_ball_number, end_ball_number, is_unbeaten
+					) VALUES (p_innings_id, TOTAL_WKTS - 1, delivery_record.innings_delivery_number, 
+					delivery_record.innings_delivery_number, BATTER1_ID, 0, 0, 
+					BATTER2_ID, 0, 0,
+						TOTAL_RUN, TOTAL_RUN, delivery_record.ball_number, delivery_record.ball_number, FALSE 
+					);
+					
+					START_PARTNERSHIP := TRUE;
+				END IF;
+
+				INSERT INTO fall_of_wickets (innings_id, batter_id, team_runs, wicket_number, 
+					dismissal_type, innings_delivery_number, ball_number
+					) VALUES (p_innings_id, delivery_record.player2_dismissed_id, TOTAL_RUN, TOTAL_WKTS,
+					delivery_record.player2_dismissal_type, delivery_record.innings_delivery_number, delivery_record.ball_number);
+			END IF;
+
+		END LOOP;
+
+		IF START_PARTNERSHIP = FALSE THEN
+			WITH deliveries_data AS (
+				SELECT MAX(innings_delivery_number) AS max_delivery_number,
+					MAX(ball_number) AS max_ball_number
+				FROM deliveries
+				WHERE innings_id = p_innings_id
+			)
+			UPDATE batting_partnerships SET
+				end_innings_delivery_number = deliveries_data.max_delivery_number,
+				batter1_runs = BATTER1_RUN, batter1_balls = BATTER1_BALL,
+				batter2_runs = BATTER2_RUN, batter2_balls = BATTER2_BALL,
+				end_team_runs = TOTAL_RUN, end_ball_number = deliveries_data.max_ball_number
+			FROM deliveries_data
+			WHERE innings_id = p_innings_id AND is_unbeaten = TRUE;
+		END IF;
+END;
+$$;
+
+
+ALTER FUNCTION public.sync_fow_partnership(p_innings_id integer) OWNER TO postgres;
+
 SET default_tablespace = '';
 
 SET default_table_access_method = heap;
+
+--
+-- Name: batting_partnerships; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public.batting_partnerships (
+    innings_id integer NOT NULL,
+    wicket_number integer NOT NULL,
+    start_innings_delivery_number integer NOT NULL,
+    end_innings_delivery_number integer NOT NULL,
+    batter1_id integer NOT NULL,
+    batter1_runs integer DEFAULT 0 NOT NULL,
+    batter1_balls integer DEFAULT 0 NOT NULL,
+    batter2_id integer NOT NULL,
+    batter2_runs integer DEFAULT 0 NOT NULL,
+    batter2_balls integer DEFAULT 0 NOT NULL,
+    start_team_runs integer NOT NULL,
+    end_team_runs integer NOT NULL,
+    start_ball_number double precision NOT NULL,
+    end_ball_number double precision NOT NULL,
+    is_unbeaten boolean DEFAULT true NOT NULL
+);
+
+
+ALTER TABLE public.batting_partnerships OWNER TO postgres;
 
 --
 -- Name: batting_scorecards; Type: TABLE; Schema: public; Owner: postgres
@@ -679,7 +834,10 @@ CREATE TABLE public.fall_of_wickets (
     innings_id integer NOT NULL,
     batter_id integer NOT NULL,
     team_runs integer NOT NULL,
-    wicket_number integer NOT NULL
+    wicket_number integer NOT NULL,
+    dismissal_type public.dismissal_type NOT NULL,
+    innings_delivery_number integer NOT NULL,
+    ball_number double precision NOT NULL
 );
 
 
@@ -1581,20 +1739,6 @@ CREATE INDEX deliveries_innings_id_innings_delivery_number_key ON public.deliver
 
 
 --
--- Name: fall_of_wickets_innings_id_batter_id_key; Type: INDEX; Schema: public; Owner: postgres
---
-
-CREATE INDEX fall_of_wickets_innings_id_batter_id_key ON public.fall_of_wickets USING btree (innings_id, batter_id);
-
-
---
--- Name: fall_of_wickets_innings_id_wicket_number_key; Type: INDEX; Schema: public; Owner: postgres
---
-
-CREATE INDEX fall_of_wickets_innings_id_wicket_number_key ON public.fall_of_wickets USING btree (innings_id, wicket_number);
-
-
---
 -- Name: idx_batting_scorecards_innings_id_batter_id; Type: INDEX; Schema: public; Owner: postgres
 --
 
@@ -1606,6 +1750,76 @@ CREATE UNIQUE INDEX idx_batting_scorecards_innings_id_batter_id ON public.battin
 --
 
 CREATE UNIQUE INDEX idx_bowling_scorecards_innings_id_bowler_id ON public.bowling_scorecards USING btree (innings_id, bowler_id);
+
+
+--
+-- Name: unique_innings_batter_non_retired; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE UNIQUE INDEX unique_innings_batter_non_retired ON public.fall_of_wickets USING btree (innings_id, batter_id) WHERE (dismissal_type <> ALL (ARRAY['retired hurt'::public.dismissal_type, 'retired not out'::public.dismissal_type]));
+
+
+--
+-- Name: unique_innings_wicket_number_non_retired; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE UNIQUE INDEX unique_innings_wicket_number_non_retired ON public.fall_of_wickets USING btree (innings_id, wicket_number) WHERE (dismissal_type <> ALL (ARRAY['retired hurt'::public.dismissal_type, 'retired not out'::public.dismissal_type]));
+
+
+--
+-- Name: batting_partnerships batting_partnerships_batter1_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.batting_partnerships
+    ADD CONSTRAINT batting_partnerships_batter1_id_fkey FOREIGN KEY (batter1_id) REFERENCES public.players(id);
+
+
+--
+-- Name: batting_partnerships batting_partnerships_batter2_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.batting_partnerships
+    ADD CONSTRAINT batting_partnerships_batter2_id_fkey FOREIGN KEY (batter2_id) REFERENCES public.players(id);
+
+
+--
+-- Name: batting_partnerships batting_partnerships_innings_id_batter1_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.batting_partnerships
+    ADD CONSTRAINT batting_partnerships_innings_id_batter1_id_fkey FOREIGN KEY (innings_id, batter1_id) REFERENCES public.batting_scorecards(innings_id, batter_id);
+
+
+--
+-- Name: batting_partnerships batting_partnerships_innings_id_batter2_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.batting_partnerships
+    ADD CONSTRAINT batting_partnerships_innings_id_batter2_id_fkey FOREIGN KEY (innings_id, batter2_id) REFERENCES public.batting_scorecards(innings_id, batter_id);
+
+
+--
+-- Name: batting_partnerships batting_partnerships_innings_id_end_innings_delivery_numbe_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.batting_partnerships
+    ADD CONSTRAINT batting_partnerships_innings_id_end_innings_delivery_numbe_fkey FOREIGN KEY (innings_id, end_innings_delivery_number) REFERENCES public.deliveries(innings_id, innings_delivery_number);
+
+
+--
+-- Name: batting_partnerships batting_partnerships_innings_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.batting_partnerships
+    ADD CONSTRAINT batting_partnerships_innings_id_fkey FOREIGN KEY (innings_id) REFERENCES public.innings(id);
+
+
+--
+-- Name: batting_partnerships batting_partnerships_innings_id_start_innings_delivery_num_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.batting_partnerships
+    ADD CONSTRAINT batting_partnerships_innings_id_start_innings_delivery_num_fkey FOREIGN KEY (innings_id, start_innings_delivery_number) REFERENCES public.deliveries(innings_id, innings_delivery_number);
 
 
 --
@@ -1806,6 +2020,14 @@ ALTER TABLE ONLY public.innings
 
 ALTER TABLE ONLY public.innings
     ADD CONSTRAINT innings_bowling_team_id_fkey FOREIGN KEY (bowling_team_id) REFERENCES public.teams(id) ON UPDATE CASCADE ON DELETE CASCADE NOT VALID;
+
+
+--
+-- Name: fall_of_wickets innings_id_innings_delivery_number_key; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.fall_of_wickets
+    ADD CONSTRAINT innings_id_innings_delivery_number_key FOREIGN KEY (innings_id, innings_delivery_number) REFERENCES public.deliveries(innings_id, innings_delivery_number);
 
 
 --

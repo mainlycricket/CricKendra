@@ -30,6 +30,18 @@ func InsertDeliveryWithScoringData(ctx context.Context, db DB_Exec, input *model
 	// insert delivery
 	batch.Queue(`INSERT INTO deliveries (innings_id, innings_delivery_number, ball_number, over_number, batter_id, bowler_id, non_striker_id, batter_runs, wides, noballs, legbyes, byes, penalty, total_extras, total_runs, bowler_runs, is_four, is_six, player1_dismissed_id, player1_dismissal_type, fielder1_id, fielder2_id) VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22)`, input.InningsId, input.InningsDeliveryNumber, input.BallNumber, input.OverNumber, input.BatterId, input.BowlerId, input.NonStrikerId, input.BatterRuns, input.Wides, input.Noballs, input.Legbyes, input.Byes, input.Penalty, input.TotalExtras, input.TotalRuns, input.BowlerRuns, input.IsFour, input.IsSix, input.Player1DismissedId, input.Player1DismissalType, input.Fielder1Id, input.Fielder2Id)
 
+	var isContinuousDelivery bool
+	db.QueryRow(ctx,
+		`SELECT max(innings_delivery_number) + 1 = $2 FROM deliveries WHERE innings_id = $1`,
+		input.InningsId, input.InningsDeliveryNumber,
+	).Scan(&isContinuousDelivery)
+
+	// ensure partnership
+	if isContinuousDelivery {
+		query, args := getEnsurePartnershipTriggerBatch(input)
+		_ = batch.Queue(query, args...)
+	}
+
 	// update batter entry
 	if input.Wides.Int64 == 0 {
 		query, args := getDeliveryBatterTriggerBatch(input, false)
@@ -50,10 +62,17 @@ func InsertDeliveryWithScoringData(ctx context.Context, db DB_Exec, input *model
 	inningsQuery, inningsArgs := getDeliveryInningsTriggerBatch(input, false)
 	_ = batch.Queue(inningsQuery, inningsArgs...)
 
-	// update FoW entry
-	if input.Player1DismissedId.Valid && models.IsTeamDismissal(input.Player1DismissalType.String) {
-		query, args := getDeliveryFallofWktTriggerBatch(input, false)
+	// update FoW & Partnership
+	if isContinuousDelivery {
+		if input.Player1DismissedId.Valid {
+			query, args := getDeliveryFallofWktTriggerBatch(input, false)
+			_ = batch.Queue(query, args...)
+		}
+
+		query, args := getUpdatePartnershipTriggerBatch(input)
 		_ = batch.Queue(query, args...)
+	} else {
+		_ = batch.Queue(`SELECT sync_fow_partnership($1)`, input.InningsId)
 	}
 
 	result := db.SendBatch(ctx, &batch)
@@ -103,12 +122,6 @@ func UpdateDeliveryWithScoringData(ctx context.Context, db DB_Exec, newInput *mo
 	inningsQuery, inningsArgs := getDeliveryInningsTriggerBatch(&existingInput, true)
 	_ = batch.Queue(inningsQuery, inningsArgs...)
 
-	// undo FoW entry
-	if existingInput.Player1DismissedId.Valid && models.IsTeamDismissal(existingInput.Player1DismissalType.String) {
-		query, args := getDeliveryFallofWktTriggerBatch(&existingInput, true)
-		_ = batch.Queue(query, args...)
-	}
-
 	// update delivery
 	batch.Queue(`
 		UPDATE deliveries SET
@@ -139,11 +152,7 @@ func UpdateDeliveryWithScoringData(ctx context.Context, db DB_Exec, newInput *mo
 	inningsQuery1, inningsArgs1 := getDeliveryInningsTriggerBatch(newInput, false)
 	_ = batch.Queue(inningsQuery1, inningsArgs1...)
 
-	// update FoW entry
-	if newInput.Player1DismissedId.Valid && models.IsTeamDismissal(newInput.Player1DismissalType.String) {
-		query, args := getDeliveryFallofWktTriggerBatch(newInput, false)
-		_ = batch.Queue(query, args...)
-	}
+	_ = batch.Queue(`SELECT sync_fow_partnership($1)`, newInput.InningsId)
 
 	result := db.SendBatch(ctx, &batch)
 
@@ -151,17 +160,17 @@ func UpdateDeliveryWithScoringData(ctx context.Context, db DB_Exec, newInput *mo
 }
 
 func UpdateDeliveryPlayer2Dimissal(ctx context.Context, db DB_Exec, newInput *models.DeliveryPlayer2DismissedInput) error {
-	existingInput := models.DeliveryPlayer2DismissedInput{
+	existingInput := models.Delivery{
 		InningsId:             newInput.InningsId,
 		InningsDeliveryNumber: newInput.InningsDeliveryNumber,
 	}
 
 	query := `
-		SELECT player2_dismissed_id, player2_dismissal_type
+		SELECT ball_number, player2_dismissed_id, player2_dismissal_type
 		FROM deliveries
 		WHERE innings_id = $1 AND innings_delivery_number = $2`
 
-	err := db.QueryRow(ctx, query, existingInput.InningsId, existingInput.InningsDeliveryNumber).Scan(&existingInput.Player2DismissedId, &existingInput.Player2DismissalType)
+	err := db.QueryRow(ctx, query, existingInput.InningsId, existingInput.InningsDeliveryNumber).Scan(&existingInput.BallNumber, &existingInput.Player2DismissedId, &existingInput.Player2DismissalType)
 	if err != nil {
 		return err
 	}
@@ -184,9 +193,6 @@ func UpdateDeliveryPlayer2Dimissal(ctx context.Context, db DB_Exec, newInput *mo
 		_ = batch.Queue(query, existingInput.InningsId, existingInput.Player2DismissedId)
 
 		if models.IsTeamDismissal(existingInput.Player2DismissalType.String) {
-			query = `DELETE FROM fall_of_wickets WHERE innings_id = $1 AND batter_id = $2`
-			_ = batch.Queue(query, existingInput.InningsId, existingInput.Player2DismissedId)
-
 			query = `UPDATE innings SET total_wickets = total_wickets - 1 WHERE id = $1`
 			_ = batch.Queue(query, newInput.InningsId)
 		}
@@ -202,20 +208,10 @@ func UpdateDeliveryPlayer2Dimissal(ctx context.Context, db DB_Exec, newInput *mo
 		if models.IsTeamDismissal(newInput.Player2DismissalType.String) {
 			query = `UPDATE innings SET total_wickets = total_wickets + 1 WHERE id = $1`
 			_ = batch.Queue(query, newInput.InningsId)
-
-			query = `
-					WITH current_innings AS (
-						SELECT total_runs, total_wickets
-						FROM innings
-						WHERE innings.id = $1			
-					)
-					INSERT INTO fall_of_wickets (innings_id, batter_id, team_runs, wicket_number)
-					SELECT $1, $2, current_innings.total_runs, current_innings.total_wickets
-					FROM current_innings`
-
-			_ = batch.Queue(query, newInput.InningsId, newInput.Player2DismissedId)
 		}
 	}
+
+	_ = batch.Queue(`SELECT sync_fow_partnership($1)`, newInput.InningsId)
 
 	return db.SendBatch(ctx, &batch).Close()
 }
@@ -494,22 +490,79 @@ func getDeliveryFallofWktTriggerBatch(input *models.DeliveryScoringInput, undoFl
 	)
 
 	if undoFlag {
-		query = "DELETE FROM fall_of_wickets WHERE innings_id = $1 AND batter_id = $2"
-		args = []any{input.InningsId, input.Player1DismissedId}
+		query = "DELETE FROM fall_of_wickets WHERE innings_id = $1 AND innings_delivery_number = $2 AND batter_id = $3"
+		args = []any{input.InningsId, input.InningsDeliveryNumber, input.Player1DismissedId}
 	} else {
 		query = `
 			WITH current_innings AS (
 				SELECT total_runs, total_wickets
 				FROM innings
-				WHERE innings.id = $1			
+				WHERE innings.id = $1
 			)
-			INSERT INTO fall_of_wickets (innings_id, batter_id, team_runs, wicket_number)
-			SELECT $1, $2, current_innings.total_runs, current_innings.total_wickets
+			INSERT INTO fall_of_wickets (innings_id, innings_delivery_number, batter_id, ball_number, dismissal_type, team_runs, wicket_number)
+			SELECT $1, $2, $3, $4, $5, current_innings.total_runs, current_innings.total_wickets
 			FROM current_innings
 		`
 
-		args = []any{input.InningsId, input.Player1DismissedId}
+		args = []any{input.InningsId, input.InningsDeliveryNumber, input.Player1DismissedId, input.BallNumber, input.Player1DismissalType}
 	}
+
+	return query, args
+}
+
+func getEnsurePartnershipTriggerBatch(input *models.DeliveryScoringInput) (string, []any) {
+	query := `
+		WITH innings_data AS (
+			SELECT total_runs, total_wickets FROM innings WHERE id = $1
+		)
+		INSERT INTO batting_partnerships (
+			innings_id, wicket_number, start_innings_delivery_number, end_innings_delivery_number,
+			batter1_id, batter1_runs, batter1_balls, batter2_id, batter2_runs, batter2_balls,
+			start_team_runs, end_team_runs, start_ball_number, end_ball_number, is_unbeaten
+		)
+		SELECT $1, innings_data.total_wickets + 1, $2, $3,
+			$4, 0, 0, $5, 0, 0,
+			innings_data.total_runs, innings_data.total_runs, $6, $7, true
+		FROM innings_data
+		WHERE NOT EXISTS (
+			SELECT 1 FROM batting_partnerships WHERE innings_id = $1 AND is_unbeaten = TRUE
+		);
+	`
+
+	args := []any{input.InningsId, input.InningsDeliveryNumber, input.InningsDeliveryNumber, input.BatterId, input.NonStrikerId, input.BallNumber, input.BallNumber}
+
+	return query, args
+}
+
+func getUpdatePartnershipTriggerBatch(input *models.DeliveryScoringInput) (string, []any) {
+	query := `
+		WITH innings_data AS (
+			SELECT total_runs FROM innings WHERE id = $1
+		), partnership_data AS (
+			SELECT batter1_id, batter2_id FROM batting_partnerships WHERE innings_id = $1 AND is_unbeaten = TRUE
+		), delivery_data AS (
+			SELECT
+				CASE WHEN batter1_id = batter_id THEN batter_runs ELSE 0 END AS batter1_runs,
+				CASE WHEN batter1_id = batter_id AND wides = 0 THEN 1 ELSE 0 END AS batter1_balls,
+				CASE WHEN batter2_id = batter_id THEN batter_runs ELSE 0 END AS batter2_runs,
+				CASE WHEN batter2_id = batter_id AND wides = 0 THEN 1 ELSE 0 END AS batter2_balls
+			FROM deliveries
+			CROSS JOIN partnership_data
+			WHERE innings_id = $1 AND innings_delivery_number = $2
+		)
+		UPDATE batting_partnerships SET
+			end_innings_delivery_number = $2, end_team_runs = innings_data.total_runs,
+			end_ball_number = $3, is_unbeaten = $4,
+			batter1_runs = batting_partnerships.batter1_runs + delivery_data.batter1_runs,
+			batter1_balls = batting_partnerships.batter1_balls + delivery_data.batter1_balls,
+			batter2_runs = batting_partnerships.batter2_runs + delivery_data.batter2_runs,
+			batter2_balls = batting_partnerships.batter2_balls + delivery_data.batter2_balls
+		FROM delivery_data
+		CROSS JOIN innings_data
+		WHERE innings_id = $1 AND is_unbeaten = TRUE
+	`
+
+	args := []any{input.InningsId, input.InningsDeliveryNumber, input.BallNumber, !input.Player1DismissedId.Valid}
 
 	return query, args
 }

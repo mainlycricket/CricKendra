@@ -833,16 +833,13 @@ func ReadMatchFullScorecard(ctx context.Context, db DB_Exec, matchId int64) (res
 									ARRAY_AGG (
 										-- order is necessary for struct scanning
 										ROW (
-											fow.batter_id, batter.name,
-											deliveries.ball_number, fow.team_runs, fow.wicket_number
+											fow.batter_id, batter.name, fow.ball_number,
+											fow.team_runs, fow.wicket_number, fow.dismissal_type
 										)
 									)
 								FROM
 									fall_of_wickets fow
-
-									LEFT JOIN deliveries ON fow.innings_id = deliveries.innings_id AND fow.batter_id IN (deliveries.player1_dismissed_id, deliveries.player2_dismissed_id)
 									LEFT JOIN players batter ON fow.batter_id = batter.id
-
 								WHERE
 									fow.innings_id = innings.id
 							
@@ -879,6 +876,111 @@ func ReadMatchFullScorecard(ctx context.Context, db DB_Exec, matchId int64) (res
 		&matchHeader.PlayerAwards,
 
 		&response.InningsScorecards,
+	)
+
+	if err != nil {
+		return response, err
+	}
+
+	return response, nil
+}
+
+func ReadMatchStats(ctx context.Context, db DB_Exec, matchId int64) (responses.MatchStatsResponse, error) {
+	var response responses.MatchStatsResponse
+	matchHeader := &response.MatchHeader
+
+	query := fmt.Sprintf(`
+		WITH overs_data AS (
+			SELECT innings_id, over_number, SUM(deliveries.total_runs) AS runs,
+				COUNT (
+					DISTINCT CASE 
+						WHEN deliveries.wides = 0 AND deliveries.noballs = 0 THEN deliveries.innings_delivery_number
+					END
+				) AS balls,
+				COUNT(player1_dismissed_id) + COUNT(player2_dismissed_id) AS wickets
+			FROM deliveries
+			JOIN innings ON deliveries.innings_id = innings.id
+				AND innings.innings_number IS NOT NULL
+				AND innings.is_super_over = FALSE
+			WHERE innings.match_id = $1
+			GROUP BY innings_id, over_number
+			ORDER BY innings_id ASC, over_number ASC
+		)
+		SELECT
+			%s,
+			(
+				SELECT
+					ARRAY_AGG (
+						-- order is necessary for struct scanning
+						ROW (
+							innings.id, innings.innings_number, innings.batting_team_id, batting_team.name,
+
+							(
+								SELECT
+									ARRAY_AGG (
+										-- order is necessary for struct scanning
+										ROW (
+											bp.wicket_number, bp.is_unbeaten, bp.start_ball_number, bp.end_ball_number, bp.end_team_runs - bp.start_team_runs,
+
+											bp.batter1_id, batter1.name, bp.batter1_runs, bp.batter1_balls,
+
+											bp.batter2_id, batter2.name, bp.batter2_runs, bp.batter2_balls
+										)
+									)
+								FROM
+									batting_partnerships bp
+								LEFT JOIN players batter1 ON bp.batter1_id = batter1.id
+								LEFT JOIN players batter2 ON bp.batter2_id = batter2.id
+									
+								WHERE
+									bp.innings_id = innings.id
+							),
+
+							(
+								SELECT
+									ARRAY_AGG (
+										-- order is necessary for struct scanning
+										ROW (
+											over_number, runs, balls, wickets
+										)
+									)
+								FROM
+									overs_data
+								WHERE
+									overs_data.innings_id = innings.id
+							)
+						)
+					)
+			) AS match_innings
+		
+		FROM matches 
+		%s
+		WHERE matches.id = $1
+		GROUP BY %s
+	`,
+		matchHeaderQuery.selectFields,
+		matchHeaderQuery.joins,
+		matchHeaderQuery.groupByFields,
+	)
+
+	row := db.QueryRow(ctx, query, matchId)
+
+	err := row.Scan(
+		&matchHeader.MatchId, &matchHeader.PlayingLevel, &matchHeader.PlayingFormat, &matchHeader.MatchType, &matchHeader.EventMatchNumber,
+
+		&matchHeader.MatchState, &matchHeader.MatchStateDescription,
+
+		&matchHeader.MatchWinnerId, &matchHeader.MatchLoserId, &matchHeader.IsWonByInnings, &matchHeader.IsWonByRuns,
+		&matchHeader.WinMargin, &matchHeader.BallsMargin, &matchHeader.SuperOverWinnerId, &matchHeader.BowlOutWinnerId, &matchHeader.OutcomeSpecialMethod, &matchHeader.TossWinnerId, &matchHeader.TossLoserId, &matchHeader.IsTossDecisionBat,
+
+		&matchHeader.Season, &matchHeader.StartDate, &matchHeader.EndDate, &matchHeader.StartDateTimeUtc, &matchHeader.IsDayNight, &matchHeader.GroundId, &matchHeader.GroundName, &matchHeader.MainSeriesId, &matchHeader.MainSeriesName,
+
+		&matchHeader.Team1Id, &matchHeader.Team1Name, &matchHeader.Team1ImageUrl, &matchHeader.Team2Id, &matchHeader.Team2Name, &matchHeader.Team2ImageUrl,
+
+		&matchHeader.InningsScores,
+		&matchHeader.PlayerAwards,
+
+		&response.Innings,
 	)
 
 	if err != nil {

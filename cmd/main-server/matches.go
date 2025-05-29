@@ -26,6 +26,7 @@ func matchesRouter() *chi.Mux {
 	r.Get("/", getMatches)
 	r.Get("/{matchId}/summary", getMatchSummary)
 	r.Get("/{matchId}/full-scorecard", getMatchFullScorecard)
+	r.Get("/{matchId}/stats", getMatchStats)
 	r.Get("/{matchId}/squads", getMatchSquad)
 
 	// auth mixed - see inningsRouter
@@ -269,6 +270,24 @@ func getMatchFullScorecard(w http.ResponseWriter, r *http.Request) {
 	}
 
 	responses.WriteJsonResponse(w, responses.ApiResponse{Success: true, Message: "fetched match scorecard", Data: scorecard}, http.StatusOK)
+}
+
+func getMatchStats(w http.ResponseWriter, r *http.Request) {
+	matchIdRaw := r.PathValue("matchId")
+
+	matchId, err := strconv.ParseInt(matchIdRaw, 10, 64)
+	if err != nil {
+		responses.WriteJsonResponse(w, responses.ApiResponse{Message: "invalid match id", Data: nil}, http.StatusBadRequest)
+		return
+	}
+
+	scorecard, err := dbutils.ReadMatchStats(r.Context(), DB_POOL, matchId)
+	if err != nil {
+		responses.WriteJsonResponse(w, responses.ApiResponse{Message: "error while reading match stats", Data: err}, http.StatusInternalServerError)
+		return
+	}
+
+	responses.WriteJsonResponse(w, responses.ApiResponse{Success: true, Message: "fetched match stats", Data: scorecard}, http.StatusOK)
 }
 
 func getMatchSquad(w http.ResponseWriter, r *http.Request) {

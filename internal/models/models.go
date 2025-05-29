@@ -307,10 +307,31 @@ type Delivery struct {
 }
 
 type FallOfWicket struct {
-	InningsId    pgtype.Int8 `json:"innings_id"`
-	BatterId     pgtype.Int8 `json:"batter_id"`
-	TeamRuns     pgtype.Int8 `json:"team_runs"`
-	WicketNumber pgtype.Int8 `json:"wicket_number"`
+	InningsId             pgtype.Int8   `json:"innings_id"`
+	InningsDeliveryNumber pgtype.Int8   `json:"innings_delivery_number"`
+	BatterId              pgtype.Int8   `json:"batter_id"`
+	BallNumber            pgtype.Float8 `json:"ball_number"`
+	TeamRuns              pgtype.Int8   `json:"team_runs"`
+	WicketNumber          pgtype.Int8   `json:"wicket_number"`
+	DismissalType         pgtype.Text   `json:"dismissal_type"`
+}
+
+type BattingPartnership struct {
+	InningsId                  pgtype.Int8   `json:"innings_id"`
+	WicketNumber               pgtype.Int8   `json:"wicket_number"`
+	StartInningsDeliveryNumber pgtype.Int8   `json:"start_innings_delivery_number"`
+	EndInningsDeliveryNumber   pgtype.Int8   `json:"end_innings_delivery_number"`
+	Batter1Id                  pgtype.Int8   `json:"batter1_id"`
+	Batter1Runs                pgtype.Int8   `json:"batter1_runs"`
+	Batter1Balls               pgtype.Int8   `json:"batter1_balls"`
+	Batter2Id                  pgtype.Int8   `json:"batter2_id"`
+	Batter2Runs                pgtype.Int8   `json:"batter2_runs"`
+	Batter2Balls               pgtype.Int8   `json:"batter2_balls"`
+	StartTeamRuns              pgtype.Int8   `json:"start_team_runs"`
+	EndTeamRuns                pgtype.Int8   `json:"end_team_runs"`
+	StartBallNumber            pgtype.Float8 `json:"start_ball_number"`
+	EndBallNumber              pgtype.Float8 `json:"end_ball_number"`
+	IsUnbeaten                 pgtype.Bool   `json:"is_unbeaten"`
 }
 
 type BlogArticles struct {
