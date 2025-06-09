@@ -20,7 +20,7 @@ export function MatchHeader({ matchHeader }: { matchHeader: IMatchHeader }) {
   }
 
   return (
-    <Card>
+    <Card className="gap-4 py-4">
       <CardHeader>
         <p className="font-bold uppercase">
           {matchHeader.match_state === "break"
@@ -44,37 +44,63 @@ export function MatchHeader({ matchHeader }: { matchHeader: IMatchHeader }) {
 
       <hr />
 
-      <CardContent className="flex flex-col gap-2">
-        <div
-          className={`flex justify-between text-lg ${
-            matchHeader.match_winner_team_id == team1_id ? "font-bold" : ""
-          }`}
-        >
-          <div>
-            <Link href={team1_id ? `/teams/${team1_id}` : ""} className="flex gap-2">
-              <Image src={team1_image_url || "/file.svg"} alt="team1_image" width={20} height={20} />
-              {team1_name}
-            </Link>
+      <CardContent className="flex flex-row justify-between gap-4 h-[100%]">
+        <div className="w-full flex flex-col gap-2">
+          <div
+            className={`flex justify-between text-lg ${
+              matchHeader.match_winner_team_id == team1_id ? "font-bold" : ""
+            }`}
+          >
+            <div>
+              <Link href={team1_id ? `/teams/${team1_id}` : ""} className="flex gap-2">
+                <Image src={team1_image_url || "/file.svg"} alt="team1_image" width={20} height={20} />
+                {team1_name}
+              </Link>
+            </div>
+            <div>{getTeamScores(matchHeader.innings_scores, team1_id)}</div>
           </div>
-          <div>{getTeamScores(matchHeader.innings_scores, team1_id)}</div>
+
+          <div
+            className={`flex justify-between text-lg ${
+              matchHeader.match_winner_team_id == team2_id ? "font-bold" : ""
+            }`}
+          >
+            <div>
+              <Link href={team2_id ? `/teams/${matchHeader.team2_id}` : ""} className="flex gap-2">
+                <Image src={team2_image_url || "/file.svg"} alt="team2_image" width={20} height={20} />
+                {team2_name}
+              </Link>
+            </div>
+            <div>{getTeamScores(matchHeader.innings_scores, team2_id)}</div>
+          </div>
         </div>
 
-        <div
-          className={`flex justify-between text-lg ${
-            matchHeader.match_winner_team_id == team2_id ? "font-bold" : ""
-          }`}
-        >
-          <div>
-            <Link href={team2_id ? `/teams/${matchHeader.team2_id}` : ""} className="flex gap-2">
-              <Image src={team2_image_url || "/file.svg"} alt="team2_image" width={20} height={20} />
-              {team2_name}
-            </Link>
+        {matchHeader.player_awards.length && (
+          <div className="hidden md:block w-1/5 px-2 border-l-1">
+            {matchHeader.player_awards.map((entry) => {
+              return (
+                <div key={`${entry.player_id}_${entry.award_type}`} className="flex flex-col gap-2">
+                  <p className="capitalize font-thin px-4">{entry.award_type.split("_").join(" ")}</p>
+                  <div>
+                    <div className="flex gap-4 px-4 py-2">
+                      <Image
+                        src={`/file.svg`}
+                        width={40}
+                        height={40}
+                        alt={entry.player_name}
+                        className="rounded-full"
+                      />
+                      <p className="text-lg py-2 w-full">{entry.player_name}</p>
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
           </div>
-          <div>{getTeamScores(matchHeader.innings_scores, team2_id)}</div>
-        </div>
+        )}
       </CardContent>
 
-      <CardFooter>{getMatchResult(matchHeader)}</CardFooter>
+      <CardFooter className="py-0 mt-[-2]">{getMatchResult(matchHeader)}</CardFooter>
     </Card>
   );
 }

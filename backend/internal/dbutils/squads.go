@@ -65,7 +65,7 @@ func ReadSquadByMatchId(ctx context.Context, db DB_Exec, matchId int64) (respons
 
 	err := row.Scan(
 		&matchHeader.MatchId, &matchHeader.PlayingLevel, &matchHeader.PlayingFormat, &matchHeader.MatchType, &matchHeader.EventMatchNumber,
-		&matchHeader.MatchState, &matchHeader.MatchStateDescription,
+		&matchHeader.MatchState, &matchHeader.MatchStateDescription, &matchHeader.FinalResult,
 
 		&matchHeader.MatchWinnerId, &matchHeader.MatchLoserId, &matchHeader.IsWonByInnings, &matchHeader.IsWonByRuns,
 		&matchHeader.WinMargin, &matchHeader.BallsMargin, &matchHeader.SuperOverWinnerId, &matchHeader.BowlOutWinnerId, &matchHeader.OutcomeSpecialMethod, &matchHeader.TossWinnerId, &matchHeader.TossLoserId, &matchHeader.IsTossDecisionBat,

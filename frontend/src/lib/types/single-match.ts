@@ -312,3 +312,27 @@ export interface IOverStats {
   balls: number;
   wickets: number;
 }
+
+/* Squads */
+
+export interface IMatchSquad {
+  match_header: IMatchHeader;
+  team_squads: ITeamSquadEntry[];
+}
+
+export interface ITeamSquadEntry {
+  team_id: number;
+  team_name: string;
+  players: IPlayerSquadEntry[];
+}
+
+export interface IPlayerSquadEntry {
+  player_id: number;
+  player_name: string;
+
+  is_captain: boolean;
+  is_wk: boolean;
+  is_debut: boolean;
+  is_vice_captain: boolean;
+  playing_status: string;
+}

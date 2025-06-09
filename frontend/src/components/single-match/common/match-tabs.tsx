@@ -37,9 +37,6 @@ export function MatchTabs({
       <Link href={`/matches/${matchId}/squads`} className={active === "squads" ? activeClass : normalClass}>
         Squads
       </Link>
-      <Link href={`/matches/${matchId}/overs`} className={active === "overs" ? activeClass : normalClass}>
-        Overs
-      </Link>
     </div>
   );
 }
