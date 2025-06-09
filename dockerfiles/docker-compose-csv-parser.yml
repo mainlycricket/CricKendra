@@ -1,8 +1,8 @@
 services:
   db:
     build: 
-      context: ../
-      dockerfile: ./dockerfiles/Dockerfile.db.csv-parser
+      context: ../backend/
+      dockerfile: ../dockerfiles/Dockerfile.db.csv-parser
     networks:
       - crickendra_network
     env_file:
@@ -15,8 +15,8 @@ services:
   
   csv-parser:
     build: 
-      context: ../
-      dockerfile: ./dockerfiles/Dockerfile.csv-parser
+      context: ../backend/
+      dockerfile: ../dockerfiles/Dockerfile.csv-parser
     networks:
       - crickendra_network
     env_file:
