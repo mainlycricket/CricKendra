@@ -14,7 +14,7 @@ export function MatchTabs({
 
   return (
     <div className="px-4 md:px-0 py-3 flex justify-evenly gap-4 rounded-xl overflow-auto bg-secondary">
-      <Link href={`/matches/${matchId}/summary`} className={active === "summary" ? activeClass : normalClass}>
+      <Link href={`/matches/${matchId}`} className={active === "summary" ? activeClass : normalClass}>
         Summary
       </Link>
       <Link

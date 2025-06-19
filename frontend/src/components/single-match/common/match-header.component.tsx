@@ -1,7 +1,9 @@
-import { IMatchHeader, ITeamInningsShortInfo } from "@/lib/types/single-match";
-import { Card, CardContent, CardFooter, CardHeader } from "../../ui/card";
 import Image from "next/image";
 import Link from "next/link";
+
+import { Card, CardContent, CardFooter, CardHeader } from "../../ui/card";
+
+import { IMatchHeader, ITeamInningsShortInfo } from "@/lib/types/single-match";
 import { getDisplayDate } from "@/lib/utils";
 
 export function MatchHeader({ matchHeader }: { matchHeader: IMatchHeader }) {
@@ -33,11 +35,13 @@ export function MatchHeader({ matchHeader }: { matchHeader: IMatchHeader }) {
           )}
 
           {matchHeader.start_date && <span>, {getDisplayDate(matchHeader.start_date)}</span>}
-
           {matchHeader.main_series_id && (
-            <Link href={`/series/${matchHeader.main_series_id}`} className="underline">
-              , {matchHeader.main_series_name}
-            </Link>
+            <span>
+              ,{" "}
+              <Link href={`/series/${matchHeader.main_series_id}`} className="underline">
+                {matchHeader.main_series_name}
+              </Link>
+            </span>
           )}
         </p>
       </CardHeader>

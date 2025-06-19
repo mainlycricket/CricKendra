@@ -16,18 +16,26 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" suppressHydrationWarning>
-      <body className="p-2 md:p-4">
-        <ThemeProvider attribute="class" defaultTheme="system" enableSystem disableTransitionOnChange>
-          <header>
-            <p>Menu</p>
-            <ModeToggle />
-            <div>
-              <Link href="/matches/1">Match 1</Link>
-            </div>
-          </header>
-          {children}
-          <footer>Footer</footer>
-        </ThemeProvider>
+      <body>
+        <div className="container mx-auto p-2">
+          <ThemeProvider
+            attribute="class"
+            defaultTheme="system"
+            enableSystem
+            disableTransitionOnChange
+          >
+            <header>
+              <p>Menu</p>
+              <ModeToggle />
+              <div>
+                <Link href="/matches/1">Match 1</Link>
+                <Link href="/series/1">Series 1</Link>
+              </div>
+            </header>
+            {children}
+            <footer>Footer</footer>
+          </ThemeProvider>
+        </div>
       </body>
     </html>
   );

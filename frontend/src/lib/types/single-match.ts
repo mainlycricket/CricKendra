@@ -59,7 +59,7 @@ export interface ITeamInningsShortInfo {
   max_overs: number;
 }
 
-interface IPlayerAwardInfo {
+export interface IPlayerAwardInfo {
   player_id: number;
   player_name: string;
   award_type: string;
@@ -83,23 +83,26 @@ export interface IInningsScorecardSummary {
   total_wickets: number;
   total_overs: number;
 
-  top_batters: {
-    batter_id: number;
-    batter_name: string;
-    runs_scored: number;
-    balls_faced: number;
-    fours_scored: number;
-    sixes_scored: number;
-  }[];
+  top_batters: IScorecardSummaryBatter[];
+  top_bowlers: IScorecardSummaryBowler[];
+}
 
-  top_bowlers: {
-    bowler_id: number;
-    bowler_name: string;
-    overs_bowled: number;
-    maiden_overs: number;
-    wickets_taken: number;
-    runs_conceded: number;
-  }[];
+export interface IScorecardSummaryBatter {
+  batter_id: number;
+  batter_name: string;
+  runs_scored: number;
+  balls_faced: number;
+  fours_scored: number;
+  sixes_scored: number;
+}
+
+export interface IScorecardSummaryBowler {
+  bowler_id: number;
+  bowler_name: string;
+  overs_bowled: number;
+  maiden_overs: number;
+  wickets_taken: number;
+  runs_conceded: number;
 }
 
 /* Scorecard */
