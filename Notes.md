@@ -1,12 +1,13 @@
 ### TODOs
 
--   Image upload
--   Validation
--   Pagination
--   Delete / Update
--   Authentication
--   Handle DB Errors (https://www.postgresql.org/docs/current/errcodes-appendix.html)
--   Series Points Table
+- Image upload
+- Validation
+- Pagination
+- Delete / Update
+- Authentication
+- Handle DB Errors (https://www.postgresql.org/docs/current/errcodes-appendix.html)
+- Series Points Table
+- Over Summary in commentary (summary & full innings commentary)
 
 ### DB Notes
 
@@ -19,4 +20,5 @@
 - Get Player Profile will return computed stats in a unified manner
 
 #### Figure outs
+
 - Use Redis cache for match state info like maiden overs etc

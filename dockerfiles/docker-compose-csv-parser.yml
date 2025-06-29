@@ -1,8 +1,8 @@
 services:
   db:
     build: 
-      context: ../
-      dockerfile: ./dockerfiles/Dockerfile.db.csv-parser
+      context: ../backend/
+      dockerfile: ../dockerfiles/Dockerfile.db.csv-parser
     networks:
       - crickendra_network
     env_file:
@@ -15,8 +15,8 @@ services:
   
   csv-parser:
     build: 
-      context: ../
-      dockerfile: ./dockerfiles/Dockerfile.csv-parser
+      context: ../backend/
+      dockerfile: ../dockerfiles/Dockerfile.csv-parser
     networks:
       - crickendra_network
     env_file:
@@ -32,6 +32,7 @@ services:
         ./bin/csv-parser
 
         # Dump the database to the mounted volume
+        psql -h db -U postgres -d crickendra -f /app/db_files/sync_player_db_stats.sql
         pg_dump -h db -U postgres crickendra > /app/db_files/full_db.sql
         echo DB dumped, stop the process
       "

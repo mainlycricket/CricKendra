@@ -1,5 +1,7 @@
 .env
 full_db.sql
-/bin/*
-!/bin/.gitkeep
+/backend/bin/*
+!/backend/bin/.gitkeep
 secrets.sh
+node_modules
+.next
