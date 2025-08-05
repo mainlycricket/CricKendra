@@ -1,5 +1,3 @@
-import { IOverall_Bowling_Summary_Group } from "@/lib/types/bowling-stats.types";
-import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 
 import {
@@ -22,67 +20,24 @@ import {
   IOverall_Bowling_Tournament_Group,
   IOverall_Bowling_Year_Group,
   isT,
+  IOverall_Bowling_Bowler_Group,
+  IIndividual_Bowling_Series_Group,
+  IIndividual_Bowling_Tournament_Group,
+  IIndividual_Bowling_Ground_Group,
+  IIndividual_Bowling_HostNation_Group,
+  IIndividual_Bowling_Opposition_Group,
+  IIndividual_Bowling_Year_Group,
+  IIndividual_Bowling_Season_Group,
+  IOverall_Bowling_Ground_Group,
+  IOverall_Bowling_Aggregate_Group,
+  IOverall_Bowling_Decade_Group,
+  IOverall_Bowling_Series_Group,
+  IOverall_Bowling_TeamInnings_Group,
+  IOverall_Bowling_Match_Group,
 } from "@/lib/types/bowling-stats.types";
 import { capitalizeFirstLetter } from "@/lib/utils";
 
-export function BowlingStats({ stats }: { stats: IOverall_Bowling_Summary_Group }) {
-  const data: {
-    triggerValue: string;
-    triggerLabel: string;
-    stats: ICombinedBowlingStatsType[];
-  }[] = [
-    { triggerValue: "teams", triggerLabel: "for teams", stats: stats.teams || [] },
-    { triggerValue: "oppositions", triggerLabel: "vs teams", stats: stats.oppositions || [] },
-    { triggerValue: "host_nations", triggerLabel: "in host country", stats: stats.host_nations || [] },
-    { triggerValue: "continents", triggerLabel: "in continent", stats: stats.continents || [] },
-    { triggerValue: "home_away", triggerLabel: "home vs away", stats: stats.home_away || [] },
-    { triggerValue: "years", triggerLabel: "by year", stats: stats.years || [] },
-    { triggerValue: "seasons", triggerLabel: "by season", stats: stats.seasons || [] },
-    { triggerValue: "toss_won_lost", triggerLabel: "by toss result", stats: stats.toss_won_lost || [] },
-    { triggerValue: "toss_decision", triggerLabel: "by toss decision", stats: stats.toss_decision || [] },
-    { triggerValue: "bat_bowl_first", triggerLabel: "by bat/bowl first", stats: stats.bat_bowl_first || [] },
-    { triggerValue: "innings_number", triggerLabel: "by innings number", stats: stats.innings_number || [] },
-    { triggerValue: "match_result", triggerLabel: "by match result", stats: stats.match_result || [] },
-    {
-      triggerValue: "match_result_bat_bowl_first",
-      triggerLabel: "by match result & toss decision",
-      stats: stats.match_result_bat_bowl_first || [],
-    },
-    {
-      triggerValue: "series_teams_count",
-      triggerLabel: "by tournament type",
-      stats: stats.series_teams_count || [],
-    },
-    {
-      triggerValue: "series_event_match_number",
-      triggerLabel: "in match number per series",
-      stats: stats.series_event_match_number || [],
-    },
-    { triggerValue: "tournaments", triggerLabel: "by tournament", stats: stats.tournaments || [] },
-    {
-      triggerValue: "batting_positions",
-      triggerLabel: "by batting position",
-      stats: stats.bowling_positions || [],
-    },
-  ];
-
-  return (
-    <div className="flex flex-col gap-4">
-      <Accordion type="multiple" defaultValue={["teams"]}>
-        {data.map((item) => (
-          <AccordionItem value={item.triggerValue} key={item.triggerValue}>
-            <AccordionTrigger className="uppercase tracking-wider">{item.triggerLabel}</AccordionTrigger>
-            <AccordionContent>
-              <BowlingStatsTable stats={item.stats} />
-            </AccordionContent>
-          </AccordionItem>
-        ))}
-      </Accordion>
-    </div>
-  );
-}
-
-function BowlingStatsTable({ stats }: { stats: ICombinedBowlingStatsType[] }) {
+export function BowlingStatsTable({ stats }: { stats: ICombinedBowlingStatsType[] }) {
   return (
     <Table>
       <TableHeader>
@@ -166,6 +121,90 @@ function getRowMetaData(row: ICombinedBowlingStatsType): {
   minSpanYear?: number;
   maxSpanYear?: number;
 } {
+  /* Individual */
+  if (isT<IIndividual_Bowling_Series_Group>(row, ["bowler_id", "series_id"])) {
+    return {
+      key: `${row.bowler_id}_${row.series_id}`,
+      label: `${row.bowler_name} in ${row.series_name}, ${row.series_season}`,
+      minSpanYear: new Date(row.min_date).getFullYear(),
+      maxSpanYear: new Date(row.max_date).getFullYear(),
+    };
+  }
+
+  if (isT<IIndividual_Bowling_Tournament_Group>(row, ["bowler_id", "tournament_id"])) {
+    return {
+      key: `${row.bowler_id}_${row.tournament_id}`,
+      label: `${row.bowler_name} in ${row.tournament_name}`,
+      minSpanYear: new Date(row.min_date).getFullYear(),
+      maxSpanYear: new Date(row.max_date).getFullYear(),
+    };
+  }
+
+  if (isT<IIndividual_Bowling_Ground_Group>(row, ["bowler_id", "ground_id"])) {
+    return {
+      key: `${row.bowler_id}_${row.ground_id}`,
+      label: `${row.bowler_name} at ${row.ground_name}`,
+      minSpanYear: new Date(row.min_date).getFullYear(),
+      maxSpanYear: new Date(row.max_date).getFullYear(),
+    };
+  }
+
+  if (isT<IIndividual_Bowling_HostNation_Group>(row, ["bowler_id", "host_nation_id"])) {
+    return {
+      key: `${row.bowler_id}_${row.host_nation_id}`,
+      label: `${row.bowler_name} in ${row.host_nation_name}`,
+      minSpanYear: new Date(row.min_date).getFullYear(),
+      maxSpanYear: new Date(row.max_date).getFullYear(),
+    };
+  }
+
+  if (isT<IIndividual_Bowling_Opposition_Group>(row, ["bowler_id", "opposition_team_id"])) {
+    return {
+      key: `${row.bowler_id}_${row.opposition_team_id}`,
+      label: `${row.bowler_name} v ${row.opposition_team_name}`,
+      minSpanYear: new Date(row.min_date).getFullYear(),
+      maxSpanYear: new Date(row.max_date).getFullYear(),
+    };
+  }
+
+  if (isT<IIndividual_Bowling_Year_Group>(row, ["bowler_id", "year"])) {
+    return {
+      key: `${row.bowler_id}_${row.year}`,
+      label: `${row.bowler_name}, ${row.year}`,
+    };
+  }
+
+  if (isT<IIndividual_Bowling_Season_Group>(row, ["bowler_id", "season"])) {
+    return {
+      key: `${row.bowler_id}_${row.season}`,
+      label: `${row.bowler_name}, ${row.season}`,
+    };
+  }
+
+  /* Overall */
+  if (isT<IOverall_Bowling_Bowler_Group>(row, ["bowler_id", "bowler_name"])) {
+    return {
+      key: row.bowler_id,
+      label: row.bowler_name,
+      minSpanYear: new Date(row.min_date).getFullYear(),
+      maxSpanYear: new Date(row.max_date).getFullYear(),
+    };
+  }
+
+  if (isT<IOverall_Bowling_TeamInnings_Group>(row, ["match_id", "innings_number"])) {
+    return {
+      key: `${row.match_id}-${row.innings_number}`,
+      label: `${row.batting_team_name} (innings ${row.innings_number}) v ${row.bowling_team_name} at ${row.city_name}, ${row.season}`,
+    };
+  }
+
+  if (isT<IOverall_Bowling_Match_Group>(row, ["match_id"])) {
+    return {
+      key: row.match_id,
+      label: `${row.team1_name} v ${row.team2_name} at ${row.city_name}, ${row.season}`,
+    };
+  }
+
   if (isT<IOverall_Bowling_Team_Group>(row, ["team_id", "team_name"])) {
     return {
       key: row.team_id,
@@ -179,6 +218,15 @@ function getRowMetaData(row: ICombinedBowlingStatsType): {
     return {
       key: row.opposition_team_id,
       label: row.opposition_team_name,
+      minSpanYear: new Date(row.min_date).getFullYear(),
+      maxSpanYear: new Date(row.max_date).getFullYear(),
+    };
+  }
+
+  if (isT<IOverall_Bowling_Ground_Group>(row, ["ground_id", "ground_name"])) {
+    return {
+      key: row.ground_id,
+      label: row.ground_name,
       minSpanYear: new Date(row.min_date).getFullYear(),
       maxSpanYear: new Date(row.max_date).getFullYear(),
     };
@@ -299,10 +347,10 @@ function getRowMetaData(row: ICombinedBowlingStatsType): {
     };
   }
 
-  if (isT<IOverall_Bowling_Tournament_Group>(row, ["tournament_id", "tournament_name"])) {
+  if (isT<IOverall_Bowling_Series_Group>(row, ["series_id", "series_name"])) {
     return {
-      key: row.tournament_id,
-      label: row.tournament_name,
+      key: row.series_id,
+      label: row.series_name + ", " + row.series_season,
       minSpanYear: new Date(row.min_date).getFullYear(),
       maxSpanYear: new Date(row.max_date).getFullYear(),
     };
@@ -314,6 +362,13 @@ function getRowMetaData(row: ICombinedBowlingStatsType): {
       label: row.tournament_name,
       minSpanYear: new Date(row.min_date).getFullYear(),
       maxSpanYear: new Date(row.max_date).getFullYear(),
+    };
+  }
+
+  if (isT<IOverall_Bowling_Decade_Group>(row, ["decade"])) {
+    return {
+      key: row.decade,
+      label: row.decade.toString(),
     };
   }
 
@@ -321,6 +376,15 @@ function getRowMetaData(row: ICombinedBowlingStatsType): {
     return {
       key: row.bowling_position,
       label: `Bowl Pos. ${row.bowling_position}`,
+      minSpanYear: new Date(row.min_date).getFullYear(),
+      maxSpanYear: new Date(row.max_date).getFullYear(),
+    };
+  }
+
+  if (isT<IOverall_Bowling_Aggregate_Group>(row, ["players_count"])) {
+    return {
+      key: row.players_count,
+      label: "overall",
       minSpanYear: new Date(row.min_date).getFullYear(),
       maxSpanYear: new Date(row.max_date).getFullYear(),
     };
