@@ -3,7 +3,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import {
   ICombinedBattingStatsType2,
   IIndividual_Batting_Innings_Group,
-  IIndividual_Batting_MatchTotals_Group,
+  // IIndividual_Batting_MatchTotals_Group,
   isT2,
 } from "@/lib/types/batting-stats.types";
 import { getDisplayDate } from "@/lib/utils";

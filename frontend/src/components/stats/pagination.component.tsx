@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { Button } from "../ui/button";
-import { usePathname, useSearchParams } from "next/navigation";
+import { useSearchParams } from "next/navigation";
 
 export function Pagination({
   currentPage,
@@ -13,7 +13,6 @@ export function Pagination({
   recordsCount: number;
   disableNext: boolean;
 }) {
-  const pathName = usePathname();
   const searchParams = useSearchParams();
 
   return (

@@ -7,21 +7,18 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Factory } from "lucide-react";
 import { useState } from "react";
 import { Checkbox } from "../ui/checkbox";
 import { Label } from "../ui/label";
 
-export function StatOption({
+export function SelectCheckboxInput({
   name,
   label,
-  optionLabels,
-  optionValues,
+  options,
 }: {
   name: string;
   label: string;
-  optionLabels: string[];
-  optionValues: string[];
+  options: { value: string; label: string }[];
 }) {
   const [isMultiple, setIsMultiple] = useState(false);
   return (
@@ -31,11 +28,11 @@ export function StatOption({
         <div>
           {isMultiple ? (
             <div className="flex flex-wrap gap-4">
-              {optionValues?.map((value, idx) => {
+              {options?.map((option) => {
                 return (
-                  <div className="flex gap-2" key={value}>
-                    <Checkbox id={name + value} name={name} value={value} />
-                    <Label htmlFor={name + value}>{optionLabels[idx]}</Label>
+                  <div className="flex gap-2" key={`${name}_${option.value}`}>
+                    <Checkbox id={`${name}_${option.value}`} name={name} value={option.value} />
+                    <Label htmlFor={`${name}_${option.value}`}>{option.label}</Label>
                   </div>
                 );
               })}
@@ -48,9 +45,9 @@ export function StatOption({
               <SelectContent>
                 <SelectGroup>
                   <SelectLabel className="text-sm">{label}</SelectLabel>
-                  {optionValues.map((value, idx) => (
-                    <SelectItem key={value} value={value}>
-                      {optionLabels[idx] || ""}
+                  {options?.map((option) => (
+                    <SelectItem key={`${name}_${option.value}`} value={option.value}>
+                      {option.label}
                     </SelectItem>
                   ))}
                 </SelectGroup>
@@ -60,7 +57,7 @@ export function StatOption({
         </div>
       </div>
       <div className="hidden md:block" style={{ minWidth: "60px" }}>
-        <button type="button" className="text-sm btn" onClick={(e) => setIsMultiple(!isMultiple)}>
+        <button type="button" className="text-sm btn" onClick={() => setIsMultiple(!isMultiple)}>
           {isMultiple ? "Single" : "Multiple"}
         </button>
       </div>

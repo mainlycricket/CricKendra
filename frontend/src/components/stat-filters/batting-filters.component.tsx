@@ -1,115 +1,51 @@
-import { Input } from "../ui/input";
-import { Label } from "../ui/label";
-import { RadioGroup, RadioGroupItem } from "../ui/radio-group";
-import { StatOption } from "./options.component";
+import { RadioOption } from "./radio-option.component";
+import { RangeInput } from "./range-input.component";
+import { SelectCheckboxInput } from "./select-checkbox-input.component";
 
 export function BattingFilters() {
   return (
     <div className="flex flex-col gap-4">
-      <div className="flex gap-4">
-        <p style={{ minWidth: "175px" }}>Runs scored in an inns</p>
-        <div className="flex gap-2">
-          <Input
-            type="number"
-            name="min__innings_runs_scored"
-            min={0}
-            step={1}
-            className="w-24"
-            placeholder="Min"
-          />
-          <Input
-            type="number"
-            name="max__innings_runs_scored"
-            min={0}
-            step={1}
-            className="w-24"
-            placeholder="Max"
-          />
-        </div>
-      </div>
+      <RangeInput
+        label="Runs scored in an inns"
+        minName="min__innings_runs_scored"
+        maxName="max__innings_runs_scored"
+      />
 
-      <div className="flex gap-4">
-        <p style={{ minWidth: "175px" }}>Batting Position</p>
-        <div className="flex gap-2">
-          <Input
-            type="number"
-            name="min__innings_batting_position"
-            min={1}
-            step={1}
-            max={12}
-            className="w-24"
-            placeholder="Min"
-          />
-          <Input
-            type="number"
-            name="max__innings_batting_position"
-            min={1}
-            step={1}
-            max={12}
-            className="w-24"
-            placeholder="Max"
-          />
-        </div>
-      </div>
+      <RangeInput
+        label="Batting Position"
+        minName="min__innings_batting_position"
+        maxName="max__innings_batting_position"
+      />
 
-      <div className="flex gap-4">
-        <p style={{ minWidth: "175px" }}>Dismissed</p>
-        <RadioGroup defaultValue="" name="innings_is_batter_dismissed" className="flex flex-wrap gap-4">
-          <div className="flex items-center gap-1">
-            <RadioGroupItem value="dismissed" id="dismissed" />
-            <Label htmlFor="dismissed" className="capitalize font-normal">
-              out
-            </Label>
-          </div>
-          <div className="flex items-center gap-1">
-            <RadioGroupItem value="not_out" id="not_out" />
-            <Label htmlFor="not_out" className="capitalize font-normal">
-              not out
-            </Label>
-          </div>
-          <div className="flex items-center gap-1">
-            <RadioGroupItem value="" id="either" />
-            <Label htmlFor="either" className="capitalize font-normal">
-              either
-            </Label>
-          </div>
-        </RadioGroup>
-      </div>
+      <RadioOption
+        name="innings_is_batter_dismissed"
+        label="Dismissed"
+        defaultValue=""
+        options={[
+          { label: "out", value: "dismissed" },
+          { label: "not out", value: "not_out" },
+          { label: "either", value: "" },
+        ]}
+      />
 
-      <StatOption
+      <SelectCheckboxInput
         name="innings_batter_dismissal_type"
         label="Dismissal Type"
-        optionValues={[
-          "caught",
-          "bowled",
-          "lbw",
-          "run out",
-          "stumped",
-          "hit wicket",
-          "handled the ball",
-          "obstructing the field",
-          "timed out",
-          "retired hurt",
-          "hit the ball twice",
-          "caught and bowled",
-          "retired out",
-          "retired not out",
-        ]}
-        optionLabels={[
-          "Caught",
-          "Bowled",
-          "LBW",
-          "Run Out",
-          "Stumped",
-          "Hit Wicket",
-          "Handled the Ball",
-          "Obstructing the Field",
-          "Timed Out",
-          "Retired Hurt",
-          "Hit the Ball Twice",
-          "Caught and Bowled",
-          "Retired Out",
-          "Retired Not Out",
+        options={[
+          { label: "Caught", value: "caught" },
+          { label: "Bowled", value: "bowled" },
+          { label: "LBW", value: "lbw" },
+          { label: "Run Out", value: "run out" },
+          { label: "Stumped", value: "stumped" },
+          { label: "Hit Wicket", value: "hit wicket" },
+          { label: "Handled the Ball", value: "handled the ball" },
+          { label: "Obstructing the Field", value: "obstructing the field" },
+          { label: "Timed Out", value: "timed out" },
+          { label: "Retired Hurt", value: "retired hurt" },
+          { label: "Hit the Ball Twice", value: "hit the ball twice" },
+          { label: "Caught and Bowled", value: "caught and bowled" },
+          { label: "Retired Out", value: "retired out" },
+          { label: "Retired Not Out", value: "retired not out" },
         ]}
       />
     </div>
