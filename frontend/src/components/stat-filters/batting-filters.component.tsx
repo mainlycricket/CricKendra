@@ -1,26 +1,31 @@
-import { RadioOption } from "./radio-option.component";
+import { IStatsFiltersMap } from "@/lib/types/filters-stats.types";
+import { RadioInput } from "./radio-input.component";
 import { RangeInput } from "./range-input.component";
 import { SelectCheckboxInput } from "./select-checkbox-input.component";
 
-export function BattingFilters() {
+export function BattingFilters({ filtersMap }: { filtersMap: IStatsFiltersMap }) {
   return (
     <div className="flex flex-col gap-4">
       <RangeInput
         label="Runs scored in an inns"
         minName="min__innings_runs_scored"
         maxName="max__innings_runs_scored"
+        defaultMin={filtersMap?.min__innings_runs_scored}
+        defaultMax={filtersMap?.max__innings_runs_scored}
       />
 
       <RangeInput
         label="Batting Position"
         minName="min__innings_batting_position"
         maxName="max__innings_batting_position"
+        defaultMin={filtersMap?.min__innings_batting_position}
+        defaultMax={filtersMap?.max__innings_batting_position}
       />
 
-      <RadioOption
+      <RadioInput
         name="innings_is_batter_dismissed"
         label="Dismissed"
-        defaultValue=""
+        defaultValue={filtersMap?.innings_is_batter_dismissed || ""}
         options={[
           { label: "out", value: "dismissed" },
           { label: "not out", value: "not_out" },
@@ -47,6 +52,7 @@ export function BattingFilters() {
           { label: "Retired Out", value: "retired out" },
           { label: "Retired Not Out", value: "retired not out" },
         ]}
+        defaultValues={filtersMap?.innings_batter_dismissal_type}
       />
     </div>
   );

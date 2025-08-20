@@ -13,17 +13,21 @@ export function SelectInput({
   label,
   name,
   options,
+  defaultValue,
   onValueChange,
 }: {
   label: string;
   name: string;
   options: { label: string; value: string }[];
+  defaultValue?: string;
   onValueChange?: (value: string) => void;
 }) {
-  const [value, setValue] = useState(options?.[0]?.value);
+  const [value, setValue] = useState(defaultValue || options?.[0]?.value);
 
   useEffect(() => {
-    setValue(options?.[0]?.value);
+    if (!defaultValue) {
+      setValue(options?.[0]?.value);
+    }
   }, [options]);
 
   return (

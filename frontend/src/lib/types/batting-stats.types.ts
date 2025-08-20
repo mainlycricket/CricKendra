@@ -59,10 +59,7 @@ export function isT<T extends IOverallBattingStats>(obj: IOverallBattingStats, f
   return fields.every((field) => field in obj);
 }
 
-export function isT2<T extends ICombinedBattingStatsType2>(
-  obj: ICombinedBattingStatsType2,
-  fields: string[]
-): obj is T {
+export function isT2<T extends IIndividualBattingInnings>(obj: IIndividualBattingInnings, fields: string[]): obj is T {
   return fields.every((field) => field in obj);
 }
 
@@ -255,51 +252,15 @@ export interface IOverall_Batting_Summary_BattingPosition_Group extends IOverall
 
 /* Individual Stats */
 
-export interface IIndividual_Batting_Innings_Group {
-  match_id: number;
-  start_date: string;
-  ground_id: number;
-  city_name: string;
-
+export interface IIndividual_Batting_Innings_Group extends IIndividualBattingInnings {
   innings_number: number;
-  batter_id: number;
-  batter_name: string;
-  batting_team_id: number;
-  batting_team_name: string;
-  bowling_team_id: number;
-  bowling_team_name: string;
-
-  runs_scored: number;
-  balls_faced: number;
-  is_not_out: boolean;
-  strike_rate: number;
-  fours_scored: number;
-  sixes_scored: number;
 }
 
-export interface IIndividual_Batting_MatchTotals_Group {
-  match_id: number;
-  start_date: string;
-  ground_id: number;
-  city_name: string;
-
-  batter_id: number;
-  batter_name: string;
-  batting_team_id: number;
-  batting_team_name: string;
-  bowling_team_id: number;
-  bowling_team_name: string;
-
+export interface IIndividual_Batting_MatchTotals_Group extends IIndividualBattingInnings {
   innings: {
     runs_scored: number;
     is_not_out: boolean;
   }[];
-
-  runs_scored: number;
-  balls_faced: number;
-  strike_rate: number;
-  fours_scored: number;
-  sixes_scored: number;
 }
 
 export interface IIndividual_Batting_Series_Group extends IOverall_Batting_Batter_Group {
@@ -344,7 +305,7 @@ export interface IIndividual_Batting_Season_Group extends IOverallBattingStats {
 
 /* Extended by Others */
 
-export interface IOverallBattingStats {
+interface IOverallBattingStats {
   matches_played: number;
   innings_batted: number;
   runs_scored: number;
@@ -358,6 +319,27 @@ export interface IOverallBattingStats {
   half_centuries: number;
   fifty_plus_scores: number;
   ducks: number;
+  fours_scored: number;
+  sixes_scored: number;
+}
+
+interface IIndividualBattingInnings {
+  match_id: number;
+  start_date: string;
+  ground_id: number;
+  city_name: string;
+
+  batter_id: number;
+  batter_name: string;
+  batting_team_id: number;
+  batting_team_name: string;
+  bowling_team_id: number;
+  bowling_team_name: string;
+
+  runs_scored: number;
+  balls_faced: number;
+  is_not_out: boolean;
+  strike_rate: number;
   fours_scored: number;
   sixes_scored: number;
 }

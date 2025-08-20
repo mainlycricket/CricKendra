@@ -1,14 +1,16 @@
 import { Checkbox } from "../ui/checkbox";
 import { Label } from "../ui/label";
 
-export function CheckboxOption({
+export function CheckboxInput({
   label,
   name,
   options,
+  defaultValues,
 }: {
   name: string;
   label: string;
   options: { value: string; label: string }[];
+  defaultValues?: string[];
 }) {
   return (
     <div className="flex gap-4">
@@ -16,7 +18,12 @@ export function CheckboxOption({
       <div className="flex flex-wrap gap-4">
         {options.map((option) => (
           <div className="flex items-center gap-2" key={`${name}_${option.value}`}>
-            <Checkbox id={`${name}_${option.value}`} name={name} value={option.value} />
+            <Checkbox
+              id={`${name}_${option.value}`}
+              name={name}
+              value={option.value}
+              defaultChecked={defaultValues?.includes(option.value)}
+            />
             <Label htmlFor={`${name}_${option.value}`} className="font-normal capitalize">
               {option.label}
             </Label>

@@ -528,50 +528,17 @@ type Overall_Batting_Aggregate_Group struct {
 /* Individual Stats */
 
 type Individual_Batting_Innings_Group struct {
-	MatchId   pgtype.Int8 `json:"match_id"`
-	StartDate pgtype.Date `json:"start_date"`
-	GroundId  pgtype.Int8 `json:"ground_id"`
-	CityName  pgtype.Text `json:"city_name"`
-
-	InningsNumber   pgtype.Int8 `json:"innings_number"`
-	BatterId        pgtype.Int8 `json:"batter_id"`
-	BatterName      pgtype.Text `json:"batter_name"`
-	BattingTeamId   pgtype.Int8 `json:"batting_team_id"`
-	BattingTeamName pgtype.Text `json:"batting_team_name"`
-	BowlingTeamId   pgtype.Int8 `json:"bowling_team_id"`
-	BowlingTeamName pgtype.Text `json:"bowling_team_name"`
-
-	RunsScored  pgtype.Int8   `json:"runs_scored"`
-	BallsFaced  pgtype.Int8   `json:"balls_faced"`
-	IsNotOut    pgtype.Bool   `json:"is_not_out"`
-	StrikeRate  pgtype.Float8 `json:"strike_rate"`
-	FoursScored pgtype.Int8   `json:"fours_scored"`
-	SixesScored pgtype.Int8   `json:"sixes_scored"`
+	InningsNumber pgtype.Int8 `json:"innings_number"`
+	IndividualBattingInnings
 }
 
 type Individual_Batting_MatchTotals_Group struct {
-	MatchId   pgtype.Int8 `json:"match_id"`
-	StartDate pgtype.Date `json:"start_date"`
-	GroundId  pgtype.Int8 `json:"ground_id"`
-	CityName  pgtype.Text `json:"city_name"`
-
-	BatterId        pgtype.Int8 `json:"batter_id"`
-	BatterName      pgtype.Text `json:"batter_name"`
-	BattingTeamId   pgtype.Int8 `json:"batting_team_id"`
-	BattingTeamName pgtype.Text `json:"batting_team_name"`
-	BowlingTeamId   pgtype.Int8 `json:"bowling_team_id"`
-	BowlingTeamName pgtype.Text `json:"bowling_team_name"`
-
 	Innings []struct {
 		RunsScored pgtype.Int8 `json:"runs_scored"`
 		IsNotOut   pgtype.Bool `json:"is_not_out"`
 	} `json:"innings"`
 
-	RunsScored  pgtype.Int8   `json:"runs_scored"`
-	BallsFaced  pgtype.Int8   `json:"balls_faced"`
-	StrikeRate  pgtype.Float8 `json:"strike_rate"`
-	FoursScored pgtype.Int8   `json:"fours_scored"`
-	SixesScored pgtype.Int8   `json:"sixes_scored"`
+	IndividualBattingInnings
 }
 
 type Individual_Batting_Series_Group struct {
@@ -638,4 +605,25 @@ type OverallBattingStats struct {
 	Ducks              pgtype.Int8   `json:"ducks"`
 	FoursScored        pgtype.Int8   `json:"fours_scored"`
 	SixesScored        pgtype.Int8   `json:"sixes_scored"`
+}
+
+type IndividualBattingInnings struct {
+	MatchId   pgtype.Int8 `json:"match_id"`
+	StartDate pgtype.Date `json:"start_date"`
+	GroundId  pgtype.Int8 `json:"ground_id"`
+	CityName  pgtype.Text `json:"city_name"`
+
+	BatterId        pgtype.Int8 `json:"batter_id"`
+	BatterName      pgtype.Text `json:"batter_name"`
+	BattingTeamId   pgtype.Int8 `json:"batting_team_id"`
+	BattingTeamName pgtype.Text `json:"batting_team_name"`
+	BowlingTeamId   pgtype.Int8 `json:"bowling_team_id"`
+	BowlingTeamName pgtype.Text `json:"bowling_team_name"`
+
+	RunsScored  pgtype.Int8   `json:"runs_scored"`
+	BallsFaced  pgtype.Int8   `json:"balls_faced"`
+	IsNotOut    pgtype.Bool   `json:"is_not_out"`
+	StrikeRate  pgtype.Float8 `json:"strike_rate"`
+	FoursScored pgtype.Int8   `json:"fours_scored"`
+	SixesScored pgtype.Int8   `json:"sixes_scored"`
 }

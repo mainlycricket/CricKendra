@@ -1,37 +1,38 @@
+"use client";
+
 import { StatsFiltersComponent } from "@/components/stat-filters/main.component";
 import { doBackendRequest } from "@/lib/axiosFetch";
-import { EnumPlayingFormat, EnumStatsType, EnumStatsView } from "@/lib/types/enums.types";
-import { IStatsFilters } from "@/lib/types/filters-stats.types";
+import { IStatsFilters, prepareStatsFiltersMap } from "@/lib/types/filters-stats.types";
+import { useSearchParams } from "next/navigation";
+import { Suspense, useEffect, useState } from "react";
 
-export default async function StatsFilters({
-  searchParams,
-}: {
-  searchParams: Promise<{ [key: string]: string }>;
-}) {
-  try {
-    let { is_male, playing_format, type, view } = await searchParams;
-    if (!["Test", "ODI", "T20I", "first_class", "list_a", "t20"].includes(playing_format))
-      playing_format = "ODI";
-    if (is_male !== "true" && is_male !== "false") is_male = "true";
+export default function StatsFilters() {
+  return (
+    <Suspense>
+      <Component />
+    </Suspense>
+  );
+}
 
-    const response = await doBackendRequest<null, IStatsFilters>({
+function Component() {
+  const searchParams = useSearchParams();
+  const filtersMap = prepareStatsFiltersMap(searchParams);
+  const { playing_format, is_male } = filtersMap;
+
+  const [filtersData, setFiltersData] = useState<IStatsFilters>();
+
+  useEffect(() => {
+    doBackendRequest<null, IStatsFilters>({
       url: `/stats/filter-options?is_male=${is_male}&playing_format=${playing_format}`,
       method: "GET",
-    });
+    })
+      .then((data) => {
+        setFiltersData(data.data!);
+      })
+      .catch((error) => {
+        console.error(error);
+      });
+  }, [is_male, playing_format]);
 
-    if (type !== "batting" && type !== "bowling" && type !== "team") type = "batting";
-    if (view !== "overall" && type !== "individual") view = "overall";
-  
-    return (
-      <StatsFiltersComponent
-        commonFilterOptions={response.data!}
-        defaultPlayingFormat={playing_format as EnumPlayingFormat}
-        defaultStatsType={type as EnumStatsType}
-        defaultIsMale={is_male as "true" | "false"}
-        defaultView={view as EnumStatsView}
-      />
-    );
-  } catch (error) {
-    console.error(error);
-  }
+  return filtersData ? <StatsFiltersComponent filtersMap={filtersMap} filtersData={filtersData} /> : <></>;
 }

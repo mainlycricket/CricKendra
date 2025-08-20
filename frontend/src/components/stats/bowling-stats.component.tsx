@@ -1,5 +1,5 @@
 import { EnumStatsView } from "@/lib/types/enums.types";
-import { BowlingStatsTable } from "./tables/bowling-common-table.component";
+import { BowlingCommonTable } from "./tables/bowling-common-table.component";
 import { ICombinedBowlingStatsType, ICombinedBowlingStatsType2 } from "@/lib/types/bowling-stats.types";
 import { BowlingListTable } from "./tables/bowling-list-table.component";
 
@@ -17,7 +17,7 @@ export function BowlingStats({
       {viewType === "individual" && (groupType === "innings" || groupType === "match-totals") ? (
         <BowlingListTable stats={stats as ICombinedBowlingStatsType2[]} />
       ) : (
-        <BowlingStatsTable stats={stats as ICombinedBowlingStatsType[]} />
+        <BowlingCommonTable stats={stats as ICombinedBowlingStatsType[]} />
       )}
     </div>
   );

@@ -3,6 +3,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import {
   ICombinedBowlingStatsType2,
   IIndividual_Bowling_Innings_Group,
+  IIndividual_Bowling_MatchTotals_Group,
   isT2,
 } from "@/lib/types/bowling-stats.types";
 import { getDisplayDate } from "@/lib/utils";
@@ -20,12 +21,18 @@ export function BowlingListTable({ stats }: { stats: ICombinedBowlingStatsType2[
             Mdns
           </TableHead>
           <TableHead title="Runs Conceded">Runs</TableHead>
+          {isT2<IIndividual_Bowling_Innings_Group>(stats?.[0], ["average"]) && (
+            <TableHead title="Average">Ave</TableHead>
+          )}
           <TableHead className="hidden md:table-cell" title="Economy">
             Econ
           </TableHead>
+          {isT2<IIndividual_Bowling_MatchTotals_Group>(stats?.[0], ["strike_rate"]) && (
+            <TableHead title="Strike Rate">SR</TableHead>
+          )}
           <TableHead className="hidden md:table-cell">4s</TableHead>
           <TableHead className="hidden md:table-cell">6s</TableHead>
-          {isT2<IIndividual_Bowling_Innings_Group>(stats?.[0], ["innings_number"]) && (
+          {isT2<IIndividual_Bowling_MatchTotals_Group>(stats?.[0], ["innings_number"]) && (
             <TableHead title="Innings Number">Inns</TableHead>
           )}
           <TableHead title="Opposition">Opposition</TableHead>
@@ -45,7 +52,13 @@ export function BowlingListTable({ stats }: { stats: ICombinedBowlingStatsType2[
               <TableCell>{row.wickets_taken}</TableCell>
               <TableCell className="hidden md:table-cell">{row.maiden_overs}</TableCell>
               <TableCell>{row.runs_conceded}</TableCell>
+              {isT2<IIndividual_Bowling_MatchTotals_Group>(row, ["average"]) && (
+                <TableCell>{row?.average?.toFixed(2) || "-"}</TableCell>
+              )}
               <TableCell className="hidden md:table-cell">{row?.economy?.toFixed(2) || "-"}</TableCell>
+              {isT2<IIndividual_Bowling_MatchTotals_Group>(row, ["strike_rate"]) && (
+                <TableCell>{row?.strike_rate?.toFixed(2) || "-"}</TableCell>
+              )}
               <TableCell className="hidden md:table-cell">{row.fours_conceded}</TableCell>
               <TableCell className="hidden md:table-cell">{row.sixes_conceded}</TableCell>
               {isT2<IIndividual_Bowling_Innings_Group>(row, ["innings_number"]) && (

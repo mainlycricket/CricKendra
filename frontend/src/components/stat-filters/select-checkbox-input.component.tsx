@@ -15,12 +15,14 @@ export function SelectCheckboxInput({
   name,
   label,
   options,
+  defaultValues,
 }: {
   name: string;
   label: string;
   options: { value: string; label: string }[];
+  defaultValues?: string[];
 }) {
-  const [isMultiple, setIsMultiple] = useState(false);
+  const [isMultiple, setIsMultiple] = useState((defaultValues?.length || 0) > 1 ? true : false);
   return (
     <div className="flex justify-between">
       <div className="flex gap-4">
@@ -31,14 +33,19 @@ export function SelectCheckboxInput({
               {options?.map((option) => {
                 return (
                   <div className="flex gap-2" key={`${name}_${option.value}`}>
-                    <Checkbox id={`${name}_${option.value}`} name={name} value={option.value} />
+                    <Checkbox
+                      id={`${name}_${option.value}`}
+                      name={name}
+                      value={option.value}
+                      defaultChecked={defaultValues?.includes(option.value)}
+                    />
                     <Label htmlFor={`${name}_${option.value}`}>{option.label}</Label>
                   </div>
                 );
               })}
             </div>
           ) : (
-            <Select name={name}>
+            <Select name={name} defaultValue={defaultValues?.[0]}>
               <SelectTrigger className="w-[180px]">
                 <SelectValue placeholder="All" />
               </SelectTrigger>

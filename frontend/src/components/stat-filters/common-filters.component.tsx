@@ -1,46 +1,41 @@
-import { IStatsFilters } from "@/lib/types/filters-stats.types";
+import { IStatsFilters, IStatsFiltersMap } from "@/lib/types/filters-stats.types";
 import { SelectCheckboxInput } from "./select-checkbox-input.component";
-import { CheckboxOption } from "./checkbox-option.component";
-import { RadioOption } from "./radio-option.component";
+import { CheckboxInput } from "./checkbox-input.component";
+import { RadioInput } from "./radio-input.component";
 import { DateInput } from "./date-input.component";
 
-export function CommonFilters({ data }: { data: IStatsFilters }) {
-  const {
-    primary_teams,
-    opposition_teams,
-    host_nations,
-    continents,
-    grounds,
-    min_date,
-    max_date,
-    seasons,
-    series,
-    tournaments,
-  } = data;
-
+export function CommonFilters({
+  filtersData,
+  filtersMap,
+}: {
+  filtersData: IStatsFilters;
+  filtersMap: IStatsFiltersMap;
+}) {
   return (
     <div className="flex flex-col gap-4">
-      {primary_teams?.length && (
+      {filtersData?.primary_teams?.length && (
         <SelectCheckboxInput
           name="primary_team"
           label="Primary Team"
-          options={primary_teams?.map((item) => {
+          options={filtersData?.primary_teams?.map((item) => {
             return { label: item.name, value: item.id.toString() };
           })}
+          defaultValues={filtersMap?.primary_team}
         />
       )}
 
-      {opposition_teams?.length && (
+      {filtersData?.opposition_teams?.length && (
         <SelectCheckboxInput
           name="opposition_team"
           label="Opposition Team"
-          options={opposition_teams?.map((item) => {
+          options={filtersData?.opposition_teams?.map((item) => {
             return { label: item.name, value: item.id.toString() };
           })}
+          defaultValues={filtersMap?.opposition_team}
         />
       )}
 
-      <CheckboxOption
+      <CheckboxInput
         name="home_or_away"
         label="Home or Away"
         options={[
@@ -48,85 +43,92 @@ export function CommonFilters({ data }: { data: IStatsFilters }) {
           { value: "away", label: "away" },
           { value: "neutral", label: "neutral" },
         ]}
+        defaultValues={filtersMap?.home_or_away}
       />
 
-      {host_nations?.length && (
+      {filtersData?.host_nations?.length && (
         <SelectCheckboxInput
           name="host_nation"
           label="Host Nation"
-          options={host_nations?.map((item) => {
+          options={filtersData?.host_nations?.map((item) => {
             return { label: item.name, value: item.id.toString() };
           })}
+          defaultValues={filtersMap?.host_nation}
         />
       )}
 
-      {continents?.length && (
+      {filtersData?.continents?.length && (
         <SelectCheckboxInput
           name="continent"
           label="Continent"
-          options={continents?.map((item) => {
+          options={filtersData?.continents?.map((item) => {
             return { label: item.name, value: item.id.toString() };
           })}
+          defaultValues={filtersMap?.continent}
         />
       )}
 
-      {grounds?.length && (
+      {filtersData?.grounds?.length && (
         <SelectCheckboxInput
           name="ground"
           label="Ground"
-          options={grounds?.map((item) => {
+          options={filtersData?.grounds?.map((item) => {
             return { label: item.name, value: item.id.toString() };
           })}
+          defaultValues={filtersMap?.ground}
         />
       )}
 
       <DateInput
         name="min_start_date"
         label="Min. Start Date"
-        defaultDate={min_date}
-        minDate={min_date}
-        maxDate={max_date}
+        defaultDate={filtersMap?.min_start_date}
+        minDate={filtersData?.min_date}
+        maxDate={filtersData?.max_date}
       />
 
       <DateInput
         name="max_start_date"
         label="Max. Start Date"
-        defaultDate={max_date}
-        minDate={min_date}
-        maxDate={max_date}
+        defaultDate={filtersMap?.max_start_date}
+        minDate={filtersData?.min_date}
+        maxDate={filtersData?.max_date}
       />
 
-      {seasons?.length && (
+      {filtersData?.seasons?.length && (
         <SelectCheckboxInput
           name="season"
           label="Season"
-          options={seasons?.map((item) => {
+          options={filtersData?.seasons?.map((item) => {
             return { label: item, value: item };
           })}
+          defaultValues={filtersMap?.season}
         />
       )}
 
-      {series?.length && (
+      {filtersData?.series?.length && (
         <SelectCheckboxInput
           name="series"
           label="Series"
-          options={series?.map((item) => {
+          options={filtersData?.series?.map((item) => {
             return { label: `${item.name}, ${item.season}`, value: item.id.toString() };
           })}
+          defaultValues={filtersMap?.series}
         />
       )}
 
-      {tournaments?.length && (
+      {filtersData?.tournaments?.length && (
         <SelectCheckboxInput
           name="tournament"
           label="Tournament"
-          options={tournaments?.map((item) => {
+          options={filtersData?.tournaments?.map((item) => {
             return { label: item.name, value: item.id.toString() };
           })}
+          defaultValues={filtersMap?.tournament}
         />
       )}
 
-      <CheckboxOption
+      <CheckboxInput
         name="match_result"
         label="Match Result"
         options={[
@@ -136,12 +138,13 @@ export function CommonFilters({ data }: { data: IStatsFilters }) {
           { value: "drawn", label: "drawn" },
           { value: "no result", label: "no result" },
         ]}
+        defaultValues={filtersMap?.match_result}
       />
 
-      <RadioOption
+      <RadioInput
         name="toss_result"
         label="Toss Result"
-        defaultValue=""
+        defaultValue={filtersMap?.toss_result || ""}
         options={[
           { value: "won", label: "won" },
           { value: "lost", label: "lost" },
@@ -149,10 +152,10 @@ export function CommonFilters({ data }: { data: IStatsFilters }) {
         ]}
       />
 
-      <RadioOption
+      <RadioInput
         name="bat_field_first"
         label="Batting or Fielding First"
-        defaultValue=""
+        defaultValue={filtersMap?.bat_field_first || ""}
         options={[
           { value: "bat", label: "bat" },
           { value: "field", label: "field" },
@@ -160,7 +163,7 @@ export function CommonFilters({ data }: { data: IStatsFilters }) {
         ]}
       />
 
-      <CheckboxOption
+      <CheckboxInput
         name="innings_number"
         label="Innings Number"
         options={[
@@ -169,6 +172,7 @@ export function CommonFilters({ data }: { data: IStatsFilters }) {
           { value: "3", label: "3rd Innings" },
           { value: "4", label: "4th Innings" },
         ]}
+        defaultValues={filtersMap?.innings_number}
       />
     </div>
   );

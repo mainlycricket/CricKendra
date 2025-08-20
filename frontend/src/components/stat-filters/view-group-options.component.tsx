@@ -1,20 +1,21 @@
 import { EnumStatsType, EnumStatsView } from "@/lib/types/enums.types";
 import { useEffect, useState } from "react";
 import { getSortOptions, SortFilters } from "./sort-filters.component";
-import { RadioOption } from "./radio-option.component";
+import { RadioInput } from "./radio-input.component";
 import { getQualificationOptions, QualificationFilters } from "./qualification-filters.component";
 import { SelectInput } from "./select-input.component";
+import { IStatsFiltersMap } from "@/lib/types/filters-stats.types";
 
 export function ViewGroupOptions({
   statsType,
-  defaultView,
+  filtersMap,
 }: {
   statsType: EnumStatsType;
-  defaultView: EnumStatsView;
+  filtersMap: IStatsFiltersMap;
 }) {
-  const [viewValue, setViewValue] = useState(defaultView);
+  const [viewValue, setViewValue] = useState(filtersMap.view);
   const [groupOptions, setGroupOptions] = useState(getGroupOptions({ statsType, viewValue }));
-  const [groupValue, setGroupValue] = useState(groupOptions?.[0]?.value);
+  const [groupValue, setGroupValue] = useState(filtersMap?.group || groupOptions?.[0]?.value);
 
   const [qualificationOptions, setQualificationOptions] = useState(
     getQualificationOptions({ statsType, viewValue, groupValue })
@@ -36,11 +37,11 @@ export function ViewGroupOptions({
 
     const sortOptions = getSortOptions({ statsType, viewValue, groupValue });
     setSortOptions(sortOptions);
-  }, [groupValue]);
+  }, [statsType, viewValue, groupValue]);
 
   return (
     <div className="flex flex-col gap-4">
-      <RadioOption
+      <RadioInput
         name="view"
         label="View Format"
         defaultValue={viewValue}
@@ -53,8 +54,12 @@ export function ViewGroupOptions({
 
       <SelectInput name="group" label="group" options={groupOptions} onValueChange={setGroupValue} />
 
-      <QualificationFilters options={qualificationOptions} />
-      <SortFilters sortOptions={sortOptions} />
+      <QualificationFilters options={qualificationOptions} filtersMap={filtersMap} />
+      <SortFilters
+        sortOptions={sortOptions}
+        defaultSortKey={filtersMap?.sort_by}
+        defaultSortOrder={filtersMap?.sort_order || "default"}
+      />
     </div>
   );
 }
@@ -62,10 +67,8 @@ export function ViewGroupOptions({
 function getGroupOptions({ statsType, viewValue }: { statsType: EnumStatsType; viewValue: EnumStatsView }) {
   const commonOptions = {
     overall: [
-      { value: "team-innings", label: "Team Innings" },
       { value: "matches", label: "Matches" },
       { value: "teams", label: "Teams" },
-      { value: "oppositions", label: "Oppositions" },
       { value: "grounds", label: "Grounds" },
       { value: "host-nations", label: "Host Nations" },
       { value: "continents", label: "Continents" },
@@ -83,7 +86,6 @@ function getGroupOptions({ statsType, viewValue }: { statsType: EnumStatsType; v
       { value: "tournaments", label: "Tournaments" },
       { value: "grounds", label: "Grounds" },
       { value: "host-nations", label: "Host Nations" },
-      { value: "oppositions", label: "Oppositions" },
       { value: "years", label: "Years" },
       { value: "seasons", label: "Seasons" },
     ],
@@ -91,16 +93,26 @@ function getGroupOptions({ statsType, viewValue }: { statsType: EnumStatsType; v
 
   const finalOptions = {
     batting: {
-      overall: [{ value: "batters", label: "Batters" }, ...commonOptions["overall"]],
-      individual: [...commonOptions["individual"]],
+      overall: [
+        { value: "batters", label: "Batters" },
+        { value: "team-innings", label: "Team Innings" },
+        { value: "oppositions", label: "Oppositions" },
+        ...commonOptions["overall"],
+      ],
+      individual: [...commonOptions["individual"], { value: "oppositions", label: "Oppositions" }],
     },
     bowling: {
-      overall: [{ value: "bowlers", label: "Bowlers" }, ...commonOptions["overall"]],
-      individual: [...commonOptions["individual"]],
+      overall: [
+        { value: "bowlers", label: "Bowlers" },
+        { value: "team-innings", label: "Team Innings" },
+        { value: "oppositions", label: "Oppositions" },
+        ...commonOptions["overall"],
+      ],
+      individual: [...commonOptions["individual"], { value: "oppositions", label: "Oppositions" }],
     },
     team: {
-      overall: [],
-      individual: [],
+      overall: [{ value: "players", label: "Players" }, ...commonOptions["overall"]],
+      individual: [...commonOptions["individual"], { value: "match-results", label: "Match Results" }],
     },
   };
 

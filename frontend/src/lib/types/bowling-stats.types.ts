@@ -59,7 +59,10 @@ export function isT<T extends IOverallBowlingStats>(obj: IOverallBowlingStats, f
   return fields.every((field) => field in obj);
 }
 
-export function isT2<T extends ICombinedBowlingStatsType2>(obj: ICombinedBowlingStatsType2, fields: string[]): obj is T {
+export function isT2<T extends ICombinedBowlingStatsType2>(
+  obj: ICombinedBowlingStatsType2,
+  fields: string[]
+): obj is T {
   return fields.every((field) => field in obj);
 }
 
@@ -252,51 +255,13 @@ export interface IOverall_Bowling_Summary_BowlingPosition_Group extends IOverall
 
 /* Individual Stats */
 
-export interface IIndividual_Bowling_Innings_Group {
-  match_id: number;
-  start_date: string;
-  ground_id: number;
-  city_name: string;
-
+export interface IIndividual_Bowling_Innings_Group extends IIndividualBowlingInnings {
   innings_number: number;
-  bowler_id: number;
-  bowler_name: string;
-  batting_team_id: number;
-  batting_team_name: string;
-  bowling_team_id: number;
-  bowling_team_name: string;
-
-  overs_bowled: number;
-  maiden_overs: number;
-  runs_conceded: number;
-  wickets_taken: number;
-  economy: number;
-  fours_conceded: number;
-  sixes_conceded: number;
 }
 
-export interface IIndividual_Bowling_MatchTotals_Group {
-  match_id: number;
-  start_date: string;
-  ground_id: number;
-  city_name: string;
-
-  bowler_id: number;
-  bowler_name: string;
-  batting_team_id: number;
-  batting_team_name: string;
-  bowling_team_id: number;
-  bowling_team_name: string;
-
-  overs_bowled: number;
-  maiden_overs: number;
-  runs_conceded: number;
-  wickets_taken: number;
+export interface IIndividual_Bowling_MatchTotals_Group extends IIndividualBowlingInnings {
   average: number;
-  economy: number;
   strike_rate: number;
-  fours_conceded: number;
-  sixes_conceded: number;
 }
 
 export interface IIndividual_Bowling_Ground_Group extends IOverall_Bowling_Bowler_Group {
@@ -335,7 +300,7 @@ export interface IIndividual_Bowling_Season_Group extends IOverall_Bowling_Bowle
 
 /* Extended By Others */
 
-export interface IOverallBowlingStats {
+interface IOverallBowlingStats {
   matches_played: number;
   innings_bowled: number;
   overs_bowled: number;
@@ -352,6 +317,28 @@ export interface IOverallBowlingStats {
   best_match_runs: number;
   best_innings_wickets: number;
   best_innings_runs: number;
+  fours_conceded: number;
+  sixes_conceded: number;
+}
+
+interface IIndividualBowlingInnings {
+  match_id: number;
+  start_date: string;
+  ground_id: number;
+  city_name: string;
+
+  bowler_id: number;
+  bowler_name: string;
+  batting_team_id: number;
+  batting_team_name: string;
+  bowling_team_id: number;
+  bowling_team_name: string;
+
+  overs_bowled: number;
+  maiden_overs: number;
+  runs_conceded: number;
+  wickets_taken: number;
+  economy: number;
   fours_conceded: number;
   sixes_conceded: number;
 }

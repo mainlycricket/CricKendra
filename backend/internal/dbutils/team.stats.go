@@ -29,7 +29,7 @@ func Read_Overall_Team_Teams_Stats(ctx context.Context, db DB_Exec, queryMap url
 	teams, err := pgx.CollectRows(rows, func(row pgx.CollectableRow) (responses.Overall_Team_Teams_Group, error) {
 		var team responses.Overall_Team_Teams_Group
 
-		err := rows.Scan(&team.TeamId, &team.TeamName, &team.MinStartDate, &team.MaxStartDate, &team.MatchesPlayed, &team.MatchesWon, &team.MatchesLost, &team.WinLossRatio, &team.MatchesDrawn, &team.MatchesTied, &team.MatchesNoResult, &team.InningsCount, &team.TotalRuns, &team.TotalBalls, &team.TotalWickets, &team.Average, &team.ScoringRate, &team.HighestScore, &team.LowestScore)
+		err := rows.Scan(&team.TeamId, &team.TeamName, &team.MinDate, &team.MaxDate, &team.MatchesPlayed, &team.MatchesWon, &team.MatchesLost, &team.WinLossRatio, &team.MatchesDrawn, &team.MatchesTied, &team.MatchesNoResult, &team.InningsCount, &team.TotalRuns, &team.TotalBalls, &team.TotalWickets, &team.Average, &team.ScoringRate, &team.HighestScore, &team.LowestScore)
 
 		return team, err
 	})
@@ -66,7 +66,7 @@ func Read_Overall_Team_Players_Stats(ctx context.Context, db DB_Exec, queryMap u
 	players, err := pgx.CollectRows(rows, func(row pgx.CollectableRow) (responses.Overall_Team_Players_Group, error) {
 		var player responses.Overall_Team_Players_Group
 
-		err := rows.Scan(&player.PlayerId, &player.PlayerName, &player.MinStartDate, &player.MaxStartDate, &player.TeamsCount, &player.MatchesPlayed, &player.MatchesWon, &player.MatchesLost, &player.WinLossRatio, &player.MatchesDrawn, &player.MatchesTied, &player.MatchesNoResult, &player.InningsCount, &player.TotalRuns, &player.TotalBalls, &player.TotalWickets, &player.Average, &player.ScoringRate, &player.HighestScore, &player.LowestScore)
+		err := rows.Scan(&player.PlayerId, &player.PlayerName, &player.MinDate, &player.MaxDate, &player.TeamsCount, &player.MatchesPlayed, &player.MatchesWon, &player.MatchesLost, &player.WinLossRatio, &player.MatchesDrawn, &player.MatchesTied, &player.MatchesNoResult, &player.InningsCount, &player.TotalRuns, &player.TotalBalls, &player.TotalWickets, &player.Average, &player.ScoringRate, &player.HighestScore, &player.LowestScore)
 
 		return player, err
 	})
@@ -140,7 +140,7 @@ func Read_Overall_Team_Series_Stats(ctx context.Context, db DB_Exec, queryMap ur
 	seriesList, err := pgx.CollectRows(rows, func(row pgx.CollectableRow) (responses.Overall_Team_Series_Group, error) {
 		var series responses.Overall_Team_Series_Group
 
-		err := rows.Scan(&series.SeriesId, &series.SeriesName, &series.SeriesSeason, &series.TeamsCount, &series.MatchesPlayed, &series.MatchesWon, &series.MatchesLost, &series.WinLossRatio, &series.MatchesDrawn, &series.MatchesTied, &series.MatchesNoResult, &series.InningsCount, &series.TotalRuns, &series.TotalBalls, &series.TotalWickets, &series.Average, &series.ScoringRate, &series.HighestScore, &series.LowestScore)
+		err := rows.Scan(&series.SeriesId, &series.SeriesName, &series.SeriesSeason, &series.MinDate, &series.MaxDate, &series.TeamsCount, &series.MatchesPlayed, &series.MatchesWon, &series.MatchesLost, &series.WinLossRatio, &series.MatchesDrawn, &series.MatchesTied, &series.MatchesNoResult, &series.InningsCount, &series.TotalRuns, &series.TotalBalls, &series.TotalWickets, &series.Average, &series.ScoringRate, &series.HighestScore, &series.LowestScore)
 
 		return series, err
 	})
@@ -177,7 +177,7 @@ func Read_Overall_Team_Tournaments_Stats(ctx context.Context, db DB_Exec, queryM
 	tournaments, err := pgx.CollectRows(rows, func(row pgx.CollectableRow) (responses.Overall_Team_Tournament_Group, error) {
 		var tournament responses.Overall_Team_Tournament_Group
 
-		err := rows.Scan(&tournament.TournamentId, &tournament.TournamentName, &tournament.TeamsCount, &tournament.MatchesPlayed, &tournament.MatchesWon, &tournament.MatchesLost, &tournament.WinLossRatio, &tournament.MatchesDrawn, &tournament.MatchesTied, &tournament.MatchesNoResult, &tournament.InningsCount, &tournament.TotalRuns, &tournament.TotalBalls, &tournament.TotalWickets, &tournament.Average, &tournament.ScoringRate, &tournament.HighestScore, &tournament.LowestScore)
+		err := rows.Scan(&tournament.TournamentId, &tournament.TournamentName, &tournament.MinDate, &tournament.MaxDate, &tournament.TeamsCount, &tournament.MatchesPlayed, &tournament.MatchesWon, &tournament.MatchesLost, &tournament.WinLossRatio, &tournament.MatchesDrawn, &tournament.MatchesTied, &tournament.MatchesNoResult, &tournament.InningsCount, &tournament.TotalRuns, &tournament.TotalBalls, &tournament.TotalWickets, &tournament.Average, &tournament.ScoringRate, &tournament.HighestScore, &tournament.LowestScore)
 
 		return tournament, err
 	})
@@ -214,7 +214,7 @@ func Read_Overall_Team_Grounds_Stats(ctx context.Context, db DB_Exec, queryMap u
 	grounds, err := pgx.CollectRows(rows, func(row pgx.CollectableRow) (responses.Overall_Team_Grounds_Group, error) {
 		var ground responses.Overall_Team_Grounds_Group
 
-		err := rows.Scan(&ground.GroundId, &ground.GroundName, &ground.MinStartDate, &ground.MaxStartDate, &ground.TeamsCount, &ground.MatchesPlayed, &ground.MatchesWon, &ground.MatchesLost, &ground.WinLossRatio, &ground.MatchesDrawn, &ground.MatchesTied, &ground.MatchesNoResult, &ground.InningsCount, &ground.TotalRuns, &ground.TotalBalls, &ground.TotalWickets, &ground.Average, &ground.ScoringRate, &ground.HighestScore, &ground.LowestScore)
+		err := rows.Scan(&ground.GroundId, &ground.GroundName, &ground.MinDate, &ground.MaxDate, &ground.TeamsCount, &ground.MatchesPlayed, &ground.MatchesWon, &ground.MatchesLost, &ground.WinLossRatio, &ground.MatchesDrawn, &ground.MatchesTied, &ground.MatchesNoResult, &ground.InningsCount, &ground.TotalRuns, &ground.TotalBalls, &ground.TotalWickets, &ground.Average, &ground.ScoringRate, &ground.HighestScore, &ground.LowestScore)
 
 		return ground, err
 	})
@@ -251,7 +251,7 @@ func Read_Overall_Team_HostNations_Stats(ctx context.Context, db DB_Exec, queryM
 	hostNations, err := pgx.CollectRows(rows, func(row pgx.CollectableRow) (responses.Overall_Team_HostNations_Group, error) {
 		var hostNation responses.Overall_Team_HostNations_Group
 
-		err := rows.Scan(&hostNation.HostNationId, &hostNation.HostNationName, &hostNation.MinStartDate, &hostNation.MaxStartDate, &hostNation.TeamsCount, &hostNation.MatchesPlayed, &hostNation.MatchesWon, &hostNation.MatchesLost, &hostNation.WinLossRatio, &hostNation.MatchesDrawn, &hostNation.MatchesTied, &hostNation.MatchesNoResult, &hostNation.InningsCount, &hostNation.TotalRuns, &hostNation.TotalBalls, &hostNation.TotalWickets, &hostNation.Average, &hostNation.ScoringRate, &hostNation.HighestScore, &hostNation.LowestScore)
+		err := rows.Scan(&hostNation.HostNationId, &hostNation.HostNationName, &hostNation.MinDate, &hostNation.MaxDate, &hostNation.TeamsCount, &hostNation.MatchesPlayed, &hostNation.MatchesWon, &hostNation.MatchesLost, &hostNation.WinLossRatio, &hostNation.MatchesDrawn, &hostNation.MatchesTied, &hostNation.MatchesNoResult, &hostNation.InningsCount, &hostNation.TotalRuns, &hostNation.TotalBalls, &hostNation.TotalWickets, &hostNation.Average, &hostNation.ScoringRate, &hostNation.HighestScore, &hostNation.LowestScore)
 
 		return hostNation, err
 	})
@@ -288,7 +288,7 @@ func Read_Overall_Team_Continents_Stats(ctx context.Context, db DB_Exec, queryMa
 	continents, err := pgx.CollectRows(rows, func(row pgx.CollectableRow) (responses.Overall_Team_Continents_Group, error) {
 		var continent responses.Overall_Team_Continents_Group
 
-		err := rows.Scan(&continent.ContinentId, &continent.ContinentName, &continent.MinStartDate, &continent.MaxStartDate, &continent.TeamsCount, &continent.MatchesPlayed, &continent.MatchesWon, &continent.MatchesLost, &continent.WinLossRatio, &continent.MatchesDrawn, &continent.MatchesTied, &continent.MatchesNoResult, &continent.InningsCount, &continent.TotalRuns, &continent.TotalBalls, &continent.TotalWickets, &continent.Average, &continent.ScoringRate, &continent.HighestScore, &continent.LowestScore)
+		err := rows.Scan(&continent.ContinentId, &continent.ContinentName, &continent.MinDate, &continent.MaxDate, &continent.TeamsCount, &continent.MatchesPlayed, &continent.MatchesWon, &continent.MatchesLost, &continent.WinLossRatio, &continent.MatchesDrawn, &continent.MatchesTied, &continent.MatchesNoResult, &continent.InningsCount, &continent.TotalRuns, &continent.TotalBalls, &continent.TotalWickets, &continent.Average, &continent.ScoringRate, &continent.HighestScore, &continent.LowestScore)
 
 		return continent, err
 	})
@@ -436,7 +436,7 @@ func Read_Overall_Team_Aggregate_Stats(ctx context.Context, db DB_Exec, queryMap
 	records, err := pgx.CollectRows(rows, func(row pgx.CollectableRow) (responses.Overall_Team_Aggregate_Group, error) {
 		var record responses.Overall_Team_Aggregate_Group
 
-		err := rows.Scan(&record.TeamsCount, &record.MatchesPlayed, &record.MatchesWon, &record.MatchesLost, &record.WinLossRatio, &record.MatchesDrawn, &record.MatchesTied, &record.MatchesNoResult, &record.InningsCount, &record.TotalRuns, &record.TotalBalls, &record.TotalWickets, &record.Average, &record.ScoringRate, &record.HighestScore, &record.LowestScore)
+		err := rows.Scan(&record.MinDate, &record.MaxDate, &record.TeamsCount, &record.MatchesPlayed, &record.MatchesWon, &record.MatchesLost, &record.WinLossRatio, &record.MatchesDrawn, &record.MatchesTied, &record.MatchesNoResult, &record.InningsCount, &record.TotalRuns, &record.TotalBalls, &record.TotalWickets, &record.Average, &record.ScoringRate, &record.HighestScore, &record.LowestScore)
 
 		return record, err
 	})
@@ -581,7 +581,7 @@ func Read_Individual_Team_Series_Stats(ctx context.Context, db DB_Exec, queryMap
 	records, err := pgx.CollectRows(rows, func(row pgx.CollectableRow) (responses.Individual_Team_Series_Group, error) {
 		var record responses.Individual_Team_Series_Group
 
-		err := rows.Scan(&record.TeamId, &record.TeamName, &record.SeriesId, &record.SeriesName, &record.SeriesSeason, &record.MinStartDate, &record.MaxStartDate, &record.MatchesPlayed, &record.MatchesWon, &record.MatchesLost, &record.WinLossRatio, &record.MatchesDrawn, &record.MatchesTied, &record.MatchesNoResult, &record.InningsCount, &record.TotalRuns, &record.TotalBalls, &record.TotalWickets, &record.Average, &record.ScoringRate, &record.HighestScore, &record.LowestScore)
+		err := rows.Scan(&record.TeamId, &record.TeamName, &record.SeriesId, &record.SeriesName, &record.SeriesSeason, &record.MinDate, &record.MaxDate, &record.MatchesPlayed, &record.MatchesWon, &record.MatchesLost, &record.WinLossRatio, &record.MatchesDrawn, &record.MatchesTied, &record.MatchesNoResult, &record.InningsCount, &record.TotalRuns, &record.TotalBalls, &record.TotalWickets, &record.Average, &record.ScoringRate, &record.HighestScore, &record.LowestScore)
 
 		return record, err
 	})
@@ -618,7 +618,7 @@ func Read_Individual_Team_Tournaments_Stats(ctx context.Context, db DB_Exec, que
 	records, err := pgx.CollectRows(rows, func(row pgx.CollectableRow) (responses.Individual_Team_Tournaments_Group, error) {
 		var record responses.Individual_Team_Tournaments_Group
 
-		err := rows.Scan(&record.TeamId, &record.TeamName, &record.TournamentId, &record.TournamentName, &record.MinStartDate, &record.MaxStartDate, &record.MatchesPlayed, &record.MatchesWon, &record.MatchesLost, &record.WinLossRatio, &record.MatchesDrawn, &record.MatchesTied, &record.MatchesNoResult, &record.InningsCount, &record.TotalRuns, &record.TotalBalls, &record.TotalWickets, &record.Average, &record.ScoringRate, &record.HighestScore, &record.LowestScore)
+		err := rows.Scan(&record.TeamId, &record.TeamName, &record.TournamentId, &record.TournamentName, &record.MinDate, &record.MaxDate, &record.MatchesPlayed, &record.MatchesWon, &record.MatchesLost, &record.WinLossRatio, &record.MatchesDrawn, &record.MatchesTied, &record.MatchesNoResult, &record.InningsCount, &record.TotalRuns, &record.TotalBalls, &record.TotalWickets, &record.Average, &record.ScoringRate, &record.HighestScore, &record.LowestScore)
 
 		return record, err
 	})
@@ -655,7 +655,7 @@ func Read_Individual_Team_Grounds_Stats(ctx context.Context, db DB_Exec, queryMa
 	records, err := pgx.CollectRows(rows, func(row pgx.CollectableRow) (responses.Individual_Team_Grounds_Group, error) {
 		var record responses.Individual_Team_Grounds_Group
 
-		err := rows.Scan(&record.TeamId, &record.TeamName, &record.GroundId, &record.GroundName, &record.MinStartDate, &record.MaxStartDate, &record.MatchesPlayed, &record.MatchesWon, &record.MatchesLost, &record.WinLossRatio, &record.MatchesDrawn, &record.MatchesTied, &record.MatchesNoResult, &record.InningsCount, &record.TotalRuns, &record.TotalBalls, &record.TotalWickets, &record.Average, &record.ScoringRate, &record.HighestScore, &record.LowestScore)
+		err := rows.Scan(&record.TeamId, &record.TeamName, &record.GroundId, &record.GroundName, &record.MinDate, &record.MaxDate, &record.MatchesPlayed, &record.MatchesWon, &record.MatchesLost, &record.WinLossRatio, &record.MatchesDrawn, &record.MatchesTied, &record.MatchesNoResult, &record.InningsCount, &record.TotalRuns, &record.TotalBalls, &record.TotalWickets, &record.Average, &record.ScoringRate, &record.HighestScore, &record.LowestScore)
 
 		return record, err
 	})
@@ -692,7 +692,7 @@ func Read_Individual_Team_HostNations_Stats(ctx context.Context, db DB_Exec, que
 	records, err := pgx.CollectRows(rows, func(row pgx.CollectableRow) (responses.Individual_Team_HostNations_Group, error) {
 		var record responses.Individual_Team_HostNations_Group
 
-		err := rows.Scan(&record.TeamId, &record.TeamName, &record.HostNationId, &record.HostNationName, &record.MinStartDate, &record.MaxStartDate, &record.MatchesPlayed, &record.MatchesWon, &record.MatchesLost, &record.WinLossRatio, &record.MatchesDrawn, &record.MatchesTied, &record.MatchesNoResult, &record.InningsCount, &record.TotalRuns, &record.TotalBalls, &record.TotalWickets, &record.Average, &record.ScoringRate, &record.HighestScore, &record.LowestScore)
+		err := rows.Scan(&record.TeamId, &record.TeamName, &record.HostNationId, &record.HostNationName, &record.MinDate, &record.MaxDate, &record.MatchesPlayed, &record.MatchesWon, &record.MatchesLost, &record.WinLossRatio, &record.MatchesDrawn, &record.MatchesTied, &record.MatchesNoResult, &record.InningsCount, &record.TotalRuns, &record.TotalBalls, &record.TotalWickets, &record.Average, &record.ScoringRate, &record.HighestScore, &record.LowestScore)
 
 		return record, err
 	})

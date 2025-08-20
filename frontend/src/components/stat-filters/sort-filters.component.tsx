@@ -1,22 +1,30 @@
 import { EnumStatsType, EnumStatsView } from "@/lib/types/enums.types";
-import { RadioOption } from "./radio-option.component";
+import { RadioInput } from "./radio-input.component";
 import { SelectInput } from "./select-input.component";
 
-export function SortFilters({ sortOptions }: { sortOptions: { label: string; value: string }[] }) {
+export function SortFilters({
+  sortOptions,
+  defaultSortKey,
+  defaultSortOrder,
+}: {
+  sortOptions: { label: string; value: string }[];
+  defaultSortKey?: string;
+  defaultSortOrder: "default" | "reverse";
+}) {
   return (
     <div className="flex flex-col gap-4">
       {/* Sort By */}
-      <SelectInput name="sort_by" label="sort by" options={sortOptions} />
+      <SelectInput name="sort_by" label="sort by" options={sortOptions} defaultValue={defaultSortKey} />
 
       {/* Sort Order */}
-      <RadioOption
+      <RadioInput
         name="sort_order"
         label="sort order"
         options={[
           { label: "default", value: "default" },
           { label: "reverse", value: "reverse" },
         ]}
-        defaultValue="default"
+        defaultValue={defaultSortOrder}
       />
     </div>
   );
@@ -128,7 +136,36 @@ export function getSortOptions({
       },
       player_name: { label: "Player Name", ...getQualificationFilterObject(false, false, true, ["bowlers"]) },
     },
-    team: {},
+    team: {
+      matches_won: { label: "Matches Won", ...getQualificationFilterObject(true) },
+      matches_played: { label: "Matches Played", ...getQualificationFilterObject(true) },
+      matches_lost: { label: "Matches Lost", ...getQualificationFilterObject(true) },
+      matches_tied: { label: "Matches Tied", ...getQualificationFilterObject(true) },
+      matches_drawn: { label: "Matches Drawn", ...getQualificationFilterObject(true) },
+      matches_with_no_result: { label: "N/R Matches", ...getQualificationFilterObject(true) },
+      win_loss_ratio: { label: "W/L Ratio", ...getQualificationFilterObject(true) },
+      innings_count: { label: "Innings Count", ...getQualificationFilterObject(true) },
+      total_runs: { label: "Total Runs", ...getQualificationFilterObject(true) },
+      total_balls: { label: "Total Balls", ...getQualificationFilterObject(true) },
+      total_wickets: { label: "Total Wickets", ...getQualificationFilterObject(true) },
+      average: { label: "Average", ...getQualificationFilterObject(true) },
+      scoring_rate: { label: "Scoring Rate", ...getQualificationFilterObject(true) },
+      highest_score: { label: "Highest Score", ...getQualificationFilterObject(true) },
+      lowest_score: { label: "Lowest Score", ...getQualificationFilterObject(true) },
+      start_date: { label: "Start Date", ...getQualificationFilterObject(true) },
+      innings_number: {
+        label: "Innings Number",
+        ...getQualificationFilterObject(false, false, false, [], ["innings"]),
+      },
+      team_name: {
+        label: "Team Name",
+        ...getQualificationFilterObject(false, false, true, ["teams"]),
+      },
+      player_name: {
+        label: "Player Name",
+        ...getQualificationFilterObject(false, false, false, ["players"]),
+      },
+    },
   };
 
   const options: { label: string; value: string }[] = [];

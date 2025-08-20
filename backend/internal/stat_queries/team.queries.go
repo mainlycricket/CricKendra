@@ -201,6 +201,8 @@ func Query_Overall_Team_Series(params *url.Values) (string, []any, int, error) {
 		SELECT matches.series_id,
 			matches.series_name,
 			matches.series_season,
+			MIN(matches.start_date) AS min_date,
+			MAX(matches.start_date) AS max_date,
 			series_teams.teams_count,
 			%s
 		FROM matches
@@ -255,6 +257,8 @@ func Query_Overall_Team_Tournaments(params *url.Values) (string, []any, int, err
 		)
 		SELECT matches.tournament_id,
 			matches.tournament_name,
+			MIN(matches.start_date) AS min_date,
+			MAX(matches.start_date) AS max_date,
 			tournament_teams.teams_count,
 			%s
 		FROM matches
@@ -619,7 +623,9 @@ func Query_Overall_Team_Aggregate(params *url.Values) (string, []any, error) {
 				SELECT matches.team2_id AS team_id FROM matches
 			) combined_teams
 		)
-		SELECT aggregate_teams.teams_count,
+		SELECT MIN(matches.start_date) AS min_date,
+			MAX(matches.start_date) AS max_date,
+			aggregate_teams.teams_count,
 			%s
 		FROM matches
 		LEFT JOIN aggregate_teams ON TRUE

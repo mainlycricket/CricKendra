@@ -14,32 +14,69 @@ import { Button } from "../ui/button";
 import { PlusSquareIcon, Trash2 } from "lucide-react";
 import { useEffect, useState } from "react";
 import { EnumStatsType, EnumStatsView } from "@/lib/types/enums.types";
+import { IStatsFiltersMap } from "@/lib/types/filters-stats.types";
 
-export function QualificationFilters({ options }: { options: { label: string; value: string }[] }) {
-  const [usedOptions, setUsedOptions] = useState([options?.[0]]);
+export function QualificationFilters({
+  options,
+  filtersMap,
+}: {
+  options: { label: string; value: string }[];
+  filtersMap: IStatsFiltersMap;
+}) {
+  const inititalUsed = options?.filter((option) => {
+    const minKey = `min__${option.value}`,
+      maxKey = `max__${option.value}`;
+    if (filtersMap[minKey] || filtersMap[maxKey]) return { ...option };
+  });
+  const [usedFilters, setUsedFilters] = useState(inititalUsed?.length ? inititalUsed : [options?.[0]]);
 
   useEffect(() => {
-    setUsedOptions([options?.[0]]);
+    if (!inititalUsed?.length) {
+      setUsedFilters([options?.[0]]);
+    }
   }, [options]);
+
+  function addNewUsedFilter() {
+    const arr = [...usedFilters];
+    for (const option of options) {
+      const isUsed = usedFilters.find((item) => item.value === option.value);
+      if (!isUsed) {
+        arr.push({ ...option });
+        break;
+      }
+    }
+    setUsedFilters(arr);
+  }
+
+  function removeUsedFilter(value: string) {
+    const updatedFilters = usedFilters.filter((option) => option.value !== value);
+    setUsedFilters(updatedFilters);
+  }
+
+  function modifyUsedFiltersIdx(value: string, idx: number) {
+    const updatedUsedOptions = [...usedFilters];
+
+    const newOption = options.find((option) => option.value === value);
+    if (newOption) {
+      updatedUsedOptions[idx] = { ...newOption };
+    }
+
+    setUsedFilters(updatedUsedOptions);
+  }
 
   return (
     <div className="hidden md:flex justify-between">
       <div className="flex gap-4">
         <p style={{ minWidth: "175px" }}>Result Qualifications</p>
         <div className="flex flex-col gap-2">
-          {usedOptions?.length ? (
-            usedOptions?.map((item, idx) => {
+          {usedFilters?.length ? (
+            usedFilters?.map((usedOption, idx) => {
               return (
-                <div key={item.value} className="flex gap-2">
+                <div key={usedOption.value} className="flex gap-2">
                   <Select
-                    defaultValue={item.value}
+                    defaultValue={usedOption.value}
                     onValueChange={(value) => {
-                      const updatedUsedOptions = [...usedOptions];
-                      const newOption = options.find((x) => x.value === value);
-                      if (newOption) {
-                        updatedUsedOptions[idx] = { ...newOption };
-                      }
-                      setUsedOptions(updatedUsedOptions);
+                      modifyUsedFiltersIdx(value, idx);
                     }}
                   >
                     <SelectTrigger className="w-[180px]">
@@ -48,12 +85,12 @@ export function QualificationFilters({ options }: { options: { label: string; va
                     <SelectContent>
                       <SelectGroup>
                         <SelectLabel className="text-sm">Qualification Filters</SelectLabel>
-                        {options.map((x) => {
-                          const isUsed = usedOptions.find((y) => y.value === x.value);
-                          if (!isUsed || x.value === item.value) {
+                        {options.map((option) => {
+                          const isUsed = usedFilters.find((filter) => filter.value === option.value);
+                          if (!isUsed || option.value === usedOption.value) {
                             return (
-                              <SelectItem key={x.value} value={x.value}>
-                                {x.label}
+                              <SelectItem key={option.value} value={option.value}>
+                                {option.label}
                               </SelectItem>
                             );
                           }
@@ -64,27 +101,23 @@ export function QualificationFilters({ options }: { options: { label: string; va
 
                   <Input
                     type="number"
-                    name={`min__${item.value}`}
+                    name={`min__${usedOption.value}`}
                     placeholder="Min"
                     min={1}
                     step={1}
                     className="w-24"
+                    defaultValue={filtersMap[`min__${usedOption.value}`]}
                   />
                   <Input
                     type="number"
-                    name={`max__${item.value}`}
+                    name={`max__${usedOption.value}`}
                     placeholder="Max"
                     min={1}
                     step={1}
                     className="w-24"
+                    defaultValue={filtersMap[`max__${usedOption.value}`]}
                   />
-                  <Button
-                    type="button"
-                    onClick={() => {
-                      const updatedFilters = usedOptions.filter((x) => x.value !== item.value);
-                      setUsedOptions(updatedFilters);
-                    }}
-                  >
+                  <Button type="button" onClick={() => removeUsedFilter(usedOption.value)}>
                     <Trash2 />
                   </Button>
                 </div>
@@ -99,18 +132,8 @@ export function QualificationFilters({ options }: { options: { label: string; va
         <Button
           type="button"
           className="flex gap-2"
-          disabled={options?.length === usedOptions?.length}
-          onClick={() => {
-            const arr = [...usedOptions];
-            for (const option of options) {
-              const isUsed = usedOptions.find((item) => item.value === option.value);
-              if (!isUsed) {
-                arr.push({ ...option });
-                break;
-              }
-            }
-            setUsedOptions(arr);
-          }}
+          disabled={options?.length === usedFilters?.length}
+          onClick={addNewUsedFilter}
         >
           <PlusSquareIcon /> Add
         </Button>
@@ -200,7 +223,21 @@ export function getQualificationOptions({
         ),
       },
     },
-    team: {},
+    team: {
+      matches_played: { label: "Matches Played", ...getQualificationFilterObject(true) },
+      matches_won: { label: "Matches Won", ...getQualificationFilterObject(true) },
+      matches_lost: { label: "Matches Lost", ...getQualificationFilterObject(true) },
+      matches_tied: { label: "Matches Tied", ...getQualificationFilterObject(true) },
+      matches_drawn: { label: "Matches Drawn", ...getQualificationFilterObject(true) },
+      matches_with_no_result: { label: "N/R Matches", ...getQualificationFilterObject(true) },
+      win_loss_ratio: { label: "W/L Ratio", ...getQualificationFilterObject(true) },
+      innings_count: { label: "Innings Count", ...getQualificationFilterObject(true) },
+      total_runs: { label: "Total Runs", ...getQualificationFilterObject(true) },
+      total_balls: { label: "Total Balls", ...getQualificationFilterObject(true) },
+      total_wickets: { label: "Total Wickets", ...getQualificationFilterObject(true) },
+      average: { label: "Average", ...getQualificationFilterObject(true) },
+      scoring_rate: { label: "Scoring Rate", ...getQualificationFilterObject(true) },
+    },
   };
 
   const options: { label: string; value: string }[] = [];

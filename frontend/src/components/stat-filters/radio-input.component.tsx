@@ -2,7 +2,7 @@ import { useState } from "react";
 import { Label } from "../ui/label";
 import { RadioGroup, RadioGroupItem } from "../ui/radio-group";
 
-export function RadioOption({
+export function RadioInput({
   name,
   label,
   options,

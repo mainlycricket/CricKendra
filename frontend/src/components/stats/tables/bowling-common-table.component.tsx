@@ -37,7 +37,7 @@ import {
 } from "@/lib/types/bowling-stats.types";
 import { capitalizeFirstLetter } from "@/lib/utils";
 
-export function BowlingStatsTable({ stats }: { stats: ICombinedBowlingStatsType[] }) {
+export function BowlingCommonTable({ stats }: { stats: ICombinedBowlingStatsType[] }) {
   return (
     <Table>
       <TableHeader>
