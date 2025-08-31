@@ -13,22 +13,22 @@ export function CommonFilters({
 }) {
   return (
     <div className="flex flex-col gap-4">
-      {filtersData?.primary_teams?.length && (
+      {filtersData?.teams?.length && (
         <SelectCheckboxInput
           name="primary_team"
           label="Primary Team"
-          options={filtersData?.primary_teams?.map((item) => {
+          options={filtersData?.teams?.map((item) => {
             return { label: item.name, value: item.id.toString() };
           })}
           defaultValues={filtersMap?.primary_team}
         />
       )}
 
-      {filtersData?.opposition_teams?.length && (
+      {filtersData?.teams?.length && (
         <SelectCheckboxInput
           name="opposition_team"
           label="Opposition Team"
-          options={filtersData?.opposition_teams?.map((item) => {
+          options={filtersData?.teams?.map((item) => {
             return { label: item.name, value: item.id.toString() };
           })}
           defaultValues={filtersMap?.opposition_team}

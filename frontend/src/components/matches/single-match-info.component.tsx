@@ -1,11 +1,11 @@
 import Image from "next/image";
 
-import { Card, CardContent, CardFooter, CardHeader } from "../../ui/card";
-
-import { IMatchInfo, ITeamInningsShortInfo } from "@/lib/types/single-match.types";
+import { Card, CardContent, CardFooter, CardHeader } from "@/components/ui/card";
+import { IMatchInfo, ITeamInningsShortInfo } from "@/lib/types/match.types";
 import { getDisplayDate } from "@/lib/utils";
+import { Badge } from "../ui/badge";
 
-export function MatchInfo({ matchInfo }: { matchInfo: IMatchInfo }) {
+export function SingleMatch({ matchInfo }: { matchInfo: IMatchInfo }) {
   matchInfo?.innings_scores?.sort((a, b) => a.innings_number - b.innings_number);
 
   let { team1_id, team1_name, team1_image_url, team2_id, team2_name, team2_image_url } = matchInfo;
@@ -26,7 +26,8 @@ export function MatchInfo({ matchInfo }: { matchInfo: IMatchInfo }) {
     <Card className="gap-4 py-4">
       <CardHeader>
         <p className="font-bold uppercase">
-          {matchInfo.match_state === "break" ? matchInfo.match_state_description : matchInfo.match_state}
+          {matchInfo.match_state === "break" ? matchInfo.match_state_description : matchInfo.match_state} |{" "}
+          {matchInfo.playing_format} {!matchInfo.is_male && <Badge variant="secondary">women</Badge>}
         </p>
         <p className="line-clamp-1">
           {matchInfo.ground_id && <span>{matchInfo.ground_name}</span>}
@@ -129,5 +130,5 @@ function getTeamScores(inningsScores: ITeamInningsShortInfo[], teamId: number) {
   const entries = teamInnings.map(
     (entry) => `${entry.total_runs}-${entry.total_wickets} (${entry.total_overs})`
   );
-  return entries.join("&");
+  return entries.join(" & ");
 }

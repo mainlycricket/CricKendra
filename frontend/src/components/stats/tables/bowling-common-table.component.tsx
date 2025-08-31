@@ -43,8 +43,8 @@ export function BowlingCommonTable({ stats }: { stats: ICombinedBowlingStatsType
       <TableHeader>
         <TableRow>
           <TableHead></TableHead>
-          {!isT<IOverall_Bowling_Year_Group>(stats?.[0], ["year"]) &&
-            !isT<IOverall_Bowling_Season_Group>(stats?.[0], ["season"]) && (
+          {!isT<IOverall_Bowling_Year_Group>(stats?.[0] || {}, ["year"]) &&
+            !isT<IOverall_Bowling_Season_Group>(stats?.[0] || {}, ["season"]) && (
               <TableHead className="hidden md:table-cell">Span</TableHead>
             )}
           <TableHead className="hidden md:table-cell" title="Matches">

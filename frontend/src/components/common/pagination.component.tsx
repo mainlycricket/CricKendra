@@ -5,10 +5,12 @@ import { Button } from "../ui/button";
 import { useSearchParams } from "next/navigation";
 
 export function Pagination({
+  mainPageLink,
   currentPage,
   recordsCount,
   disableNext,
 }: {
+  mainPageLink: string;
   currentPage: number;
   recordsCount: number;
   disableNext: boolean;
@@ -17,19 +19,19 @@ export function Pagination({
 
   return (
     <div className="mt-2 flex justify-between">
-      <Link href={`/stats?${getUpdatePageQuery(searchParams.toString(), currentPage - 1)}`}>
-        <Button type="button" disabled={currentPage === 1}>
+      <Button type="button" disabled={currentPage === 1}>
+        <Link href={`/${mainPageLink}?${getUpdatePageQuery(searchParams.toString(), currentPage - 1)}`}>
           Prev
-        </Button>
-      </Link>
+        </Link>
+      </Button>
       <p style={{ fontStyle: "italic" }}>
         Current Page: {currentPage}, Records: {recordsCount}
       </p>
-      <Link href={`/stats?${getUpdatePageQuery(searchParams.toString(), currentPage + 1)}`}>
-        <Button type="button" disabled={disableNext}>
+      <Button type="button" disabled={disableNext}>
+        <Link href={`/${mainPageLink}/?${getUpdatePageQuery(searchParams.toString(), currentPage + 1)}`}>
           Next
-        </Button>
-      </Link>
+        </Link>
+      </Button>
     </div>
   );
 }

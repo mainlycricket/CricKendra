@@ -1,0 +1,17 @@
+1229824: failed to ensure team 2 players: no cricsheet id found for player J Butler: 
+1158355: failed to insert delivery of row 147: nonStriker  not found in cache
+1158345: failed to insert delivery of row 2: nonStriker  not found in cache
+1158359: failed to insert delivery of row 119: nonStriker  not found in cache
+1188786: failed to insert delivery of row 21: striker  not found in cache
+1198217: failed to insert delivery of row 9: bowler  not found in cache
+1265215: failed to insert delivery of row 102: bowler  not found in cache
+1265226: failed to insert delivery of row 8: bowler  not found in cache
+1265224: failed to insert delivery of row 136: bowler  not found in cache
+1265221: failed to insert delivery of row 146: bowler  not found in cache
+1275115: failed to insert delivery of row 159: bowler  not found in cache
+1286968: failed to insert delivery of row 163: bowler  not found in cache
+1286971: failed to insert delivery of row 159: bowler  not found in cache
+1318376: failed to insert delivery of row 52: bowler  not found in cache
+1318382: failed to insert delivery of row 50: bowler  not found in cache
+1318404: failed to insert delivery of row 2: bowler  not found in cache
+1318396: failed to insert delivery of row 139: bowler  not found in cache

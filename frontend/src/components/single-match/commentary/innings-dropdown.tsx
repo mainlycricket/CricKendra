@@ -9,7 +9,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { ITeamInningsShortInfo } from "@/lib/types/single-match.types";
+import { ITeamInningsShortInfo } from "@/lib/types/match.types";
 import { useRouter } from "next/navigation";
 
 export function InningsDropdown({

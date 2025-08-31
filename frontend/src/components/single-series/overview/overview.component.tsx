@@ -3,12 +3,12 @@ import Link from "next/link";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Card, CardHeader, CardTitle } from "@/components/ui/card";
 
-import { MatchInfo } from "@/components/single-match/common/match-info.component";
+import { SingleMatch } from "@/components/matches/single-match-info.component";
 import { TopBowlers } from "../common/top-bowlers.component";
 import { TopBatters } from "../common/top-batters.component";
 
 import { ISeriesHeader } from "@/lib/types/single-series.types";
-import { IMatchInfo } from "@/lib/types/single-match.types";
+import { IMatchInfo } from "@/lib/types/match.types";
 
 export function OverviewComponent({
   series_header,
@@ -34,7 +34,7 @@ export function OverviewComponent({
             fixture_matches.map((match) => {
               return (
                 <Link key={match.match_id} href={`/matches/${match.match_id}`}>
-                  <MatchInfo matchInfo={match} />
+                  <SingleMatch matchInfo={match} />
                 </Link>
               );
             })
@@ -51,7 +51,7 @@ export function OverviewComponent({
             result_matches.map((match) => {
               return (
                 <Link key={match.match_id} href={`/matches/${match.match_id}`}>
-                  <MatchInfo matchInfo={match} />
+                  <SingleMatch matchInfo={match} />
                 </Link>
               );
             })

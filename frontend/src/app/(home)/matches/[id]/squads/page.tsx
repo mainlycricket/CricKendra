@@ -1,7 +1,7 @@
 import { CommonMatchLayout } from "@/components/single-match/common/common-layout.component";
 import { TeamSquad } from "@/components/single-match/squads/team-squad";
 import { doBackendRequest } from "@/lib/axiosFetch";
-import { IMatchSquad } from "@/lib/types/single-match.types";
+import { IMatchSquad } from "@/lib/types/match.types";
 
 export default async function Squads({ params }: { params: Promise<{ id: string }> }) {
   try {

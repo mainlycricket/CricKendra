@@ -11,9 +11,9 @@ import { getDisplayDate } from "@/lib/utils";
 import Link from "next/link";
 
 export function TeamListTable({ stats }: { stats: ICombinedTeamStatsType2[] }) {
-  const group = isT2<IIndividual_Team_Innings_Group>(stats?.[0], ["innings_id"])
+  const group = isT2<IIndividual_Team_Innings_Group>(stats?.[0] || {}, ["innings_id"])
     ? "innings"
-    : isT2<IIndividual_Team_MatchTotals_Group>(stats?.[0], ["total_balls"])
+    : isT2<IIndividual_Team_MatchTotals_Group>(stats?.[0] || {}, ["total_balls"])
     ? "match_totals"
     : "match_results";
 

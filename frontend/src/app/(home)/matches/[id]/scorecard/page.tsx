@@ -2,7 +2,7 @@ import { CommonMatchLayout } from "@/components/single-match/common/common-layou
 import { InningsScorecard } from "@/components/single-match/scorecard/scorecard-innings";
 import { Accordion } from "@/components/ui/accordion";
 import { doBackendRequest } from "@/lib/axiosFetch";
-import { IMatchScorecard } from "@/lib/types/single-match.types";
+import { IMatchScorecard } from "@/lib/types/match.types";
 
 export default async function Scorecard({ params }: { params: Promise<{ id: string }> }) {
   try {

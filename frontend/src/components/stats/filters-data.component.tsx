@@ -93,7 +93,7 @@ export function FiltersList({
         label="Primary Team"
         value1={filtersMap?.primary_team
           ?.map((id) => {
-            const name = filtersIdData?.primary_teams?.find((item) => item.id.toString() === id)?.name || "";
+            const name = filtersIdData?.teams?.find((item) => item.id.toString() === id)?.name || "";
             return name;
           })
           ?.join(" or ")}
@@ -103,8 +103,7 @@ export function FiltersList({
         label="Opposition Team"
         value1={filtersMap?.opposition_team
           ?.map((id) => {
-            const name =
-              filtersIdData?.opposition_teams?.find((item) => item.id.toString() === id)?.name || "";
+            const name = filtersIdData?.teams?.find((item) => item.id.toString() === id)?.name || "";
             return name;
           })
           ?.join(" or ")}

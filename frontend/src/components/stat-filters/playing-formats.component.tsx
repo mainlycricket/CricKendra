@@ -3,8 +3,10 @@ import Link from "next/link";
 
 export function PlayingFormatOptions({
   selectedPlayingFormat,
+  isMale,
 }: {
   selectedPlayingFormat: EnumPlayingFormat;
+  isMale: "true" | "false";
 }) {
   const formats: { label: string; value: EnumPlayingFormat }[] = [
     { label: "Tests", value: "Test" },
@@ -20,7 +22,7 @@ export function PlayingFormatOptions({
       {formats.map((option) => (
         <Link
           key={option.value}
-          href={`/stats/filters?playing_format=${option.value}`}
+          href={`/stats/filters?playing_format=${option.value}&is_male=${isMale}`}
           className="bg-secondary px-2 py-1 rounded"
           style={selectedPlayingFormat === option.value ? { color: "var(--color-sky-500)" } : {}}
         >

@@ -1,7 +1,7 @@
 import { SinglePlayerLayout } from "@/components/single-player/common/common-layout.component";
 import { MainStats } from "@/components/single-player/stats/main-stats.component";
 import { doBackendRequest } from "@/lib/axiosFetch";
-import { ISinglePlayer } from "@/lib/types/single-player.types";
+import { ISinglePlayer } from "@/lib/types/player.types";
 
 export default async function SinlgePlayerStats({ params }: { params: Promise<{ id: number }> }) {
   try {

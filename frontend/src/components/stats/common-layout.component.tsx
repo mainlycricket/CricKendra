@@ -7,10 +7,11 @@ import { ICombinedBowlingStatsType, ICombinedBowlingStatsType2 } from "@/lib/typ
 import { IStatsFilters, IStatsFiltersMap, stringifyFiltersMap } from "@/lib/types/filters-stats.types";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "../ui/accordion";
 import { FiltersList } from "./filters-data.component";
-import { Pagination } from "./pagination.component";
+// import { Pagination } from "./pagination.component";
 import Link from "next/link";
 import { TeamStats } from "./team-stats.component";
 import { ICombinedTeamStatsType, ICombinedTeamStatsType2 } from "@/lib/types/team-stats.types";
+import { Pagination } from "../common/pagination.component";
 
 export function CommonStatsLayout({
   stats,
@@ -74,6 +75,7 @@ export function CommonStatsLayout({
         </Card>
 
         <Pagination
+          mainPageLink="stats"
           currentPage={parseInt(filtersMap["__page"] || "1")}
           recordsCount={stats?.stats?.length || 0}
           disableNext={!stats?.next}

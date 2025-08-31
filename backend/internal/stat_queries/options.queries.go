@@ -8,19 +8,12 @@ import (
 func Query_Stat_Filter_Options(params *url.Values) (string, []any, error) {
 	sqlWhere := newSqlWhere(-1, -1)
 
-	primaryTeamJoin := `JOIN teams primary_teams ON matches.team1_id = primary_teams.id`
-	oppositionTeamJoin := `JOIN teams opposition_teams ON matches.team2_id = opposition_teams.id`
-
 	if params != nil && len(*params) != 0 {
 		sqlWhere.matchQuery.applyMatchFilters(params)
-
-		if len((*params)["involving_player"]) > 0 {
-			primaryTeamJoin += ` AND primary_teams.id = ANY(matches.players_team_id)`
-			oppositionTeamJoin += ` AND opposition_teams.id != ANY(matches.players_team_id)`
-		}
 	}
 
 	sqlWhere.matchQuery.fields = append(sqlWhere.matchQuery.fields, "matches.ground_id")
+	sqlWhere.matchQuery.fields = append(sqlWhere.matchQuery.fields, "matches.teams_id")
 
 	matchQuery := sqlWhere.matchQuery.prepareQuery()
 
@@ -28,16 +21,12 @@ func Query_Stat_Filter_Options(params *url.Values) (string, []any, error) {
 		WITH matches AS (
 			%s
 		), unique_teams AS (
-			SELECT DISTINCT combined_teams.team_id
-			FROM (
-				SELECT matches.team1_id AS team_id FROM matches
-				UNION
-				SELECT matches.team2_id AS team_id FROM matches
-			) combined_teams
+			SELECT DISTINCT team_id, teams.name AS team_name FROM
+				(SELECT DISTINCT unnest(teams_id) AS team_id FROM matches) unique_ids
+			JOIN teams ON teams.id = team_id
 		)
 		SELECT
-			ARRAY_AGG(DISTINCT ROW(primary_teams.id, primary_teams.name)) AS primary_teams,
-			ARRAY_AGG(DISTINCT ROW(opposition_teams.id, opposition_teams.name)) AS opposition_teams,
+			ARRAY_AGG(DISTINCT ROW (unique_teams.team_id, unique_teams.team_name)) AS teams,
 
 			ARRAY_AGG(DISTINCT ROW(hn.id, hn.name))
 			FILTER (WHERE hn.id IS NOT NULL AND hn.name IS NOT NULL) AS host_nations,
@@ -61,8 +50,6 @@ func Query_Stat_Filter_Options(params *url.Values) (string, []any, error) {
 		FROM matches
 
 		JOIN unique_teams ON TRUE
-		%s
-		%s
 
 		LEFT JOIN grounds ON matches.ground_id = grounds.id
 		LEFT JOIN cities ON cities.id = grounds.city_id
@@ -72,7 +59,7 @@ func Query_Stat_Filter_Options(params *url.Values) (string, []any, error) {
 		LEFT JOIN match_series_entries mse ON mse.match_id = matches.id
 		LEFT JOIN series ON mse.series_id = series.id AND (series.tour_flag IS NULL OR series.tour_flag != 'tour_series')
 		LEFT JOIN tournaments ON series.tournament_id = tournaments.id
-	`, matchQuery, primaryTeamJoin, oppositionTeamJoin)
+	`, matchQuery)
 
 	return query, sqlWhere.matchQuery.args, nil
 }

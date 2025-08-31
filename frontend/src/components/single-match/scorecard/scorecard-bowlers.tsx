@@ -1,4 +1,4 @@
-import { IBowlerScorecardEntry } from "@/lib/types/single-match.types";
+import { IBowlerScorecardEntry } from "@/lib/types/match.types";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "../../ui/table";
 import Link from "next/link";
 

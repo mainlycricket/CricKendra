@@ -21,18 +21,18 @@ export function BowlingListTable({ stats }: { stats: ICombinedBowlingStatsType2[
             Mdns
           </TableHead>
           <TableHead title="Runs Conceded">Runs</TableHead>
-          {isT2<IIndividual_Bowling_Innings_Group>(stats?.[0], ["average"]) && (
+          {isT2<IIndividual_Bowling_Innings_Group>(stats?.[0] || {}, ["average"]) && (
             <TableHead title="Average">Ave</TableHead>
           )}
           <TableHead className="hidden md:table-cell" title="Economy">
             Econ
           </TableHead>
-          {isT2<IIndividual_Bowling_MatchTotals_Group>(stats?.[0], ["strike_rate"]) && (
+          {isT2<IIndividual_Bowling_MatchTotals_Group>(stats?.[0] || {}, ["strike_rate"]) && (
             <TableHead title="Strike Rate">SR</TableHead>
           )}
           <TableHead className="hidden md:table-cell">4s</TableHead>
           <TableHead className="hidden md:table-cell">6s</TableHead>
-          {isT2<IIndividual_Bowling_MatchTotals_Group>(stats?.[0], ["innings_number"]) && (
+          {isT2<IIndividual_Bowling_MatchTotals_Group>(stats?.[0] || {}, ["innings_number"]) && (
             <TableHead title="Innings Number">Inns</TableHead>
           )}
           <TableHead title="Opposition">Opposition</TableHead>

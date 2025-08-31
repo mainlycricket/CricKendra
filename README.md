@@ -16,11 +16,10 @@ I am building `CricKendra` out of my passion for cricket and programming.
   - Single Match & Single Series routes ✅
   - Admin Routes with Live Scoring System ✅
 - Frontend
-  - Single Match, Single Series & Single Player ✅
-  - Stats Tool ⏳
+  - Matches, Series & Players pages ✅
+  - Stats Tool ✅
   - Admin Panel with Live Scoring System ⏳
-  - Navbar, Header, Footer fixes ⏳
-- Series & Tournaments view with search ⏳
+  - Grounds, Tournaments, Teams etc. pages ⏳
 - All-round & Partnership in Stats Tools ⏳
 - Content Management System ⏳
 

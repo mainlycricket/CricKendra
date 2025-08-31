@@ -15,6 +15,7 @@ type AllPlayersResponse struct {
 type AllPlayers struct {
 	Id                  pgtype.Int8 `json:"id"`
 	Name                pgtype.Text `json:"name"`
+	ImageURL            pgtype.Text `json:"image_url"`
 	PlayingRole         pgtype.Text `json:"playing_role"`
 	Nationality         pgtype.Text `json:"nationality"`
 	IsMale              pgtype.Bool `json:"is_male"`
@@ -270,6 +271,7 @@ type MatchInfo struct {
 	MatchId               pgtype.Int8 `json:"match_id"`
 	PlayingLevel          pgtype.Text `json:"playing_level"`
 	PlayingFormat         pgtype.Text `json:"playing_format"`
+	IsMale                pgtype.Bool `json:"is_male"`
 	MatchType             pgtype.Text `json:"match_type"`
 	EventMatchNumber      pgtype.Int8 `json:"event_match_number"`
 	MatchState            pgtype.Text `json:"match_state"`
@@ -327,10 +329,6 @@ type AllMatchesResponse struct {
 	Matches []MatchInfo `json:"matches"`
 	Next    bool        `json:"next"`
 }
-
-// 	PlayerId  pgtype.Int8 `json:"player_id"`
-// 	AwardType pgtype.Text `json:"award_type"`
-// }
 
 type MatchHeader struct {
 	MatchInfo
@@ -602,14 +600,13 @@ type StatsResponse[T any] struct {
 }
 
 type StatsFilters struct {
-	PrimaryTeams    []TeamAsForeignField       `json:"primary_teams"`
-	OppositionTeams []TeamAsForeignField       `json:"opposition_teams"`
-	HostNations     []HostNationAsForeignField `json:"host_nations"`
-	Continents      []ContinentAsForeignField  `json:"continents"`
-	Grounds         []GroundAsForeignField     `json:"grounds"`
-	MinDate         pgtype.Date                `json:"min_date"`
-	MaxDate         pgtype.Date                `json:"max_date"`
-	Seasons         []pgtype.Text              `json:"seasons"`
-	Series          []SeriesAsForeignField     `json:"series"`
-	Tournaments     []TournamentAsForeignField `json:"tournaments"`
+	Teams       []TeamAsForeignField       `json:"teams"`
+	HostNations []HostNationAsForeignField `json:"host_nations"`
+	Continents  []ContinentAsForeignField  `json:"continents"`
+	Grounds     []GroundAsForeignField     `json:"grounds"`
+	MinDate     pgtype.Date                `json:"min_date"`
+	MaxDate     pgtype.Date                `json:"max_date"`
+	Seasons     []pgtype.Text              `json:"seasons"`
+	Series      []SeriesAsForeignField     `json:"series"`
+	Tournaments []TournamentAsForeignField `json:"tournaments"`
 }

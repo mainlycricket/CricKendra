@@ -1,8 +1,8 @@
 import Link from "next/link";
 
-import { MatchInfo } from "@/components/single-match/common/match-info.component";
+import { SingleMatch } from "@/components/matches/single-match-info.component";
 
-import { IMatchInfo } from "@/lib/types/single-match.types";
+import { IMatchInfo } from "@/lib/types/match.types";
 
 export function MatchesComponent({ matches }: { matches: IMatchInfo[] }) {
   return (
@@ -10,7 +10,7 @@ export function MatchesComponent({ matches }: { matches: IMatchInfo[] }) {
       {matches.map((match) => {
         return (
           <Link key={match.match_id} href={`/matches/${match.match_id}`}>
-            <MatchInfo matchInfo={match} />
+            <SingleMatch matchInfo={match} />
           </Link>
         );
       })}

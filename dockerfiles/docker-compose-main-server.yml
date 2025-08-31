@@ -30,9 +30,11 @@ services:
     depends_on:
       db:
         condition: service_healthy
+    command: >
+      sh -c "sleep 30 && ./main-server"
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8080/ping"]
-      interval: 10s
+      interval: 60s
       timeout: 5s
       retries: 5
 

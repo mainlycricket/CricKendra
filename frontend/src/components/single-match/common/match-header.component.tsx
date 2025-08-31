@@ -3,8 +3,9 @@ import Link from "next/link";
 
 import { Card, CardContent, CardFooter, CardHeader } from "../../ui/card";
 
-import { IMatchHeader, ITeamInningsShortInfo } from "@/lib/types/single-match.types";
+import { IMatchHeader, ITeamInningsShortInfo } from "@/lib/types/match.types";
 import { getDisplayDate } from "@/lib/utils";
+import { Badge } from "@/components/ui/badge";
 
 export function MatchHeader({ matchHeader }: { matchHeader: IMatchHeader }) {
   let { team1_id, team1_name, team1_image_url, team2_id, team2_name, team2_image_url } = matchHeader;
@@ -27,7 +28,8 @@ export function MatchHeader({ matchHeader }: { matchHeader: IMatchHeader }) {
         <p className="font-bold uppercase">
           {matchHeader.match_state === "break"
             ? matchHeader.match_state_description
-            : matchHeader.match_state}
+            : matchHeader.match_state}{" "}
+          | {matchHeader.playing_format} {!matchHeader.is_male && <Badge variant="secondary">women</Badge>}
         </p>
         <p className="line-clamp-1">
           {matchHeader.ground_id && (
@@ -171,5 +173,5 @@ function getTeamScores(inningsScores: ITeamInningsShortInfo[], teamId: number) {
   const entries = teamInnings.map(
     (entry) => `${entry.total_runs}-${entry.total_wickets} (${entry.total_overs})`
   );
-  return entries.join("&");
+  return entries.join(" & ");
 }

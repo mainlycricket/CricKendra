@@ -29,9 +29,9 @@ export function TeamCommonTable({ stats }: { stats: ICombinedTeamStatsType[] }) 
       <TableHeader>
         <TableRow>
           <TableHead></TableHead>
-          {!isT<IOverall_Team_Years_Group>(stats?.[0], ["year"]) &&
-            !isT<IOverall_Team_Seasons_Group>(stats?.[0], ["season"]) &&
-            !isT<IOverall_Team_Decades_Group>(stats?.[0], ["decade"]) && (
+          {!isT<IOverall_Team_Years_Group>(stats?.[0] || {}, ["year"]) &&
+            !isT<IOverall_Team_Seasons_Group>(stats?.[0] || {}, ["season"]) &&
+            !isT<IOverall_Team_Decades_Group>(stats?.[0] || {}, ["decade"]) && (
               <TableHead className="hidden md:table-cell">Span</TableHead>
             )}
           <TableHead title="Matches Played">Mat</TableHead>

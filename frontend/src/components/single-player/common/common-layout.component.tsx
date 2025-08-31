@@ -1,4 +1,4 @@
-import { ISinglePlayer } from "@/lib/types/single-player.types";
+import { ISinglePlayer } from "@/lib/types/player.types";
 import { PlayerTabs } from "./player-tabs.component";
 import { Card, CardContent, CardFooter } from "@/components/ui/card";
 import Image from "next/image";

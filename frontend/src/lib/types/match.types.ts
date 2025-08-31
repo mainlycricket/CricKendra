@@ -1,7 +1,14 @@
+import { INextData } from "./shared.types";
+
+export interface AllMatchesResponse extends INextData {
+  matches: IMatchInfo[];
+}
+
 export interface IMatchInfo {
   match_id: number;
   playing_level: string;
   playing_format: string;
+  is_male: boolean;
   match_type: string;
   event_match_number: number;
   match_state: "upcoming" | "live" | "break" | "completed";

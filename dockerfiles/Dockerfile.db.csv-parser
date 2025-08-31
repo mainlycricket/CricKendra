@@ -1,4 +1,4 @@
-FROM postgres:17.3-alpine
+FROM postgres:17.6-alpine
 
 COPY ./db_files/schema.sql /schema.sql
 COPY ./db_files/seed_data/*.csv /seed_data/

@@ -64,7 +64,7 @@ func ReadSquadByMatchId(ctx context.Context, db DB_Exec, matchId int64) (respons
 	row := db.QueryRow(ctx, query, matchId)
 
 	err := row.Scan(
-		&matchHeader.MatchId, &matchHeader.PlayingLevel, &matchHeader.PlayingFormat, &matchHeader.MatchType, &matchHeader.EventMatchNumber,
+		&matchHeader.MatchId, &matchHeader.PlayingLevel, &matchHeader.PlayingFormat, &matchHeader.IsMale, &matchHeader.MatchType, &matchHeader.EventMatchNumber,
 		&matchHeader.MatchState, &matchHeader.MatchStateDescription, &matchHeader.FinalResult,
 
 		&matchHeader.MatchWinnerId, &matchHeader.MatchLoserId, &matchHeader.IsWonByInnings, &matchHeader.IsWonByRuns,

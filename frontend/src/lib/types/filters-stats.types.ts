@@ -23,8 +23,7 @@ import {
 } from "./enums.types";
 
 export interface IStatsFilters {
-  primary_teams?: ITeamAsForeignField[];
-  opposition_teams?: ITeamAsForeignField[];
+  teams?: ITeamAsForeignField[];
   host_nations?: IHostNationAsForeignField[];
   continents?: IContinentAsForeignField[];
   grounds?: IGroundAsForeignField[];

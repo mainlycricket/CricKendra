@@ -1,3 +1,21 @@
+import { INextData } from "./shared.types";
+
+export interface IAllPlayersResponse extends INextData {
+  players: IAllPlayers[];
+}
+
+export interface IAllPlayers {
+  id: number;
+  name: string;
+  image_url?: string;
+  playing_role: string;
+  nationality: string;
+  is_male: boolean;
+  date_of_birth: string; // YYYY-MM-DD
+  is_rhb: boolean;
+  primary_bowling_style: string;
+}
+
 export interface ISinglePlayer {
   id: number;
   name: string;

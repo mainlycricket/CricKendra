@@ -23,6 +23,14 @@ export function getDisplayDate(date: Date | string) {
   return `${date.getDate()} ${months[date.getMonth()]} ${date.getFullYear()}`;
 }
 
+export function formatDateForApi(date: Date): string {
+  const day = date?.getDate()?.toString()?.padStart(2, "0") || "",
+    month = (date?.getMonth() + 1)?.toString()?.padStart(2, "0") || "",
+    year = date?.getFullYear()?.toString() || "";
+
+  return `${year}-${month}-${day}`;
+}
+
 export function isBowlerDismissal(dismissalType: string): boolean {
   const bowlerWickets = ["caught", "bowled", "lbw", "stumped", "hit wicket", "caught and bowled"];
   return bowlerWickets.includes(dismissalType);

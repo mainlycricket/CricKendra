@@ -81,7 +81,7 @@ func ReadPlayers(ctx context.Context, db DB_Exec, queryMap url.Values) (response
 		return response, err
 	}
 
-	query := fmt.Sprintf(`SELECT id, name, playing_role, nationality, is_male, date_of_birth, is_rhb, primary_bowling_style FROM players %s %s %s`, queryInfoOutput.WhereClause, queryInfoOutput.OrderByClause, queryInfoOutput.PaginationClause)
+	query := fmt.Sprintf(`SELECT id, name, image_url, playing_role, nationality, is_male, date_of_birth, is_rhb, primary_bowling_style FROM players %s %s %s`, queryInfoOutput.WhereClause, queryInfoOutput.OrderByClause, queryInfoOutput.PaginationClause)
 
 	rows, err := db.Query(ctx, query, queryInfoOutput.Args...)
 	if err != nil {
@@ -91,7 +91,7 @@ func ReadPlayers(ctx context.Context, db DB_Exec, queryMap url.Values) (response
 	players, err := pgx.CollectRows(rows, func(row pgx.CollectableRow) (responses.AllPlayers, error) {
 		var player responses.AllPlayers
 
-		err := rows.Scan(&player.Id, &player.Name, &player.PlayingRole, &player.Nationality, &player.IsMale, &player.DateOfBirth, &player.IsRHB, &player.PrimaryBowlingStyle)
+		err := rows.Scan(&player.Id, &player.Name, &player.ImageURL, &player.PlayingRole, &player.Nationality, &player.IsMale, &player.DateOfBirth, &player.IsRHB, &player.PrimaryBowlingStyle)
 
 		return player, err
 	})

@@ -98,7 +98,7 @@ func ReadSeries(ctx context.Context, db DB_Exec, queryMap url.Values) (responses
 	
 		ARRAY_AGG(ROW(ste.team_id, t.name)) AS teams, 
 		
-		s.start_date, s.end_date,s.winner_team_id, s.final_status, s.tour_flag
+		s.start_date, s.end_date,s.winner_team_id, s.final_status, s.tour_flag, s.tournament_id
 		
 		FROM series s 
 		

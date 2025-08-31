@@ -47,14 +47,18 @@ export function BowlingStats({ stats }: { stats: IOverall_Bowling_Summary_Group 
   return (
     <div className="flex flex-col gap-4">
       <Accordion type="multiple" defaultValue={["teams"]}>
-        {data.map((item) => (
-          <AccordionItem value={item.triggerValue} key={item.triggerValue}>
-            <AccordionTrigger className="uppercase tracking-wider">{item.triggerLabel}</AccordionTrigger>
-            <AccordionContent>
-              <BowlingCommonTable stats={item.stats} />
-            </AccordionContent>
-          </AccordionItem>
-        ))}
+        {data.map((item) => {
+          if (item.stats.length) {
+            return (
+              <AccordionItem value={item.triggerValue} key={item.triggerValue}>
+                <AccordionTrigger className="uppercase tracking-wider">{item.triggerLabel}</AccordionTrigger>
+                <AccordionContent>
+                  <BowlingCommonTable stats={item.stats} />
+                </AccordionContent>
+              </AccordionItem>
+            );
+          }
+        })}
       </Accordion>
     </div>
   );

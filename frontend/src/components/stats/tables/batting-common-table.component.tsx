@@ -43,9 +43,9 @@ export function BattingCommonTable({ stats }: { stats: ICombinedBattingStatsType
       <TableHeader>
         <TableRow>
           <TableHead></TableHead>
-          {!isT<IOverall_Batting_Year_Group>(stats?.[0], ["year"]) &&
-            !isT<IOverall_Batting_Season_Group>(stats?.[0], ["season"]) &&
-            !isT<IOverall_Batting_Decade_Group>(stats?.[0], ["decade"]) && (
+          {!isT<IOverall_Batting_Year_Group>(stats?.[0] || {}, ["year"]) &&
+            !isT<IOverall_Batting_Season_Group>(stats?.[0] || {}, ["season"]) &&
+            !isT<IOverall_Batting_Decade_Group>(stats?.[0] || {}, ["decade"]) && (
               <TableHead className="hidden md:table-cell">Span</TableHead>
             )}
           <TableHead className="hidden md:table-cell" title="Matches">
@@ -137,7 +137,7 @@ function getRowMetaData(row: ICombinedBattingStatsType): {
       maxSpanYear: new Date(row.max_date).getFullYear(),
     };
   }
-  
+
   if (isT<IIndividual_Batting_Ground_Group>(row, ["batter_id", "ground_id"])) {
     return {
       key: `${row.batter_id}_${row.ground_id}`,
@@ -146,7 +146,7 @@ function getRowMetaData(row: ICombinedBattingStatsType): {
       maxSpanYear: new Date(row.max_date).getFullYear(),
     };
   }
-  
+
   if (isT<IIndividual_Batting_HostNation_Group>(row, ["batter_id", "host_nation_id"])) {
     return {
       key: `${row.batter_id}_${row.host_nation_id}`,
@@ -155,7 +155,7 @@ function getRowMetaData(row: ICombinedBattingStatsType): {
       maxSpanYear: new Date(row.max_date).getFullYear(),
     };
   }
-  
+
   if (isT<IIndividual_Batting_Opposition_Group>(row, ["batter_id", "opposition_team_id"])) {
     return {
       key: `${row.batter_id}_${row.opposition_team_id}`,

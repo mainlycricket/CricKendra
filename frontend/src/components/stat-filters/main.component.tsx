@@ -47,9 +47,13 @@ export function StatsFiltersComponent({
 
   return (
     <div className="flex flex-col gap-4">
-      <PlayingFormatOptions selectedPlayingFormat={filtersMap.playing_format} />
+      <PlayingFormatOptions
+        selectedPlayingFormat={filtersMap.playing_format}
+        isMale={filtersMap.is_male || "true"}
+      />
       <form onSubmit={(e) => handleSubmit(e)} className="px-2 flex flex-col gap-4">
         <StatsTypeGenderDropdowns
+          playingFormat={filtersMap.playing_format || "ODI"}
           defaultIsMale={filtersMap.is_male}
           defaultStatsType={statsTypeValue}
           setStatsTypeValue={setStatsTypeValue}

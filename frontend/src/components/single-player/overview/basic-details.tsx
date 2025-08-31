@@ -1,4 +1,4 @@
-import { ISinglePlayer } from "@/lib/types/single-player.types";
+import { ISinglePlayer } from "@/lib/types/player.types";
 import { getDisplayDate } from "@/lib/utils";
 import Image from "next/image";
 import Link from "next/link";

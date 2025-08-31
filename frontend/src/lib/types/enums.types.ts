@@ -1,3 +1,8 @@
+export type EnumPlayingLevel = "international" | "domestic";
+export function isEnumPlayingLevel(value: string): value is EnumPlayingLevel {
+  return ["international", "domestic"].includes(value);
+}
+
 export type EnumPlayingFormat = "Test" | "ODI" | "T20I" | "first_class" | "list_a" | "T20";
 export function isEnumPlayingFormat(value: string): value is EnumPlayingFormat {
   return ["Test", "ODI", "T20I", "first_class", "list_a", "T20"].includes(value);

@@ -27,7 +27,7 @@ export function BattingListTable({ stats }: { stats: ICombinedBattingStatsType2[
           <TableHead className="hidden md:table-cell" title="Sixes">
             6s
           </TableHead>
-          {isT2<IIndividual_Batting_Innings_Group>(stats?.[0], ["innings_number"]) && (
+          {isT2<IIndividual_Batting_Innings_Group>(stats?.[0] || {}, ["innings_number"]) && (
             <TableHead title="Innings Number">Inns</TableHead>
           )}
           <TableHead title="Opposition">Opposition</TableHead>

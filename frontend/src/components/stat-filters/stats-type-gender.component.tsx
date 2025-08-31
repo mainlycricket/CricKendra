@@ -1,12 +1,15 @@
-import { EnumStatsType } from "@/lib/types/enums.types";
+import { EnumPlayingFormat, EnumStatsType } from "@/lib/types/enums.types";
 import { Dispatch, SetStateAction } from "react";
 import { SelectInput } from "./select-input.component";
+import { redirect } from "next/navigation";
 
 export function StatsTypeGenderDropdowns({
+  playingFormat,
   defaultIsMale,
   defaultStatsType,
   setStatsTypeValue,
 }: {
+  playingFormat: EnumPlayingFormat;
   defaultIsMale: "true" | "false";
   defaultStatsType: EnumStatsType;
   setStatsTypeValue: Dispatch<SetStateAction<EnumStatsType>>;
@@ -22,6 +25,9 @@ export function StatsTypeGenderDropdowns({
           { label: "Female", value: "false" },
         ]}
         defaultValue={defaultIsMale || "true"}
+        onValueChange={(value) => {
+          redirect(`/stats/filters?playing_format=${playingFormat}&is_male=${value}`);
+        }}
       />
 
       {/* Stats Type */}

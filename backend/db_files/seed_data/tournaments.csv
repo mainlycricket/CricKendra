@@ -1,4 +1,11 @@
 id,name,is_male,playing_level,playing_format
 1,ICC Cricket World Cup,true,international,ODI
-2,ICC Champions Trophy,true,international,ODI
-3,Indian Premier League,true,domestic,T20
+2,ICC Women's World Cup,false,international,ODI
+3,ICC Champions Trophy,true,international,ODI
+4,Asia Cup,true,international,ODI
+5,Afro-Asia Cup,true,international,ODI
+6,Asia Cup Qualifiers,true,international,ODI
+7,Women's Asia Cup,false,international,ODI
+8,Asia Cup,true,international,T20
+9,Women's Asia Cup,false,international,T20
+10,Indian Premier League,true,domestic,T20
