@@ -139,10 +139,10 @@ const bowling_common_joins string = `
 /* TEAM */
 
 const (
-	matchesDrawn_query     string = `COUNT(CASE WHEN matches.final_result = 'draw' THEN 1  END)`
-	matchesTied_query      string = `COUNT(CASE WHEN matches.final_result = 'tie' THEN 1 END)`
-	matchesNoResult_query  string = `COUNT(CASE WHEN matches.final_result = 'no result' THEN 1 END)`
-	teamInningsCount_query string = `COUNT(CASE WHEN innings.innings_number > 0 THEN innings.id END)`
+	matchesDrawn_query     string = `COUNT(DISTINCT CASE WHEN matches.final_result = 'draw' THEN matches.id END)`
+	matchesTied_query      string = `COUNT(DISTINCT CASE WHEN matches.final_result = 'tie' THEN matches.id END)`
+	matchesNoResult_query  string = `COUNT(DISTINCT CASE WHEN matches.final_result = 'no result' THEN matches.id END)`
+	teamInningsCount_query string = `COUNT(DISTINCT CASE WHEN innings.innings_number > 0 THEN innings.id END)`
 	teamTotalRuns_query    string = `SUM(innings.total_runs)`
 	teamTotalBalls_query   string = `SUM(innings.total_balls)`
 	teamTotalWkts_query    string = `SUM(innings.total_wickets)`
@@ -177,27 +177,27 @@ func getTeamNumbersQuery(teamField string) string {
 }
 
 func getMatchesWonQuery(teamField string) string {
-	return fmt.Sprintf(`COUNT(CASE WHEN %s = matches.match_winner_team_id THEN 1 END)`, teamField)
+	return fmt.Sprintf(`COUNT (DISTINCT CASE WHEN %s = matches.match_winner_team_id THEN matches.id END)`, teamField)
 }
 
 func getMatchesLostQuery(teamField string) string {
-	return fmt.Sprintf(`COUNT(CASE WHEN %s = matches.match_loser_team_id THEN 1 END)`, teamField)
+	return fmt.Sprintf(`COUNT(DISTINCT CASE WHEN %s = matches.match_loser_team_id THEN matches.id END)`, teamField)
 }
 
 func getWinLossRatioNullQuery(teamField string) string {
 	return fmt.Sprintf(`(CASE
-				WHEN COUNT(CASE WHEN %s = matches.match_loser_team_id THEN 1 END) > 0
+				WHEN COUNT(DISTINCT CASE WHEN %s = matches.match_loser_team_id THEN matches.id END) > 0
 				THEN 
-					COUNT(CASE WHEN %s = matches.match_winner_team_id THEN 1 END) * 1.0 / COUNT(CASE WHEN %s = matches.match_loser_team_id THEN 1 END)
+					COUNT(DISTINCT CASE WHEN %s = matches.match_winner_team_id THEN matches.id END) * 1.0 / COUNT(DISTINCT CASE WHEN %s = matches.match_loser_team_id THEN matches.id END)
 				ELSE NULL
 				END)`, teamField, teamField, teamField)
 }
 
 func getWinLossRatioInfiniteQuery(teamField string) string {
 	return fmt.Sprintf(`(CASE
-				WHEN COUNT(CASE WHEN %s = matches.match_loser_team_id THEN 1 END) > 0
+				WHEN COUNT(DISTINCT CASE WHEN %s = matches.match_loser_team_id THEN matches.id END) > 0
 				THEN 
-					COUNT(CASE WHEN %s = matches.match_winner_team_id THEN 1 END) * 1.0 / COUNT(CASE WHEN %s = matches.match_loser_team_id THEN 1 END)
+					COUNT(DISTINCT CASE WHEN %s = matches.match_winner_team_id THEN matches.id END) * 1.0 / COUNT(DISTINCT CASE WHEN %s = matches.match_loser_team_id THEN matches.id END)
 				ELSE '+infinity'
 				END)`, teamField, teamField, teamField)
 }

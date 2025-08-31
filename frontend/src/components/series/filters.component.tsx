@@ -61,10 +61,15 @@ function FilterForm({ searchParams }: { searchParams: ReadonlyURLSearchParams })
           defaultValue={searchParams.get("start_date__max") || undefined}
         />
       </div>
-      <Input type="text" name="name__like" placeholder="Series Name" />
+      <Input
+        type="text"
+        name="name__like"
+        placeholder="Series Name"
+        defaultValue={searchParams.get("name__like") || ""}
+      />
       <SelectTeams name="teams_id__all" defaultSelected={searchParams.getAll("teams_id__all") || []} />
       <SelectSeasons defaultSelected={searchParams.getAll("season") || []} />
-      <SelectTournaments defaultSelected={searchParams.getAll("tournament_id")} />
+      <SelectTournaments defaultSelected={searchParams.getAll("tournament_id") || []} />
       <Button type="submit">Search Series</Button>
     </form>
   );

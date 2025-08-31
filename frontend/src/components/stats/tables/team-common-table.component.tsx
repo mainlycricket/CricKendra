@@ -173,7 +173,7 @@ function getRowMetaData(row: ICombinedTeamStatsType): {
 
   if (isT<IOverall_Team_Matches_Group>(row, ["match_id"])) {
     return {
-      key: row.match_id,
+      key: `${row.match_id}_${row.team1_id}`,
       label: `${row.team1_name} v ${row.team2_name} at ${row.city_name}, ${row.season}`,
     };
   }

@@ -192,8 +192,11 @@ export function FiltersList({
         value1={filtersMap?.match_result?.map((value) => capitalizeFirstLetter(value))?.join(" or ")}
       />
 
-      <FilterItem label="Toss Result" value1={filtersMap?.toss_result} />
-      <FilterItem label="Bat or Field First" value1={filtersMap?.bat_field_first} />
+      <FilterItem label="Toss Result" value1={capitalizeFirstLetter(filtersMap?.toss_result || "")} />
+      <FilterItem
+        label="Bat or Field First"
+        value1={capitalizeFirstLetter(filtersMap?.bat_field_first || "")}
+      />
       <FilterItem label="Innings Number" value1={filtersMap?.innings_number?.sort()?.join(" or ")} />
 
       {/* Batting Specific filters */}

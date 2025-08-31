@@ -248,7 +248,7 @@ func (filters *inningsFilters) setBatterIsDismissed(isDismissed string) {
 	}
 
 	if isDismissed == "not_out" {
-		filters.conditions = append(filters.conditions, `(batting_scorecards.dismissal_type IS NULL OR batting_scorecards.dismissal_type NOT IN ('retired hurt', 'retired not out'))`)
+		filters.conditions = append(filters.conditions, `(batting_scorecards.dismissal_type IS NULL OR batting_scorecards.dismissal_type IN ('retired hurt', 'retired not out'))`)
 		return
 	}
 }

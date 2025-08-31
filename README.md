@@ -48,7 +48,7 @@ I am building `CricKendra` out of my passion for cricket and programming.
 
 ### Resources
 
-- Screenshots [here](https://www.linkedin.com/pulse/crickendra-screenshots-tushar-jain-vftjc)
+- Screenshots [here](https://www.linkedin.com/pulse/crickendra-screenshots-part-2-tushar-jain-bmhnc)
 - Postman Collection [here](https://documenter.getpostman.com/view/25403102/2sAYBREZ3x)
 - DB Schema [here](https://dbdiagram.io/d/CricKendra-670bfc5697a66db9a3d0b44a)
 

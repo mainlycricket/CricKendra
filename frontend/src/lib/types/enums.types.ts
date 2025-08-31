@@ -157,6 +157,7 @@ export function isEnumBowlingQualificationKey(value: string): value is EnumBowli
     "wickets_taken",
     "average",
     "strike_rate",
+    "economy",
     "fours_conceded",
     "sixes_conceded",
     "four_wkt_hauls",
