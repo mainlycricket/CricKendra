@@ -2,7 +2,7 @@ import {
   IInningsScorecardSummary,
   IScorecardSummaryBatter,
   IScorecardSummaryBowler,
-} from "@/lib/types/single-match.types";
+} from "@/lib/types/match.types";
 import Link from "next/link";
 
 export function SingleScorecardSummary({ entry }: { entry: IInningsScorecardSummary }) {

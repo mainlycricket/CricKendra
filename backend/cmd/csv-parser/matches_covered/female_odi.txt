@@ -1,0 +1,525 @@
+2025-07-28 - international - ODI - female - 1476991 - Zimbabwe vs Ireland
+2025-07-26 - international - ODI - female - 1476990 - Ireland vs Zimbabwe
+2025-07-22 - international - ODI - female - 1448404 - India vs England
+2025-07-19 - international - ODI - female - 1448403 - India vs England
+2025-07-16 - international - ODI - female - 1448402 - England vs India
+2025-06-17 - international - ODI - female - 1472536 - South Africa vs West Indies
+2025-06-14 - international - ODI - female - 1472535 - South Africa vs West Indies
+2025-06-11 - international - ODI - female - 1472534 - South Africa vs West Indies
+2025-06-07 - international - ODI - female - 1448396 - West Indies vs England
+2025-06-04 - international - ODI - female - 1448395 - England vs West Indies
+2025-05-30 - international - ODI - female - 1448394 - England vs West Indies
+2025-05-11 - international - ODI - female - 1476986 - India vs Sri Lanka
+2025-05-09 - international - ODI - female - 1476985 - South Africa vs Sri Lanka
+2025-05-07 - international - ODI - female - 1476984 - India vs South Africa
+2025-05-04 - international - ODI - female - 1476983 - India vs Sri Lanka
+2025-05-03 - international - ODI - female - 1481713 - Zimbabwe vs United States of America
+2025-05-02 - international - ODI - female - 1476982 - South Africa vs Sri Lanka
+2025-05-01 - international - ODI - female - 1481712 - Zimbabwe vs United States of America
+2025-04-29 - international - ODI - female - 1476981 - India vs South Africa
+2025-04-27 - international - ODI - female - 1476980 - Sri Lanka vs India
+2025-04-19 - international - ODI - female - 1477023 - Thailand vs West Indies
+2025-04-19 - international - ODI - female - 1477022 - Bangladesh vs Pakistan
+2025-04-18 - international - ODI - female - 1477021 - Scotland vs Ireland
+2025-04-17 - international - ODI - female - 1477020 - Pakistan vs Thailand
+2025-04-17 - international - ODI - female - 1477019 - Bangladesh vs West Indies
+2025-04-15 - international - ODI - female - 1477018 - Bangladesh vs Scotland
+2025-04-15 - international - ODI - female - 1477017 - Ireland vs Thailand
+2025-04-14 - international - ODI - female - 1477016 - Pakistan vs West Indies
+2025-04-13 - international - ODI - female - 1477015 - Ireland vs Bangladesh
+2025-04-13 - international - ODI - female - 1477014 - Scotland vs Thailand
+2025-04-11 - international - ODI - female - 1477013 - West Indies vs Ireland
+2025-04-11 - international - ODI - female - 1477012 - Scotland vs Pakistan
+2025-04-10 - international - ODI - female - 1477011 - Bangladesh vs Thailand
+2025-04-09 - international - ODI - female - 1477010 - Scotland vs West Indies
+2025-04-09 - international - ODI - female - 1477009 - Pakistan vs Ireland
+2025-03-09 - international - ODI - female - 1443570 - New Zealand vs Sri Lanka
+2025-03-07 - international - ODI - female - 1443569 - New Zealand vs Sri Lanka
+2025-03-04 - international - ODI - female - 1443568 - Sri Lanka vs New Zealand
+2025-01-24 - international - ODI - female - 1468401 - Bangladesh vs West Indies
+2025-01-21 - international - ODI - female - 1468400 - Bangladesh vs West Indies
+2025-01-19 - international - ODI - female - 1468399 - Bangladesh vs West Indies
+2025-01-17 - international - ODI - female - 1426625 - Australia vs England
+2025-01-15 - international - ODI - female - 1459899 - India vs Ireland
+2025-01-14 - international - ODI - female - 1426624 - Australia vs England
+2025-01-12 - international - ODI - female - 1459898 - India vs Ireland
+2025-01-12 - international - ODI - female - 1426623 - England vs Australia
+2025-01-10 - international - ODI - female - 1459897 - Ireland vs India
+2024-12-27 - international - ODI - female - 1459896 - West Indies vs India
+2024-12-24 - international - ODI - female - 1459895 - India vs West Indies
+2024-12-23 - international - ODI - female - 1443567 - Australia vs New Zealand
+2024-12-22 - international - ODI - female - 1459894 - India vs West Indies
+2024-12-21 - international - ODI - female - 1443566 - Australia vs New Zealand
+2024-12-11 - international - ODI - female - 1432230 - South Africa vs England
+2024-12-11 - international - ODI - female - 1426622 - Australia vs India
+2024-12-08 - international - ODI - female - 1432229 - South Africa vs England
+2024-12-08 - international - ODI - female - 1426621 - Australia vs India
+2024-12-05 - international - ODI - female - 1426620 - India vs Australia
+2024-12-04 - international - ODI - female - 1432228 - England vs South Africa
+2024-12-02 - international - ODI - female - 1458413 - Ireland vs Bangladesh
+2024-11-30 - international - ODI - female - 1458412 - Ireland vs Bangladesh
+2024-11-27 - international - ODI - female - 1458411 - Bangladesh vs Ireland
+2024-10-29 - international - ODI - female - 1454393 - New Zealand vs India
+2024-10-28 - international - ODI - female - 1455371 - Zimbabwe vs United States of America
+2024-10-27 - international - ODI - female - 1454392 - New Zealand vs India
+2024-10-26 - international - ODI - female - 1455370 - Zimbabwe vs United States of America
+2024-10-24 - international - ODI - female - 1454391 - India vs New Zealand
+2024-10-23 - international - ODI - female - 1455369 - Zimbabwe vs United States of America
+2024-10-20 - international - ODI - female - 1455368 - United States of America vs Zimbabwe
+2024-10-17 - international - ODI - female - 1455367 - United States of America vs Zimbabwe
+2024-09-11 - international - ODI - female - 1430819 - England vs Ireland
+2024-09-09 - international - ODI - female - 1430818 - England vs Ireland
+2024-09-07 - international - ODI - female - 1430817 - Ireland vs England
+2024-08-20 - international - ODI - female - 1430816 - Ireland vs Sri Lanka
+2024-08-18 - international - ODI - female - 1430815 - Ireland vs Sri Lanka
+2024-08-16 - international - ODI - female - 1430814 - Sri Lanka vs Ireland
+2024-08-12 - international - ODI - female - 1444548 - Scotland vs Netherlands
+2024-08-11 - international - ODI - female - 1444547 - Papua New Guinea vs Scotland
+2024-08-09 - international - ODI - female - 1444546 - Papua New Guinea vs Netherlands
+2024-08-08 - international - ODI - female - 1444545 - Scotland vs Netherlands
+2024-08-06 - international - ODI - female - 1444544 - Scotland vs Papua New Guinea
+2024-08-05 - international - ODI - female - 1444543 - Papua New Guinea vs Netherlands
+2024-07-03 - international - ODI - female - 1398276 - New Zealand vs England
+2024-06-30 - international - ODI - female - 1398275 - New Zealand vs England
+2024-06-26 - international - ODI - female - 1398274 - New Zealand vs England
+2024-06-23 - international - ODI - female - 1434289 - South Africa vs India
+2024-06-21 - international - ODI - female - 1436888 - Sri Lanka vs West Indies
+2024-06-19 - international - ODI - female - 1434288 - India vs South Africa
+2024-06-18 - international - ODI - female - 1436887 - West Indies vs Sri Lanka
+2024-06-16 - international - ODI - female - 1434287 - India vs South Africa
+2024-06-15 - international - ODI - female - 1436886 - West Indies vs Sri Lanka
+2024-05-29 - international - ODI - female - 1398273 - England vs Pakistan
+2024-05-26 - international - ODI - female - 1398272 - Pakistan vs England
+2024-05-23 - international - ODI - female - 1398271 - England vs Pakistan
+2024-04-23 - international - ODI - female - 1426083 - West Indies vs Pakistan
+2024-04-21 - international - ODI - female - 1426082 - Pakistan vs West Indies
+2024-04-18 - international - ODI - female - 1426081 - West Indies vs Pakistan
+2024-04-17 - international - ODI - female - 1398267 - South Africa vs Sri Lanka
+2024-04-14 - international - ODI - female - 1427425 - Scotland vs United States of America
+2024-04-13 - international - ODI - female - 1398266 - Sri Lanka vs South Africa
+2024-04-12 - international - ODI - female - 1427424 - Scotland vs Papua New Guinea
+2024-04-11 - international - ODI - female - 1427423 - United States of America vs Papua New Guinea
+2024-04-09 - international - ODI - female - 1398265 - South Africa vs Sri Lanka
+2024-04-07 - international - ODI - female - 1388209 - England vs New Zealand
+2024-04-04 - international - ODI - female - 1388208 - England vs New Zealand
+2024-04-01 - international - ODI - female - 1388207 - New Zealand vs England
+2024-03-28 - international - ODI - female - 1426047 - Zimbabwe vs Papua New Guinea
+2024-03-27 - international - ODI - female - 1425063 - Bangladesh vs Australia
+2024-03-26 - international - ODI - female - 1426046 - Papua New Guinea vs Zimbabwe
+2024-03-24 - international - ODI - female - 1425062 - Bangladesh vs Australia
+2024-03-21 - international - ODI - female - 1425061 - Australia vs Bangladesh
+2024-02-10 - international - ODI - female - 1375874 - Australia vs South Africa
+2024-02-07 - international - ODI - female - 1375873 - South Africa vs Australia
+2024-02-03 - international - ODI - female - 1375872 - South Africa vs Australia
+2024-01-23 - international - ODI - female - 1415982 - Ireland vs Zimbabwe
+2024-01-21 - international - ODI - female - 1415981 - Zimbabwe vs Ireland
+2024-01-18 - international - ODI - female - 1415980 - Zimbabwe vs Ireland
+2024-01-02 - international - ODI - female - 1406080 - Australia vs India
+2023-12-30 - international - ODI - female - 1406079 - Australia vs India
+2023-12-28 - international - ODI - female - 1406078 - India vs Australia
+2023-12-23 - international - ODI - female - 1398260 - South Africa vs Bangladesh
+2023-12-20 - international - ODI - female - 1398259 - Bangladesh vs South Africa
+2023-12-18 - international - ODI - female - 1388201 - New Zealand vs Pakistan
+2023-12-16 - international - ODI - female - 1398258 - Bangladesh vs South Africa
+2023-12-15 - international - ODI - female - 1388200 - Pakistan vs New Zealand
+2023-12-12 - international - ODI - female - 1388199 - New Zealand vs Pakistan
+2023-11-10 - international - ODI - female - 1405126 - Pakistan vs Bangladesh
+2023-11-07 - international - ODI - female - 1405125 - Bangladesh vs Pakistan
+2023-11-04 - international - ODI - female - 1405124 - Bangladesh vs Pakistan
+2023-10-21 - international - ODI - female - 1403685 - Ireland vs Scotland
+2023-10-19 - international - ODI - female - 1403684 - Ireland vs Scotland
+2023-10-17 - international - ODI - female - 1403683 - Scotland vs Ireland
+2023-10-14 - international - ODI - female - 1375868 - West Indies vs Australia
+2023-10-12 - international - ODI - female - 1375867 - West Indies vs Australia
+2023-10-08 - international - ODI - female - 1375866 - West Indies vs Australia
+2023-10-01 - international - ODI - female - 1392350 - South Africa vs New Zealand
+2023-09-28 - international - ODI - female - 1392349 - New Zealand vs South Africa
+2023-09-24 - international - ODI - female - 1392348 - New Zealand vs South Africa
+2023-09-14 - international - ODI - female - 1382171 - South Africa vs Pakistan
+2023-09-14 - international - ODI - female - 1336085 - England vs Sri Lanka
+2023-09-12 - international - ODI - female - 1336084 - Sri Lanka vs England
+2023-09-11 - international - ODI - female - 1382170 - Pakistan vs South Africa
+2023-09-09 - international - ODI - female - 1336083 - Sri Lanka vs England
+2023-09-08 - international - ODI - female - 1382169 - South Africa vs Pakistan
+2023-07-29 - international - ODI - female - 1378199 - Ireland vs Australia
+2023-07-25 - international - ODI - female - 1378198 - Australia vs Ireland
+2023-07-22 - international - ODI - female - 1382168 - Bangladesh vs India
+2023-07-19 - international - ODI - female - 1382167 - India vs Bangladesh
+2023-07-18 - international - ODI - female - 1336079 - England vs Australia
+2023-07-16 - international - ODI - female - 1382166 - Bangladesh vs India
+2023-07-16 - international - ODI - female - 1336078 - Australia vs England
+2023-07-12 - international - ODI - female - 1336077 - Australia vs England
+2023-07-07 - international - ODI - female - 1384544 - Thailand vs Netherlands
+2023-07-03 - international - ODI - female - 1384542 - Netherlands vs Thailand
+2023-07-03 - international - ODI - female - 1379759 - New Zealand vs Sri Lanka
+2023-07-01 - international - ODI - female - 1378193 - Ireland vs West Indies
+2023-06-30 - international - ODI - female - 1379758 - New Zealand vs Sri Lanka
+2023-06-28 - international - ODI - female - 1378192 - Ireland vs West Indies
+2023-06-27 - international - ODI - female - 1379757 - New Zealand vs Sri Lanka
+2023-06-26 - international - ODI - female - 1378191 - West Indies vs Ireland
+2023-05-04 - international - ODI - female - 1368851 - Sri Lanka vs Bangladesh
+2023-04-29 - international - ODI - female - 1368849 - Sri Lanka vs Bangladesh
+2023-04-23 - international - ODI - female - 1368832 - Zimbabwe vs Thailand
+2023-04-21 - international - ODI - female - 1368831 - Thailand vs Zimbabwe
+2023-04-19 - international - ODI - female - 1368830 - Thailand vs Zimbabwe
+2023-01-21 - international - ODI - female - 1345094 - Australia vs Pakistan
+2023-01-18 - international - ODI - female - 1345093 - Pakistan vs Australia
+2023-01-16 - international - ODI - female - 1345092 - Pakistan vs Australia
+2022-12-17 - international - ODI - female - 1322343 - New Zealand vs Bangladesh
+2022-12-14 - international - ODI - female - 1322342 - Bangladesh vs New Zealand
+2022-12-11 - international - ODI - female - 1322341 - Bangladesh vs New Zealand
+2022-12-09 - international - ODI - female - 1343933 - England vs West Indies
+2022-12-06 - international - ODI - female - 1343932 - England vs West Indies
+2022-12-04 - international - ODI - female - 1343931 - England vs West Indies
+2022-11-26 - international - ODI - female - 1344506 - Netherlands vs Thailand
+2022-11-24 - international - ODI - female - 1344505 - Thailand vs Netherlands
+2022-11-22 - international - ODI - female - 1344504 - Thailand vs Netherlands
+2022-11-20 - international - ODI - female - 1344503 - Thailand vs Netherlands
+2022-11-09 - international - ODI - female - 1308235 - Ireland vs Pakistan
+2022-11-06 - international - ODI - female - 1308234 - Ireland vs Pakistan
+2022-11-04 - international - ODI - female - 1308233 - Pakistan vs Ireland
+2022-09-25 - international - ODI - female - 1334414 - New Zealand vs West Indies
+2022-09-24 - international - ODI - female - 1301339 - India vs England
+2022-09-22 - international - ODI - female - 1334413 - West Indies vs New Zealand
+2022-09-21 - international - ODI - female - 1301338 - India vs England
+2022-09-19 - international - ODI - female - 1334412 - West Indies vs New Zealand
+2022-09-18 - international - ODI - female - 1301337 - England vs India
+2022-08-26 - international - ODI - female - 1328487 - Netherlands vs Ireland
+2022-08-24 - international - ODI - female - 1328486 - Ireland vs Netherlands
+2022-08-22 - international - ODI - female - 1328485 - Netherlands vs Ireland
+2022-07-18 - international - ODI - female - 1301330 - England vs South Africa
+2022-07-15 - international - ODI - female - 1301329 - England vs South Africa
+2022-07-11 - international - ODI - female - 1301328 - South Africa vs England
+2022-07-07 - international - ODI - female - 1319714 - India vs Sri Lanka
+2022-07-04 - international - ODI - female - 1319713 - Sri Lanka vs India
+2022-07-01 - international - ODI - female - 1319712 - Sri Lanka vs India
+2022-06-17 - international - ODI - female - 1316647 - South Africa vs Ireland
+2022-06-14 - international - ODI - female - 1316646 - Ireland vs South Africa
+2022-06-11 - international - ODI - female - 1316645 - Ireland vs South Africa
+2022-06-05 - international - ODI - female - 1310986 - Sri Lanka vs Pakistan
+2022-06-03 - international - ODI - female - 1310985 - Pakistan vs Sri Lanka
+2022-06-01 - international - ODI - female - 1310984 - Sri Lanka vs Pakistan
+2022-04-03 - international - ODI - female - 1243938 - Australia vs England
+2022-03-31 - international - ODI - female - 1243937 - England vs South Africa
+2022-03-30 - international - ODI - female - 1243936 - Australia vs West Indies
+2022-03-27 - international - ODI - female - 1243935 - India vs South Africa
+2022-03-27 - international - ODI - female - 1243934 - England vs Bangladesh
+2022-03-26 - international - ODI - female - 1243933 - New Zealand vs Pakistan
+2022-03-25 - international - ODI - female - 1243932 - Bangladesh vs Australia
+2022-03-24 - international - ODI - female - 1243931 - Pakistan vs England
+2022-03-24 - international - ODI - female - 1243930 - South Africa vs West Indies
+2022-03-22 - international - ODI - female - 1243929 - India vs Bangladesh
+2022-03-22 - international - ODI - female - 1243928 - South Africa vs Australia
+2022-03-21 - international - ODI - female - 1243927 - West Indies vs Pakistan
+2022-03-20 - international - ODI - female - 1243926 - New Zealand vs England
+2022-03-19 - international - ODI - female - 1243925 - India vs Australia
+2022-03-18 - international - ODI - female - 1243924 - West Indies vs Bangladesh
+2022-03-17 - international - ODI - female - 1243923 - New Zealand vs South Africa
+2022-03-16 - international - ODI - female - 1243922 - India vs England
+2022-03-15 - international - ODI - female - 1243921 - West Indies vs Australia
+2022-03-14 - international - ODI - female - 1243920 - Bangladesh vs Pakistan
+2022-03-14 - international - ODI - female - 1243919 - England vs South Africa
+2022-03-13 - international - ODI - female - 1243918 - Australia vs New Zealand
+2022-03-12 - international - ODI - female - 1243917 - India vs West Indies
+2022-03-11 - international - ODI - female - 1243916 - South Africa vs Pakistan
+2022-03-10 - international - ODI - female - 1243915 - New Zealand vs India
+2022-03-09 - international - ODI - female - 1243914 - West Indies vs England
+2022-03-08 - international - ODI - female - 1243913 - Pakistan vs Australia
+2022-03-07 - international - ODI - female - 1243912 - Bangladesh vs New Zealand
+2022-03-06 - international - ODI - female - 1243911 - India vs Pakistan
+2022-03-05 - international - ODI - female - 1243910 - Australia vs England
+2022-03-05 - international - ODI - female - 1243909 - South Africa vs Bangladesh
+2022-03-04 - international - ODI - female - 1243908 - West Indies vs New Zealand
+2022-02-24 - international - ODI - female - 1289036 - New Zealand vs India
+2022-02-22 - international - ODI - female - 1289035 - New Zealand vs India
+2022-02-18 - international - ODI - female - 1289034 - India vs New Zealand
+2022-02-15 - international - ODI - female - 1289033 - India vs New Zealand
+2022-02-12 - international - ODI - female - 1289032 - New Zealand vs India
+2022-02-08 - international - ODI - female - 1263577 - England vs Australia
+2022-02-06 - international - ODI - female - 1277095 - West Indies vs South Africa
+2022-02-06 - international - ODI - female - 1263576 - England vs Australia
+2022-02-03 - international - ODI - female - 1277094 - South Africa vs West Indies
+2022-02-03 - international - ODI - female - 1263575 - Australia vs England
+2022-01-31 - international - ODI - female - 1277093 - South Africa vs West Indies
+2022-01-28 - international - ODI - female - 1277092 - West Indies vs South Africa
+2021-11-27 - international - ODI - female - 1286915 - Pakistan vs Zimbabwe
+2021-11-21 - international - ODI - female - 1286901 - Pakistan vs Bangladesh
+2021-11-15 - international - ODI - female - 1288322 - Zimbabwe vs Bangladesh
+2021-11-14 - international - ODI - female - 1288211 - Pakistan vs West Indies
+2021-11-11 - international - ODI - female - 1288210 - West Indies vs Pakistan
+2021-11-08 - international - ODI - female - 1288209 - West Indies vs Pakistan
+2021-10-11 - international - ODI - female - 1281420 - Ireland vs Zimbabwe
+2021-10-09 - international - ODI - female - 1281419 - Zimbabwe vs Ireland
+2021-10-07 - international - ODI - female - 1281418 - Ireland vs Zimbabwe
+2021-10-05 - international - ODI - female - 1281417 - Ireland vs Zimbabwe
+2021-09-26 - international - ODI - female - 1263619 - Australia vs India
+2021-09-26 - international - ODI - female - 1260107 - England vs New Zealand
+2021-09-24 - international - ODI - female - 1263618 - India vs Australia
+2021-09-23 - international - ODI - female - 1260106 - New Zealand vs England
+2021-09-21 - international - ODI - female - 1263617 - India vs Australia
+2021-09-21 - international - ODI - female - 1260105 - England vs New Zealand
+2021-09-19 - international - ODI - female - 1273422 - West Indies vs South Africa
+2021-09-19 - international - ODI - female - 1260104 - England vs New Zealand
+2021-09-16 - international - ODI - female - 1273421 - South Africa vs West Indies
+2021-09-16 - international - ODI - female - 1260103 - England vs New Zealand
+2021-09-13 - international - ODI - female - 1273420 - West Indies vs South Africa
+2021-09-10 - international - ODI - female - 1273419 - West Indies vs South Africa
+2021-09-07 - international - ODI - female - 1273418 - West Indies vs South Africa
+2021-07-18 - international - ODI - female - 1267329 - Pakistan vs West Indies
+2021-07-15 - international - ODI - female - 1267328 - West Indies vs Pakistan
+2021-07-12 - international - ODI - female - 1267327 - Pakistan vs West Indies
+2021-07-09 - international - ODI - female - 1267326 - Pakistan vs West Indies
+2021-07-07 - international - ODI - female - 1267325 - Pakistan vs West Indies
+2021-07-03 - international - ODI - female - 1260096 - England vs India
+2021-06-30 - international - ODI - female - 1260095 - India vs England
+2021-06-27 - international - ODI - female - 1260094 - India vs England
+2021-04-10 - international - ODI - female - 1249243 - Australia vs New Zealand
+2021-04-07 - international - ODI - female - 1249242 - Australia vs New Zealand
+2021-04-04 - international - ODI - female - 1249241 - New Zealand vs Australia
+2021-03-17 - international - ODI - female - 1253271 - India vs South Africa
+2021-03-14 - international - ODI - female - 1253270 - India vs South Africa
+2021-03-12 - international - ODI - female - 1253269 - India vs South Africa
+2021-03-09 - international - ODI - female - 1253268 - South Africa vs India
+2021-03-07 - international - ODI - female - 1253267 - India vs South Africa
+2021-02-28 - international - ODI - female - 1249234 - England vs New Zealand
+2021-02-26 - international - ODI - female - 1249233 - New Zealand vs England
+2021-02-23 - international - ODI - female - 1249232 - New Zealand vs England
+2021-01-26 - international - ODI - female - 1244845 - South Africa vs Pakistan
+2021-01-23 - international - ODI - female - 1244844 - South Africa vs Pakistan
+2021-01-20 - international - ODI - female - 1244843 - South Africa vs Pakistan
+2020-10-07 - international - ODI - female - 1223946 - Australia vs New Zealand
+2020-10-05 - international - ODI - female - 1223945 - New Zealand vs Australia
+2020-10-03 - international - ODI - female - 1223944 - New Zealand vs Australia
+2020-01-30 - international - ODI - female - 1187716 - New Zealand vs South Africa
+2020-01-27 - international - ODI - female - 1187715 - New Zealand vs South Africa
+2020-01-25 - international - ODI - female - 1187714 - New Zealand vs South Africa
+2019-12-14 - international - ODI - female - 1208346 - England vs Pakistan
+2019-12-12 - international - ODI - female - 1208345 - England vs Pakistan
+2019-12-09 - international - ODI - female - 1208344 - England vs Pakistan
+2019-11-06 - international - ODI - female - 1202251 - West Indies vs India
+2019-11-03 - international - ODI - female - 1202250 - West Indies vs India
+2019-11-01 - international - ODI - female - 1202249 - West Indies vs India
+2019-10-14 - international - ODI - female - 1200182 - India vs South Africa
+2019-10-11 - international - ODI - female - 1200181 - India vs South Africa
+2019-10-09 - international - ODI - female - 1200180 - India vs South Africa
+2019-10-09 - international - ODI - female - 1183515 - Australia vs Sri Lanka
+2019-10-07 - international - ODI - female - 1183514 - Australia vs Sri Lanka
+2019-10-05 - international - ODI - female - 1183513 - Australia vs Sri Lanka
+2019-09-11 - international - ODI - female - 1198474 - West Indies vs Australia
+2019-09-05 - international - ODI - female - 1198472 - Australia vs West Indies
+2019-07-07 - international - ODI - female - 1168024 - England vs Australia
+2019-07-04 - international - ODI - female - 1168023 - England vs Australia
+2019-07-02 - international - ODI - female - 1168022 - England vs Australia
+2019-06-13 - international - ODI - female - 1168018 - England vs West Indies
+2019-06-09 - international - ODI - female - 1168017 - England vs West Indies
+2019-06-06 - international - ODI - female - 1168016 - England vs West Indies
+2019-05-12 - international - ODI - female - 1177017 - South Africa vs Pakistan
+2019-05-09 - international - ODI - female - 1177016 - South Africa vs Pakistan
+2019-05-06 - international - ODI - female - 1177015 - South Africa vs Pakistan
+2019-03-21 - international - ODI - female - 1176434 - Sri Lanka vs England
+2019-03-18 - international - ODI - female - 1176433 - Sri Lanka vs England
+2019-03-16 - international - ODI - female - 1176432 - Sri Lanka vs England
+2019-03-03 - international - ODI - female - 1144984 - Australia vs New Zealand
+2019-02-28 - international - ODI - female - 1172162 - India vs England
+2019-02-25 - international - ODI - female - 1172161 - India vs England
+2019-02-24 - international - ODI - female - 1144983 - Australia vs New Zealand
+2019-02-22 - international - ODI - female - 1172160 - India vs England
+2019-02-22 - international - ODI - female - 1144982 - Australia vs New Zealand
+2019-02-17 - international - ODI - female - 1168166 - South Africa vs Sri Lanka
+2019-02-14 - international - ODI - female - 1168165 - South Africa vs Sri Lanka
+2019-02-11 - international - ODI - female - 1168164 - South Africa vs Sri Lanka
+2019-02-09 - international - ODI - female - 1172211 - Pakistan vs West Indies
+2019-02-07 - international - ODI - female - 1172210 - Pakistan vs West Indies
+2019-02-01 - international - ODI - female - 1153857 - New Zealand vs India
+2019-01-29 - international - ODI - female - 1153856 - New Zealand vs India
+2019-01-24 - international - ODI - female - 1153855 - New Zealand vs India
+2018-10-22 - international - ODI - female - 1161230 - Australia vs Pakistan
+2018-10-20 - international - ODI - female - 1161229 - Australia vs Pakistan
+2018-10-18 - international - ODI - female - 1161228 - Pakistan vs Australia
+2018-09-22 - international - ODI - female - 1156214 - West Indies vs South Africa
+2018-09-16 - international - ODI - female - 1157708 - India vs Sri Lanka
+2018-09-16 - international - ODI - female - 1156212 - South Africa vs West Indies
+2018-09-13 - international - ODI - female - 1157707 - India vs Sri Lanka
+2018-09-11 - international - ODI - female - 1157706 - Sri Lanka vs India
+2018-07-13 - international - ODI - female - 1126729 - England vs New Zealand
+2018-07-10 - international - ODI - female - 1126728 - England vs New Zealand
+2018-07-07 - international - ODI - female - 1126727 - England vs New Zealand
+2018-06-15 - international - ODI - female - 1126719 - South Africa vs England
+2018-06-12 - international - ODI - female - 1126718 - England vs South Africa
+2018-06-10 - international - ODI - female - 1145892 - New Zealand vs Ireland
+2018-06-09 - international - ODI - female - 1126717 - England vs South Africa
+2018-05-14 - international - ODI - female - 1144439 - Bangladesh vs South Africa
+2018-05-11 - international - ODI - female - 1144438 - South Africa vs Bangladesh
+2018-05-09 - international - ODI - female - 1144437 - Bangladesh vs South Africa
+2018-05-06 - international - ODI - female - 1144436 - Bangladesh vs South Africa
+2018-05-04 - international - ODI - female - 1144435 - South Africa vs Bangladesh
+2018-04-12 - international - ODI - female - 1131778 - England vs India
+2018-04-09 - international - ODI - female - 1131777 - India vs England
+2018-03-24 - international - ODI - female - 1138201 - Pakistan vs Sri Lanka
+2018-03-22 - international - ODI - female - 1138200 - Pakistan vs Sri Lanka
+2018-03-15 - international - ODI - female - 1131233 - Australia vs India
+2018-03-12 - international - ODI - female - 1131232 - India vs Australia
+2018-03-11 - international - ODI - female - 1138193 - New Zealand vs West Indies
+2018-03-08 - international - ODI - female - 1138192 - West Indies vs New Zealand
+2018-03-04 - international - ODI - female - 1138191 - New Zealand vs West Indies
+2018-02-10 - international - ODI - female - 1123205 - India vs South Africa
+2018-02-07 - international - ODI - female - 1123204 - India vs South Africa
+2017-11-05 - international - ODI - female - 1122906 - New Zealand vs Pakistan
+2017-11-02 - international - ODI - female - 1122905 - Pakistan vs New Zealand
+2017-10-31 - international - ODI - female - 1122904 - New Zealand vs Pakistan
+2017-10-26 - international - ODI - female - 1086064 - Australia vs England
+2017-10-22 - international - ODI - female - 1086063 - England vs Australia
+2017-07-23 - international - ODI - female - 1085975 - England vs India
+2017-07-20 - international - ODI - female - 1085974 - India vs Australia
+2017-07-18 - international - ODI - female - 1085973 - South Africa vs England
+2017-07-15 - international - ODI - female - 1085972 - Pakistan vs Sri Lanka
+2017-07-15 - international - ODI - female - 1085971 - India vs New Zealand
+2017-07-15 - international - ODI - female - 1085970 - England vs West Indies
+2017-07-15 - international - ODI - female - 1085969 - Australia vs South Africa
+2017-07-12 - international - ODI - female - 1085968 - England vs New Zealand
+2017-07-12 - international - ODI - female - 1085967 - Australia vs India
+2017-07-12 - international - ODI - female - 1085966 - South Africa vs Sri Lanka
+2017-07-11 - international - ODI - female - 1085965 - Pakistan vs West Indies
+2017-07-09 - international - ODI - female - 1085964 - Sri Lanka vs West Indies
+2017-07-09 - international - ODI - female - 1085963 - England vs Australia
+2017-07-08 - international - ODI - female - 1085962 - India vs South Africa
+2017-07-08 - international - ODI - female - 1085961 - New Zealand vs Pakistan
+2017-07-06 - international - ODI - female - 1085960 - New Zealand vs West Indies
+2017-07-05 - international - ODI - female - 1085959 - Australia vs Pakistan
+2017-07-05 - international - ODI - female - 1085958 - India vs Sri Lanka
+2017-07-05 - international - ODI - female - 1085957 - England vs South Africa
+2017-07-02 - international - ODI - female - 1085956 - South Africa vs West Indies
+2017-07-02 - international - ODI - female - 1085955 - India vs Pakistan
+2017-07-02 - international - ODI - female - 1085954 - Australia vs New Zealand
+2017-07-02 - international - ODI - female - 1085953 - England vs Sri Lanka
+2017-06-29 - international - ODI - female - 1085952 - Australia vs Sri Lanka
+2017-06-29 - international - ODI - female - 1085951 - India vs West Indies
+2017-06-27 - international - ODI - female - 1085949 - England vs Pakistan
+2017-06-26 - international - ODI - female - 1085948 - Australia vs West Indies
+2017-06-25 - international - ODI - female - 1085947 - Pakistan vs South Africa
+2017-06-24 - international - ODI - female - 1085946 - England vs India
+2017-06-24 - international - ODI - female - 1085945 - New Zealand vs Sri Lanka
+2017-05-21 - international - ODI - female - 1089533 - South Africa vs India
+2017-05-19 - international - ODI - female - 1089530 - South Africa vs Ireland
+2017-05-17 - international - ODI - female - 1089528 - South Africa vs India
+2017-05-11 - international - ODI - female - 1089524 - South Africa vs Ireland
+2017-05-09 - international - ODI - female - 1089522 - South Africa vs India
+2017-05-07 - international - ODI - female - 1089521 - India vs Ireland
+2017-03-05 - international - ODI - female - 1050627 - New Zealand vs Australia
+2017-03-02 - international - ODI - female - 1050625 - New Zealand vs Australia
+2017-02-26 - international - ODI - female - 1050623 - New Zealand vs Australia
+2017-02-21 - international - ODI - female - 1073430 - India vs South Africa
+2017-02-19 - international - ODI - female - 1073429 - Ireland vs South Africa
+2017-02-19 - international - ODI - female - 1073428 - Sri Lanka vs Bangladesh
+2017-02-19 - international - ODI - female - 1073427 - India vs Pakistan
+2017-02-17 - international - ODI - female - 1073426 - Ireland vs Pakistan
+2017-02-17 - international - ODI - female - 1073425 - Bangladesh vs India
+2017-02-17 - international - ODI - female - 1073424 - Sri Lanka vs South Africa
+2017-02-15 - international - ODI - female - 1073423 - Bangladesh vs Ireland
+2017-02-15 - international - ODI - female - 1073422 - Sri Lanka vs Pakistan
+2017-02-15 - international - ODI - female - 1073421 - India vs South Africa
+2017-02-11 - international - ODI - female - 1073413 - Bangladesh vs South Africa
+2017-02-10 - international - ODI - female - 1073411 - India vs Ireland
+2017-02-08 - international - ODI - female - 1073408 - Bangladesh vs Pakistan
+2017-02-08 - international - ODI - female - 1073405 - Sri Lanka vs Ireland
+2017-02-07 - international - ODI - female - 1073403 - Pakistan vs South Africa
+2017-02-07 - international - ODI - female - 1073401 - Sri Lanka vs India
+2017-01-20 - international - ODI - female - 1041525 - Bangladesh vs South Africa
+2017-01-18 - international - ODI - female - 1041523 - Bangladesh vs South Africa
+2016-11-29 - international - ODI - female - 1043961 - Australia vs South Africa
+2016-11-20 - international - ODI - female - 1043955 - Australia vs South Africa
+2016-11-18 - international - ODI - female - 1043953 - Australia vs South Africa
+2016-11-17 - international - ODI - female - 1059196 - Sri Lanka vs England
+2016-11-17 - international - ODI - female - 1050611 - New Zealand vs Pakistan
+2016-11-15 - international - ODI - female - 1059195 - Sri Lanka vs England
+2016-11-13 - international - ODI - female - 1050609 - New Zealand vs Pakistan
+2016-11-11 - international - ODI - female - 1050607 - New Zealand vs Pakistan
+2016-11-09 - international - ODI - female - 1062580 - Sri Lanka vs England
+2016-10-24 - international - ODI - female - 935823 - South Africa vs New Zealand
+2016-10-22 - international - ODI - female - 935821 - South Africa vs New Zealand
+2016-10-19 - international - ODI - female - 935819 - South Africa vs New Zealand
+2016-10-17 - international - ODI - female - 935817 - South Africa vs New Zealand
+2016-10-11 - international - ODI - female - 935813 - South Africa vs New Zealand
+2016-09-25 - international - ODI - female - 1044209 - Sri Lanka vs Australia
+2016-09-18 - international - ODI - female - 1044203 - Sri Lanka vs Australia
+2016-08-11 - international - ODI - female - 962017 - Ireland vs South Africa
+2016-06-27 - international - ODI - female - 946549 - England vs Pakistan
+2016-06-22 - international - ODI - female - 946547 - England vs Pakistan
+2016-06-20 - international - ODI - female - 946545 - England vs Pakistan
+2016-02-29 - international - ODI - female - 907393 - South Africa vs West Indies
+2016-02-27 - international - ODI - female - 907391 - South Africa vs West Indies
+2016-02-24 - international - ODI - female - 907389 - South Africa vs West Indies
+2016-02-22 - international - ODI - female - 916663 - New Zealand vs Australia
+2016-02-20 - international - ODI - female - 916661 - New Zealand vs Australia
+2016-02-07 - international - ODI - female - 907375 - South Africa vs England
+2016-02-07 - international - ODI - female - 895797 - Australia vs India
+2015-11-05 - international - ODI - female - 916647 - New Zealand vs Sri Lanka
+2015-11-03 - international - ODI - female - 916645 - New Zealand vs Sri Lanka
+2015-10-06 - international - ODI - female - 923327 - Pakistan vs Bangladesh
+2015-07-26 - international - ODI - female - 798373 - England vs Australia
+2015-07-23 - international - ODI - female - 798371 - England vs Australia
+2015-07-21 - international - ODI - female - 798369 - England vs Australia
+2015-07-08 - international - ODI - female - 872483 - India vs New Zealand
+2015-07-06 - international - ODI - female - 872481 - India vs New Zealand
+2015-03-17 - international - ODI - female - 828245 - Pakistan vs South Africa
+2015-01-13 - international - ODI - female - 808865 - Pakistan vs Sri Lanka
+2015-01-11 - international - ODI - female - 808863 - Pakistan vs Sri Lanka
+2014-11-18 - international - ODI - female - 754815 - Australia vs West Indies
+2014-11-16 - international - ODI - female - 754813 - Australia vs West Indies
+2014-11-13 - international - ODI - female - 754811 - Australia vs West Indies
+2014-11-11 - international - ODI - female - 754809 - Australia vs West Indies
+2014-10-21 - international - ODI - female - 757509 - Sri Lanka vs South Africa
+2014-10-19 - international - ODI - female - 757507 - Sri Lanka vs South Africa
+2014-10-17 - international - ODI - female - 757505 - Sri Lanka vs South Africa
+2014-08-26 - international - ODI - female - 754789 - Australia vs Pakistan
+2014-08-23 - international - ODI - female - 754787 - Australia vs Pakistan
+2014-08-23 - international - ODI - female - 722391 - England vs India
+2014-08-21 - international - ODI - female - 722389 - England vs India
+2014-01-26 - international - ODI - female - 666043 - Australia vs England
+2014-01-23 - international - ODI - female - 666041 - Australia vs England
+2014-01-19 - international - ODI - female - 666039 - Australia vs England
+2013-10-28 - international - ODI - female - 668513 - South Africa vs Sri Lanka
+2013-10-26 - international - ODI - female - 668511 - South Africa vs Sri Lanka
+2013-09-24 - international - ODI - female - 664303 - South Africa vs Bangladesh
+2013-09-20 - international - ODI - female - 664299 - South Africa vs Bangladesh
+2013-08-25 - international - ODI - female - 593725 - England vs Australia
+2013-08-23 - international - ODI - female - 593724 - England vs Australia
+2013-08-20 - international - ODI - female - 593723 - England vs Australia
+2013-07-19 - international - ODI - female - 644945 - Ireland vs Pakistan
+2013-07-17 - international - ODI - female - 644943 - Ireland vs Pakistan
+2013-07-03 - international - ODI - female - 627007 - England vs Pakistan
+2013-07-01 - international - ODI - female - 627006 - England vs Pakistan
+2013-02-26 - international - ODI - female - 603241 - Sri Lanka vs West Indies
+2013-02-24 - international - ODI - female - 603240 - Sri Lanka vs West Indies
+2013-02-22 - international - ODI - female - 603239 - Sri Lanka vs West Indies
+2013-02-17 - international - ODI - female - 594915 - Australia vs West Indies
+2013-02-15 - international - ODI - female - 594914 - England vs New Zealand
+2013-02-13 - international - ODI - female - 594912 - England vs New Zealand
+2013-02-11 - international - ODI - female - 594909 - New Zealand vs West Indies
+2013-02-10 - international - ODI - female - 594907 - Australia vs Sri Lanka
+2013-02-08 - international - ODI - female - 594904 - Australia vs England
+2013-02-05 - international - ODI - female - 594901 - India vs Sri Lanka
+2013-02-03 - international - ODI - female - 594897 - India vs England
+2013-02-01 - international - ODI - female - 594894 - England vs Sri Lanka
+2013-01-31 - international - ODI - female - 594891 - India vs West Indies
+2012-12-19 - international - ODI - female - 584549 - Australia vs New Zealand
+2012-12-14 - international - ODI - female - 584547 - Australia vs New Zealand
+2012-12-12 - international - ODI - female - 584546 - Australia vs New Zealand
+2012-07-11 - international - ODI - female - 542856 - England vs India
+2012-07-05 - international - ODI - female - 542854 - England vs India
+2012-07-04 - international - ODI - female - 542853 - England vs India
+2012-07-01 - international - ODI - female - 542852 - England vs India
+2011-10-25 - international - ODI - female - 527681 - South Africa vs England
+2011-10-23 - international - ODI - female - 527680 - South Africa vs England
+2011-10-21 - international - ODI - female - 527679 - South Africa vs England
+2009-10-21 - international - ODI - female - 423387 - South Africa vs West Indies
+2009-06-29 - international - ODI - female - 383283 - England vs Australia
+2009-03-10 - international - ODI - female - 357962 - England vs India
+2008-05-11 - international - ODI - female - 341306 - India vs Sri Lanka
+2008-05-08 - international - ODI - female - 341302 - Sri Lanka vs India
+2008-02-22 - international - ODI - female - 312296 - Pakistan vs Netherlands
+2008-02-22 - international - ODI - female - 312295 - Ireland vs South Africa
+2008-02-21 - international - ODI - female - 312291 - South Africa vs Netherlands
+2007-03-05 - international - ODI - female - 276226 - New Zealand vs Australia
+2007-01-24 - international - ODI - female - 271466 - Pakistan vs South Africa
+2007-01-22 - international - ODI - female - 271465 - South Africa vs Pakistan

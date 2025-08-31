@@ -194,6 +194,7 @@ type Match struct {
 	IsBBBDone             pgtype.Bool        `json:"is_bbb_done"`
 	MatchState            pgtype.Text        `json:"match_state"` // 'upcoming', 'live', 'break', 'completed'
 	MatchStateDescription pgtype.Text        `json:"match_state_description"`
+	TeamsId               []pgtype.Int8      `json:"teams_id"` // managed by postgres
 }
 
 type MatchSeriesEntry struct {

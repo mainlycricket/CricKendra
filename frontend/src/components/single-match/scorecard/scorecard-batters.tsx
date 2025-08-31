@@ -1,4 +1,4 @@
-import { IBatterScorecardEntry, IInningsExtrasData, IInningsTotalData } from "@/lib/types/single-match.types";
+import { IBatterScorecardEntry, IInningsExtrasData, IInningsTotalData } from "@/lib/types/match.types";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "../../ui/table";
 import Link from "next/link";
 import { isBowlerDismissal } from "@/lib/utils";
@@ -14,6 +14,8 @@ export function ScorecardBatters({
 }) {
   batters.sort((a, b) => a.batting_position - b.batting_position);
   const lastDidNotBatIdx = batters.findLastIndex((entry) => !entry.has_batted);
+
+  const dnbBatters = batters.filter((batter) => !batter.has_batted);
 
   return (
     <div>
@@ -97,10 +99,10 @@ export function ScorecardBatters({
         </div>
       </div>
 
-      <div className="mt-4">
-        <span className="font-bold">Did not bat:</span> {"  "}
-        {batters.map((batter, idx) => {
-          if (!batter.has_batted) {
+      {dnbBatters?.length ? (
+        <div className="mt-4">
+          <span className="font-bold">Did not bat:</span> {"  "}
+          {dnbBatters.map((batter, idx) => {
             return (
               <span key={batter.batter_id}>
                 <Link href={`/players/${batter.batter_id}`} className="underline">
@@ -109,9 +111,11 @@ export function ScorecardBatters({
                 {idx < lastDidNotBatIdx ? ", " : ""}
               </span>
             );
-          }
-        })}
-      </div>
+          })}
+        </div>
+      ) : (
+        <></>
+      )}
     </div>
   );
 }

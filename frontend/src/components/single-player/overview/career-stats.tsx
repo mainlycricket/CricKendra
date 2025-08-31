@@ -1,7 +1,7 @@
 import { PopulatedTable } from "@/components/common/table.component";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { ICareerStats, ISinglePlayer } from "@/lib/types/single-player.types";
+import { ICareerStats, ISinglePlayer } from "@/lib/types/player.types";
 import { rotate2DArray } from "@/lib/utils";
 
 export function PlayerCareerStats({ player }: { player: ISinglePlayer }) {

@@ -7,7 +7,7 @@ import {
   IInningsScorecardSummary,
   IMatchHeader,
   IPlayerAwardInfo,
-} from "@/lib/types/single-match.types";
+} from "@/lib/types/match.types";
 import Link from "next/link";
 import { InningsCommentary } from "../commentary/innings-commentary";
 

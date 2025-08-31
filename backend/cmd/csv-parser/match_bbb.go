@@ -337,9 +337,10 @@ func (teamInnings *teamInnings) updateStrikerScores(batterId int64, scoringInput
 
 	updatedEntry.RunsScored.Int64 += scoringInput.batterRuns
 
-	if scoringInput.batterRuns == 4 {
+	switch scoringInput.batterRuns {
+	case 4:
 		updatedEntry.FoursScored.Int64++
-	} else if scoringInput.batterRuns == 6 {
+	case 6:
 		updatedEntry.SixesScored.Int64++
 	}
 
@@ -478,9 +479,10 @@ func (teamInnings *teamInnings) updateBowlerEntry(bowlerId int64, scoringInput *
 		updatedEntry.BallsBowled.Int64++
 	}
 
-	if scoringInput.batterRuns == 4 {
+	switch scoringInput.batterRuns {
+	case 4:
 		updatedEntry.FoursConceded.Int64++
-	} else if scoringInput.batterRuns == 6 {
+	case 6:
 		updatedEntry.SixesConceded.Int64++
 	}
 
@@ -545,9 +547,10 @@ func (teamInnings *teamInnings) handleDelivery(tx pgx.Tx, scoringInput *scoringI
 
 	delivery.IsSix = pgtype.Bool{Bool: false, Valid: true}
 	delivery.IsFour = pgtype.Bool{Bool: false, Valid: true}
-	if scoringInput.batterRuns == 4 {
+	switch scoringInput.batterRuns {
+	case 4:
 		delivery.IsFour = pgtype.Bool{Bool: true, Valid: true}
-	} else if scoringInput.batterRuns == 6 {
+	case 6:
 		delivery.IsSix = pgtype.Bool{Bool: true, Valid: true}
 	}
 

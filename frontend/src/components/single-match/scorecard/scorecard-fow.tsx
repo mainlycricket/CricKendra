@@ -1,4 +1,4 @@
-import { IFallOfWickets } from "@/lib/types/single-match.types";
+import { IFallOfWickets } from "@/lib/types/match.types";
 import Link from "next/link";
 
 export function ScorecardFoWs({ entries }: { entries: IFallOfWickets[] }) {

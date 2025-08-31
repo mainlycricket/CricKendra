@@ -64,13 +64,8 @@ func TestRead_Stat_Filter_Options(t *testing.T) {
 				return
 			}
 
-			if len(got.PrimaryTeams) == 0 {
-				t.Error("primary teams less than 1")
-				return
-			}
-
-			if len(got.OppositionTeams) == 0 {
-				t.Error("opposition teams less than 1")
+			if len(got.Teams) == 0 {
+				t.Error("teams less than 1")
 				return
 			}
 

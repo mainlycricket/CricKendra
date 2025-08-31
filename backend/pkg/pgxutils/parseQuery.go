@@ -63,6 +63,13 @@ func ParseQuery[T any](input QueryInfoInput) (QueryInfoOutput, error) {
 			)
 		} else {
 			keysWithOperator = append(keysWithOperator, []string{columnName, "IN"})
+			if datatype == "Text" {
+				keysWithOperator = append(keysWithOperator, []string{columnName + "__like", "text_ilike"})
+			}
+			if datatype == "Date" {
+				keysWithOperator = append(keysWithOperator, []string{columnName + "__min", "date_min"})
+				keysWithOperator = append(keysWithOperator, []string{columnName + "__max", "date_max"})
+			}
 		}
 
 		for _, item := range keysWithOperator {
@@ -165,6 +172,11 @@ func GetConditionArgs(values []string, datatype string, argsLen int) ([]any, []s
 	var args []any
 
 	for _, value := range values {
+		value = strings.TrimSpace(value)
+		if value == "" {
+			continue
+		}
+
 		parsed, err := ParseArg(value, datatype)
 		if err == nil {
 			args = append(args, parsed)
@@ -187,6 +199,12 @@ func GetCondition(tableName, columnName, operator, pgType string, placeholders [
 		condition += fmt.Sprintf(`@> ARRAY[%v]::%s[] AND ARRAY[%v]::%s[] @> %s.%s`, placeholderString, pgType, placeholderString, pgType, tableName, columnName)
 	case "array_all":
 		condition += fmt.Sprintf(`@> ARRAY[%v]::%s[]`, placeholderString, pgType)
+	case "text_ilike":
+		condition += fmt.Sprintf(`ILIKE '%%' || %s || '%%'`, placeholderString)
+	case "date_min":
+		condition += fmt.Sprintf(`>= %s`, placeholderString)
+	case "date_max":
+		condition += fmt.Sprintf(`<= %s`, placeholderString)
 	default:
 		condition += fmt.Sprintf(`IN (%s)`, placeholderString)
 	}

@@ -1,4 +1,4 @@
-import { IInningsExtrasData, IInningsTotalData, ITeamInningsScorecard } from "@/lib/types/single-match.types";
+import { IInningsExtrasData, IInningsTotalData, ITeamInningsScorecard } from "@/lib/types/match.types";
 import { ScorecardBatters } from "./scorecard-batters";
 import { ScorecardBowlers } from "./scorecard-bowlers";
 import { ScorecardFoWs } from "./scorecard-fow";

@@ -406,7 +406,7 @@ var matchInfoQuery = struct {
 	groupByFields string
 }{
 	selectFields: `
-		matches.id, matches.playing_level, matches.playing_format, matches.match_type, matches.event_match_number,
+		matches.id, matches.playing_level, matches.playing_format, matches.is_male, matches.match_type, matches.event_match_number,
 		matches.match_state, matches.match_state_description, matches.final_result,
 		
 		matches.match_winner_team_id, matches.match_loser_team_id, matches.is_won_by_innings,
@@ -525,7 +525,7 @@ func ReadMatches(ctx context.Context, db DB_Exec, queryMap url.Values) (response
 		var match responses.MatchInfo
 
 		err := rows.Scan(
-			&match.MatchId, &match.PlayingLevel, &match.PlayingFormat, &match.MatchType, &match.EventMatchNumber,
+			&match.MatchId, &match.PlayingLevel, &match.PlayingFormat, &match.IsMale, &match.MatchType, &match.EventMatchNumber,
 
 			&match.MatchState, &match.MatchStateDescription, &match.FinalResult,
 
@@ -746,7 +746,7 @@ func ReadMatchSummary(ctx context.Context, db DB_Exec, matchId int64) (responses
 	row := db.QueryRow(ctx, query, matchId)
 
 	err := row.Scan(
-		&matchHeader.MatchId, &matchHeader.PlayingLevel, &matchHeader.PlayingFormat, &matchHeader.MatchType, &matchHeader.EventMatchNumber,
+		&matchHeader.MatchId, &matchHeader.PlayingLevel, &matchHeader.PlayingFormat, &matchHeader.IsMale, &matchHeader.MatchType, &matchHeader.EventMatchNumber,
 
 		&matchHeader.MatchState, &matchHeader.MatchStateDescription, &matchHeader.FinalResult,
 
@@ -864,7 +864,7 @@ func ReadMatchFullScorecard(ctx context.Context, db DB_Exec, matchId int64) (res
 	row := db.QueryRow(ctx, query, matchId)
 
 	err := row.Scan(
-		&matchHeader.MatchId, &matchHeader.PlayingLevel, &matchHeader.PlayingFormat, &matchHeader.MatchType, &matchHeader.EventMatchNumber,
+		&matchHeader.MatchId, &matchHeader.PlayingLevel, &matchHeader.PlayingFormat, &matchHeader.IsMale, &matchHeader.MatchType, &matchHeader.EventMatchNumber,
 
 		&matchHeader.MatchState, &matchHeader.MatchStateDescription, &matchHeader.FinalResult,
 
@@ -969,7 +969,7 @@ func ReadMatchStats(ctx context.Context, db DB_Exec, matchId int64) (responses.M
 	row := db.QueryRow(ctx, query, matchId)
 
 	err := row.Scan(
-		&matchHeader.MatchId, &matchHeader.PlayingLevel, &matchHeader.PlayingFormat, &matchHeader.MatchType, &matchHeader.EventMatchNumber,
+		&matchHeader.MatchId, &matchHeader.PlayingLevel, &matchHeader.PlayingFormat, &matchHeader.IsMale, &matchHeader.MatchType, &matchHeader.EventMatchNumber,
 
 		&matchHeader.MatchState, &matchHeader.MatchStateDescription, &matchHeader.FinalResult,
 

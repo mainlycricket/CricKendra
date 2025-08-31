@@ -10,7 +10,7 @@ import {
   ChartTooltip,
   ChartTooltipContent,
 } from "@/components/ui/chart";
-import { IOverStats } from "@/lib/types/single-match.types";
+import { IOverStats } from "@/lib/types/match.types";
 
 export function StatsRunRate({
   data,

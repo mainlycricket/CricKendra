@@ -1,5 +1,5 @@
-FROM postgres:17.3-alpine
+FROM postgres:17.6-alpine
 
 COPY ./db_files/full_db.sql /docker-entrypoint-initdb.d/full_db.sql
 
-CMD [ "postgres" ]
+CMD [ "postgres" , "-c", "max_wal_size=2GB", "-c", "checkpoint_timeout=10min"]

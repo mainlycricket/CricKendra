@@ -57,7 +57,7 @@ func (filters *inningsFilters) applyInningsFilters(params *url.Values, stats_typ
 		filters.setBowlerBallsRange(params.Get("min__innings_balls_bowled"), params.Get("max__innings_balls_bowled"))
 		filters.setBowlerRunsRange(params.Get("min__innings_runs_conceded"), params.Get("max__innings_runs_conceded"))
 		filters.setBowlerWicketsRange(params.Get("min__innings_wickets_taken"), params.Get("max__innings_wickets_taken"))
-		filters.setBowlerPositionRange(params.Get("min__innings_bowling_position"), params.Get("min__innings_bowling_position"))
+		filters.setBowlerPositionRange(params.Get("min__innings_bowling_position"), params.Get("max__innings_bowling_position"))
 	case team_stats:
 		filters.setTeamInningsRunsRange(params.Get("min__team_innings_runs"), params.Get("max__team_innings_runs"))
 		filters.setTeamInningsWktsRange(params.Get("min__team_innings_wickets"), params.Get("max__team_innings_wickets"))
@@ -103,14 +103,20 @@ func (filters *inningsFilters) setHomeAway(values []string, isBattingTeam bool) 
 		inningsField = "innings.batting_team_id"
 	}
 
+	conditions := make([]string, 0, 2)
+
 	if slices.Contains(values, "home") {
 		condition := fmt.Sprintf(`matches.home_team_id = %s`, inningsField)
-		filters.conditions = append(filters.conditions, condition)
+		conditions = append(conditions, condition)
 	}
 
 	if slices.Contains(values, "away") {
 		condition := fmt.Sprintf(`matches.away_team_id = %s`, inningsField)
-		filters.conditions = append(filters.conditions, condition)
+		conditions = append(conditions, condition)
+	}
+
+	if len(conditions) > 0 {
+		filters.conditions = append(filters.conditions, fmt.Sprintf(`(%s)`, strings.Join(conditions, " OR ")))
 	}
 }
 
@@ -120,12 +126,18 @@ func (filters *inningsFilters) setMatchResult(values []string, isBattingTeam boo
 		team_field = `innings.batting_team_id`
 	}
 
+	conditions := make([]string, 0, 2)
+
 	if slices.Contains(values, "won") {
-		filters.conditions = append(filters.conditions, fmt.Sprintf(`matches.match_winner_team_id = %s`, team_field))
+		conditions = append(conditions, fmt.Sprintf(`matches.match_winner_team_id = %s`, team_field))
 	}
 
 	if slices.Contains(values, "lost") {
-		filters.conditions = append(filters.conditions, fmt.Sprintf(`matches.match_loser_team_id = %s`, team_field))
+		conditions = append(conditions, fmt.Sprintf(`matches.match_loser_team_id = %s`, team_field))
+	}
+
+	if len(conditions) > 0 {
+		filters.conditions = append(filters.conditions, fmt.Sprintf(`(%s)`, strings.Join(conditions, " OR ")))
 	}
 }
 
@@ -236,7 +248,7 @@ func (filters *inningsFilters) setBatterIsDismissed(isDismissed string) {
 	}
 
 	if isDismissed == "not_out" {
-		filters.conditions = append(filters.conditions, `batting_scorecards.dismissal_type IS NULL OR batting_scorecards.dismissal_type NOT IN ('retired hurt', 'retired not out')`)
+		filters.conditions = append(filters.conditions, `(batting_scorecards.dismissal_type IS NULL OR batting_scorecards.dismissal_type IN ('retired hurt', 'retired not out'))`)
 		return
 	}
 }

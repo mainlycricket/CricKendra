@@ -316,7 +316,7 @@ func ReadDeliveriesByMatchInnings(ctx context.Context, db DB_Exec, match_id int6
 	rows := db.QueryRow(ctx, query, match_id, innings_id)
 
 	err := rows.Scan(
-		&matchHeader.MatchId, &matchHeader.PlayingLevel, &matchHeader.PlayingFormat, &matchHeader.MatchType, &matchHeader.EventMatchNumber,
+		&matchHeader.MatchId, &matchHeader.PlayingLevel, &matchHeader.PlayingFormat, &matchHeader.IsMale, &matchHeader.MatchType, &matchHeader.EventMatchNumber,
 		&matchHeader.MatchState, &matchHeader.MatchStateDescription, &matchHeader.FinalResult,
 
 		&matchHeader.MatchWinnerId, &matchHeader.MatchLoserId, &matchHeader.IsWonByInnings, &matchHeader.IsWonByRuns,

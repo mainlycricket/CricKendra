@@ -2,7 +2,7 @@ import { InningsCommentary } from "@/components/single-match/commentary/innings-
 import { InningsDropdown } from "@/components/single-match/commentary/innings-dropdown";
 import { CommonMatchLayout } from "@/components/single-match/common/common-layout.component";
 import { doBackendRequest } from "@/lib/axiosFetch";
-import { IMatchCommentary } from "@/lib/types/single-match.types";
+import { IMatchCommentary } from "@/lib/types/match.types";
 
 export default async function Commentary({ params }: { params: Promise<{ id: string; inningsId: string }> }) {
   try {

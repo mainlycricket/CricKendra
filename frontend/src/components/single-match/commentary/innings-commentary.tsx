@@ -1,4 +1,4 @@
-import { IBbbCommentary, IOverSummary } from "@/lib/types/single-match.types";
+import { IBbbCommentary, IOverSummary } from "@/lib/types/match.types";
 import { SingleBallCommentary } from "./single-commentary";
 import { OverSummary } from "./over-summary";
 import { isBowlerDismissal } from "@/lib/utils";

@@ -1,7 +1,7 @@
 import { MatchHeader } from "./match-header.component";
 import { MatchTabs } from "./match-tabs.component";
 
-import { IMatchHeader } from "@/lib/types/single-match.types";
+import { IMatchHeader } from "@/lib/types/match.types";
 
 export function CommonMatchLayout({
   matchHeader,

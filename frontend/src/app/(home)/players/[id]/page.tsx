@@ -3,7 +3,7 @@ import { PlayerBasicDetails } from "@/components/single-player/overview/basic-de
 import { PlayerCareerStats } from "@/components/single-player/overview/career-stats";
 import { Card, CardContent } from "@/components/ui/card";
 import { doBackendRequest } from "@/lib/axiosFetch";
-import { ISinglePlayer } from "@/lib/types/single-player.types";
+import { ISinglePlayer } from "@/lib/types/player.types";
 
 export default async function SinlgePlayerOverview({ params }: { params: Promise<{ id: number }> }) {
   try {

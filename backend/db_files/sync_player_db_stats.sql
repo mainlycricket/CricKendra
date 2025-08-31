@@ -1,3 +1,37 @@
+WITH
+	series_data AS (
+		SELECT
+			series.id,
+			series.name,
+			MIN(matches.start_date) AS min_date,
+			MAX(matches.start_date) AS max_date
+		FROM
+			series
+			JOIN match_series_entries mse ON mse.series_id = series.id
+			JOIN matches ON mse.match_id = matches.id
+		GROUP BY
+			series.id,
+			series.name
+	)
+UPDATE series
+SET
+	start_date = (
+		SELECT
+			min_date
+		FROM
+			series_data
+		WHERE
+			series_data.id = series.id
+	),
+	end_date = (
+		SELECT
+			max_date
+		FROM
+			series_data
+		WHERE
+			series_data.id = series.id
+	);
+
 WITH match_wickets AS (
     SELECT bs.bowler_id,
         matches.id AS match_id,

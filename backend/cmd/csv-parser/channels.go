@@ -61,33 +61,70 @@ func triggerParseInfo(directories map[string]string, parseChannel *channelWrappe
 		parseChannel.dependencyCondition.Broadcast()
 	}()
 
+	wg := &sync.WaitGroup{}
 	for basePath, playingFormat := range directories {
-		dirEntries, err := os.ReadDir(basePath)
-		if err != nil {
-			log.Fatalf("error while reading directory: %v", basePath)
-		}
+		wg.Add(1)
+		go traverseDirectory(basePath, playingFormat, wg, parseChannel)
+	}
 
-		for _, dirEntry := range dirEntries {
-			fileName := dirEntry.Name()
-			if strings.HasSuffix(fileName, "_info.csv") {
-				matchCricsheetId := strings.TrimSuffix(fileName, "_info.csv")
+	wg.Wait()
 
-				match, err := dbutils.ReadMatchByCricsheetId(context.Background(), DB_POOL, matchCricsheetId)
-				if err != nil && err.Error() != "no rows in result set" {
-					log.Printf(`error while reading cricsheet match: %v`, err)
-					continue
-				}
-				if match.IsBBBDone.Bool {
-					continue
-				}
+	// for basePath, playingFormat := range directories {
+	// 	dirEntries, err := os.ReadDir(basePath)
+	// 	if err != nil {
+	// 		log.Fatalf("error while reading directory: %v", basePath)
+	// 	}
 
-				matchInfoPath := filepath.Join(basePath, fileName)
+	// 	for _, dirEntry := range dirEntries {
+	// 		fileName := dirEntry.Name()
+	// 		if strings.HasSuffix(fileName, "_info.csv") {
+	// 			matchCricsheetId := strings.TrimSuffix(fileName, "_info.csv")
 
-				parseChannel.tasks.Add(1)
-				go parseMatchInfoFile(matchInfoPath, playingFormat, parseChannel.channel)
+	// 			match, err := dbutils.ReadMatchByCricsheetId(context.Background(), DB_POOL, matchCricsheetId)
+	// 			if err != nil && err.Error() != "no rows in result set" {
+	// 				log.Printf(`error while reading cricsheet match: %v`, err)
+	// 				continue
+	// 			}
+	// 			if match.IsBBBDone.Bool {
+	// 				continue
+	// 			}
+
+	// 			matchInfoPath := filepath.Join(basePath, fileName)
+
+	// 			parseChannel.tasks.Add(1)
+	// 			go parseMatchInfoFile(matchInfoPath, playingFormat, parseChannel.channel)
+	// 		}
+	// 	}
+	// }
+}
+
+func traverseDirectory(basePath, playingFormat string, wg *sync.WaitGroup, parseChannel *channelWrapper[info_parse_response]) {
+	dirEntries, err := os.ReadDir(basePath)
+	if err != nil {
+		log.Fatalf("error while reading directory: %v", basePath)
+	}
+
+	for _, dirEntry := range dirEntries {
+		fileName := dirEntry.Name()
+		if strings.HasSuffix(fileName, "_info.csv") {
+			matchCricsheetId := strings.TrimSuffix(fileName, "_info.csv")
+
+			match, err := dbutils.ReadMatchByCricsheetId(context.Background(), DB_POOL, matchCricsheetId)
+			if err != nil && err.Error() != "no rows in result set" {
+				log.Printf(`error while reading cricsheet match: %v`, err)
+				continue
 			}
+			if match.IsBBBDone.Bool {
+				continue
+			}
+
+			matchInfoPath := filepath.Join(basePath, fileName)
+
+			parseChannel.tasks.Add(1)
+			go parseMatchInfoFile(matchInfoPath, playingFormat, parseChannel.channel)
 		}
 	}
+	wg.Done()
 }
 
 func triggerMatchInit(parseChannel *channelWrapper[info_parse_response], matchInitChannel *channelWrapper[match_init_response]) {

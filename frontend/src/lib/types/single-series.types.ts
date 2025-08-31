@@ -1,4 +1,4 @@
-import { IMatchInfo } from "./single-match.types";
+import { IMatchInfo } from "./match.types";
 
 export interface ISeriesHeader {
   series_id: number;

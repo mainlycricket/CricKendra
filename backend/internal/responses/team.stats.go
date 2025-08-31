@@ -5,19 +5,19 @@ import "github.com/jackc/pgx/v5/pgtype"
 /* Overall Stats */
 
 type Overall_Team_Teams_Group struct {
-	TeamId       pgtype.Int8 `json:"team_id"`
-	TeamName     pgtype.Text `json:"team_name"`
-	MinStartDate pgtype.Date `json:"min_start_date"`
-	MaxStartDate pgtype.Date `json:"max_start_date"`
+	TeamId   pgtype.Int8 `json:"team_id"`
+	TeamName pgtype.Text `json:"team_name"`
+	MinDate  pgtype.Date `json:"min_date"`
+	MaxDate  pgtype.Date `json:"max_date"`
 	OverallTeamStats
 }
 
 type Overall_Team_Players_Group struct {
-	PlayerId     pgtype.Int8 `json:"player_id"`
-	PlayerName   pgtype.Text `json:"player_name"`
-	MinStartDate pgtype.Date `json:"min_start_date"`
-	MaxStartDate pgtype.Date `json:"max_start_date"`
-	TeamsCount   pgtype.Int8 `json:"teams_count"`
+	PlayerId   pgtype.Int8 `json:"player_id"`
+	PlayerName pgtype.Text `json:"player_name"`
+	MinDate    pgtype.Date `json:"min_date"`
+	MaxDate    pgtype.Date `json:"max_date"`
+	TeamsCount pgtype.Int8 `json:"teams_count"`
 	OverallTeamStats
 }
 
@@ -39,6 +39,8 @@ type Overall_Team_Series_Group struct {
 	SeriesId     pgtype.Int8 `json:"series_id"`
 	SeriesName   pgtype.Text `json:"series_name"`
 	SeriesSeason pgtype.Text `json:"series_season"`
+	MinDate      pgtype.Date `json:"min_date"`
+	MaxDate      pgtype.Date `json:"max_date"`
 	TeamsCount   pgtype.Int8 `json:"teams_count"`
 	OverallTeamStats
 }
@@ -46,24 +48,26 @@ type Overall_Team_Series_Group struct {
 type Overall_Team_Tournament_Group struct {
 	TournamentId   pgtype.Int8 `json:"tournament_id"`
 	TournamentName pgtype.Text `json:"tournament_name"`
+	MinDate        pgtype.Date `json:"min_date"`
+	MaxDate        pgtype.Date `json:"max_date"`
 	TeamsCount     pgtype.Int8 `json:"teams_count"`
 	OverallTeamStats
 }
 
 type Overall_Team_Grounds_Group struct {
-	GroundId     pgtype.Int8 `json:"ground_id"`
-	GroundName   pgtype.Text `json:"ground_name"`
-	MinStartDate pgtype.Date `json:"min_start_date"`
-	MaxStartDate pgtype.Date `json:"max_start_date"`
-	TeamsCount   pgtype.Int8 `json:"teams_count"`
+	GroundId   pgtype.Int8 `json:"ground_id"`
+	GroundName pgtype.Text `json:"ground_name"`
+	MinDate    pgtype.Date `json:"min_date"`
+	MaxDate    pgtype.Date `json:"max_date"`
+	TeamsCount pgtype.Int8 `json:"teams_count"`
 	OverallTeamStats
 }
 
 type Overall_Team_HostNations_Group struct {
 	HostNationId   pgtype.Int8 `json:"host_nation_id"`
 	HostNationName pgtype.Text `json:"host_nation_name"`
-	MinStartDate   pgtype.Date `json:"min_start_date"`
-	MaxStartDate   pgtype.Date `json:"max_start_date"`
+	MinDate        pgtype.Date `json:"min_date"`
+	MaxDate        pgtype.Date `json:"max_date"`
 	TeamsCount     pgtype.Int8 `json:"teams_count"`
 	OverallTeamStats
 }
@@ -71,8 +75,8 @@ type Overall_Team_HostNations_Group struct {
 type Overall_Team_Continents_Group struct {
 	ContinentId   pgtype.Int8 `json:"continent_id"`
 	ContinentName pgtype.Text `json:"continent_name"`
-	MinStartDate  pgtype.Date `json:"min_start_date"`
-	MaxStartDate  pgtype.Date `json:"max_start_date"`
+	MinDate       pgtype.Date `json:"min_date"`
+	MaxDate       pgtype.Date `json:"max_date"`
 	TeamsCount    pgtype.Int8 `json:"teams_count"`
 	OverallTeamStats
 }
@@ -96,6 +100,8 @@ type Overall_Team_Decades_Group struct {
 }
 
 type Overall_Team_Aggregate_Group struct {
+	MinDate    pgtype.Date `json:"min_date"`
+	MaxDate    pgtype.Date `json:"max_date"`
 	TeamsCount pgtype.Int8 `json:"teams_count"`
 	OverallTeamStats
 }
@@ -141,8 +147,8 @@ type Individual_Team_Series_Group struct {
 	SeriesId     pgtype.Int8 `json:"series_id"`
 	SeriesName   pgtype.Text `json:"series_name"`
 	SeriesSeason pgtype.Text `json:"series_season"`
-	MinStartDate pgtype.Date `json:"min_start_date"`
-	MaxStartDate pgtype.Date `json:"max_start_date"`
+	MinDate      pgtype.Date `json:"min_date"`
+	MaxDate      pgtype.Date `json:"max_date"`
 	OverallTeamStats
 }
 
@@ -151,18 +157,18 @@ type Individual_Team_Tournaments_Group struct {
 	TeamName       pgtype.Text `json:"team_name"`
 	TournamentId   pgtype.Int8 `json:"tournament_id"`
 	TournamentName pgtype.Text `json:"tournament_name"`
-	MinStartDate   pgtype.Date `json:"min_start_date"`
-	MaxStartDate   pgtype.Date `json:"max_start_date"`
+	MinDate        pgtype.Date `json:"min_date"`
+	MaxDate        pgtype.Date `json:"max_date"`
 	OverallTeamStats
 }
 
 type Individual_Team_Grounds_Group struct {
-	TeamId       pgtype.Int8 `json:"team_id"`
-	TeamName     pgtype.Text `json:"team_name"`
-	GroundId     pgtype.Int8 `json:"ground_id"`
-	GroundName   pgtype.Text `json:"ground_name"`
-	MinStartDate pgtype.Date `json:"min_start_date"`
-	MaxStartDate pgtype.Date `json:"max_start_date"`
+	TeamId     pgtype.Int8 `json:"team_id"`
+	TeamName   pgtype.Text `json:"team_name"`
+	GroundId   pgtype.Int8 `json:"ground_id"`
+	GroundName pgtype.Text `json:"ground_name"`
+	MinDate    pgtype.Date `json:"min_date"`
+	MaxDate    pgtype.Date `json:"max_date"`
 	OverallTeamStats
 }
 
@@ -171,8 +177,8 @@ type Individual_Team_HostNations_Group struct {
 	TeamName       pgtype.Text `json:"team_name"`
 	HostNationId   pgtype.Int8 `json:"host_nation_id"`
 	HostNationName pgtype.Text `json:"host_nation_name"`
-	MinStartDate   pgtype.Date `json:"min_start_date"`
-	MaxStartDate   pgtype.Date `json:"max_start_date"`
+	MinDate        pgtype.Date `json:"min_date"`
+	MaxDate        pgtype.Date `json:"max_date"`
 	OverallTeamStats
 }
 

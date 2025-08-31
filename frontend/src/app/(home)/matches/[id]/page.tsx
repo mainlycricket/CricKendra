@@ -1,5 +1,5 @@
 import { doBackendRequest } from "@/lib/axiosFetch";
-import { IMatchSummary } from "@/lib/types/single-match.types";
+import { IMatchSummary } from "@/lib/types/match.types";
 import { CommonMatchLayout } from "@/components/single-match/common/common-layout.component";
 import { MatchSummary } from "@/components/single-match/summary/summary.component";
 

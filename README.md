@@ -16,11 +16,10 @@ I am building `CricKendra` out of my passion for cricket and programming.
   - Single Match & Single Series routes ✅
   - Admin Routes with Live Scoring System ✅
 - Frontend
-  - Single Match, Single Series & Single Player ✅
-  - Stats Tool ⏳
+  - Matches, Series & Players pages ✅
+  - Stats Tool ✅
   - Admin Panel with Live Scoring System ⏳
-  - Navbar, Header, Footer fixes ⏳
-- Series & Tournaments view with search ⏳
+  - Grounds, Tournaments, Teams etc. pages ⏳
 - All-round & Partnership in Stats Tools ⏳
 - Content Management System ⏳
 
@@ -49,7 +48,7 @@ I am building `CricKendra` out of my passion for cricket and programming.
 
 ### Resources
 
-- Screenshots [here](https://www.linkedin.com/pulse/crickendra-screenshots-tushar-jain-vftjc)
+- Screenshots [here](https://www.linkedin.com/pulse/crickendra-screenshots-part-2-tushar-jain-bmhnc)
 - Postman Collection [here](https://documenter.getpostman.com/view/25403102/2sAYBREZ3x)
 - DB Schema [here](https://dbdiagram.io/d/CricKendra-670bfc5697a66db9a3d0b44a)
 

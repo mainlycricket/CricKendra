@@ -1,4 +1,4 @@
-import { IPartnershipStats } from "@/lib/types/single-match.types";
+import { IPartnershipStats } from "@/lib/types/match.types";
 
 export function Partnerships({ partnerships }: { partnerships: IPartnershipStats[] }) {
   partnerships.sort((a, b) => a.for_wicket - b.for_wicket);

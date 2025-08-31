@@ -5,7 +5,7 @@ import { StatsRunRate } from "@/components/single-match/stats/runrate.component"
 import { StatsWorm } from "@/components/single-match/stats/worm.component";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { doBackendRequest } from "@/lib/axiosFetch";
-import { IMatchStats } from "@/lib/types/single-match.types";
+import { IMatchStats } from "@/lib/types/match.types";
 
 export default async function Stats({
   params,

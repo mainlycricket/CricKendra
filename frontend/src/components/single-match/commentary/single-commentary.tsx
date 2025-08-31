@@ -1,4 +1,4 @@
-import { IBbbCommentary } from "@/lib/types/single-match.types";
+import { IBbbCommentary } from "@/lib/types/match.types";
 import { isBowlerDismissal } from "@/lib/utils";
 
 export function SingleBallCommentary({ data }: { data: IBbbCommentary }) {

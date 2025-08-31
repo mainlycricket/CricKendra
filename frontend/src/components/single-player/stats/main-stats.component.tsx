@@ -4,7 +4,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { StatsDropdown } from "./dropdown-options.component";
 import { BattingStats } from "./batting-stats.component";
 import { BowlingStats } from "./bowling-stats.component";
-import { ISinglePlayer } from "@/lib/types/single-player.types";
+import { ISinglePlayer } from "@/lib/types/player.types";
 import { useEffect, useState } from "react";
 import { IOverall_Batting_Summary_Group } from "@/lib/types/batting-stats.types";
 import { IOverall_Bowling_Summary_Group } from "@/lib/types/bowling-stats.types";

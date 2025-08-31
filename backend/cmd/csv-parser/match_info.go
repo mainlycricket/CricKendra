@@ -319,30 +319,34 @@ func (input *matchInfoInput) initalizeMatch(channel chan<- match_init_response) 
 	match := output.match
 
 	// match winner & loser
-	if input.match_winner_name == output.team1Info.name {
+	switch input.match_winner_name {
+	case output.team1Info.name:
 		match.MatchWinnerId, match.MatchLoserId = match.Team1Id, match.Team2Id
-	} else if input.match_winner_name == output.team2Info.name {
+	case output.team2Info.name:
 		match.MatchWinnerId, match.MatchLoserId = match.Team2Id, match.Team1Id
 	}
 
 	// toss winner & loser
-	if input.toss_winner_name == output.team1Info.name {
+	switch input.toss_winner_name {
+	case output.team1Info.name:
 		match.TossWinnerId, match.TossLoserId = match.Team1Id, match.Team2Id
-	} else if input.toss_winner_name == output.team2Info.name {
+	case output.team2Info.name:
 		match.TossWinnerId, match.TossLoserId = match.Team2Id, match.Team1Id
 	}
 
 	// bowl out winner
-	if input.bowl_out_winner == output.team1Info.name {
+	switch input.bowl_out_winner {
+	case output.team1Info.name:
 		match.BowlOutWinnerId = match.Team1Id
-	} else if input.bowl_out_winner == output.team2Info.name {
+	case output.team2Info.name:
 		match.BowlOutWinnerId = match.Team2Id
 	}
 
 	// super over winner
-	if input.super_over_winner == output.team1Info.name {
+	switch input.super_over_winner {
+	case output.team1Info.name:
 		match.SuperOverWinnerId = match.Team1Id
-	} else if input.super_over_winner == output.team2Info.name {
+	case output.team2Info.name:
 		match.SuperOverWinnerId = match.Team2Id
 	}
 
@@ -441,10 +445,11 @@ func (matchInfo *matchInfo) setVenueDetails(input *matchInfoInput) error {
 	matchInfo.match.GroundId = ground.Id
 
 	if !input.is_neutral_venue {
-		if ground.HostNationName.String == matchInfo.team1Info.name {
+		switch ground.HostNationName.String {
+		case matchInfo.team1Info.name:
 			matchInfo.match.HomeTeamId = matchInfo.match.Team1Id
 			matchInfo.match.AwayTeamId = matchInfo.match.Team2Id
-		} else if ground.HostNationName.String == matchInfo.team2Info.name {
+		case matchInfo.team2Info.name:
 			matchInfo.match.HomeTeamId = matchInfo.match.Team2Id
 			matchInfo.match.AwayTeamId = matchInfo.match.Team1Id
 		}
@@ -474,6 +479,8 @@ func (matchInfo *matchInfo) setMatchSeries(input *matchInfoInput) error {
 		seriesKey.season = renamedSeason
 	}
 
+	team1_id, team2_id := matchInfo.team1Info.id, matchInfo.team2Info.id
+
 	// check if tour
 	touringTeam, hostNations := getTourInfo(seriesKey.name)
 	if touringTeam != "" {
@@ -491,7 +498,7 @@ func (matchInfo *matchInfo) setMatchSeries(input *matchInfoInput) error {
 		subSeriesKey := seriesKey
 		subSeriesKey.name = fmt.Sprintf("%s in %s %s series", touringTeam, hostTeam, input.playingFormat)
 
-		subSeriesId, err := cachedSeries.loadOrStore(subSeriesKey, 1, 2, "tour_sub_series")
+		subSeriesId, err := cachedSeries.loadOrStore(subSeriesKey, team1_id, team2_id, "tour_sub_series")
 		if err != nil {
 			return fmt.Errorf(`failed to load tour series: %v`, err)
 		}
@@ -504,7 +511,6 @@ func (matchInfo *matchInfo) setMatchSeries(input *matchInfoInput) error {
 		tourFlag = "tour_series"
 	}
 
-	team1_id, team2_id := matchInfo.team1Info.id, matchInfo.team2Info.id
 	mainSeriesId, err := cachedSeries.loadOrStore(seriesKey, team1_id, team2_id, tourFlag)
 	if err != nil {
 		return fmt.Errorf(`failed to load main series: %v`, err)

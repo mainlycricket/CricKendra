@@ -762,6 +762,7 @@ CREATE TABLE public.cricsheet_people (
     key_crichq text,
     key_cricinfo text,
     key_cricinfo_2 text,
+    key_cricinfo_3 text,
     key_cricingif text,
     key_cricketarchive text,
     key_cricketarchive_2 text,
@@ -1037,7 +1038,8 @@ CREATE TABLE public.matches (
     end_date date,
     match_state public.match_state_enum DEFAULT 'upcoming'::public.match_state_enum,
     match_state_description text,
-    start_datetime_utc timestamp with time zone
+    start_datetime_utc timestamp with time zone,
+    teams_id integer[] GENERATED ALWAYS AS (ARRAY[team1_id, team2_id]) STORED
 );
 
 

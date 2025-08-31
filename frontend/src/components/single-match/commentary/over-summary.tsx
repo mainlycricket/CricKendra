@@ -1,4 +1,4 @@
-import { IOverSummary } from "@/lib/types/single-match.types";
+import { IOverSummary } from "@/lib/types/match.types";
 
 export function OverSummary({ overSummary }: { overSummary: IOverSummary }) {
   return (
